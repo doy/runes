@@ -12,7 +12,6 @@ typedef struct {
 
 RunesWindow *runes_window_create();
 cairo_surface_t *runes_surface_create(RunesWindow *w);
-void runes_window_flush(RunesWindow *w);
 void runes_window_destroy(RunesWindow *w);
 
 #endif

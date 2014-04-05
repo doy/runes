@@ -16,11 +16,6 @@ RunesTerm *runes_term_create()
     return t;
 }
 
-void runes_term_flush(RunesTerm *t)
-{
-    runes_window_flush(t->w);
-}
-
 void runes_term_destroy(RunesTerm *t)
 {
     cairo_destroy(t->cr);

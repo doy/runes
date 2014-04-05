@@ -14,7 +14,6 @@ typedef struct {
 } RunesTerm;
 
 RunesTerm *runes_term_create();
-void runes_term_flush(RunesTerm *t);
 void runes_term_destroy(RunesTerm *t);
 
 #endif

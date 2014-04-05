@@ -56,7 +56,7 @@ int main (int argc, char *argv[])
             continue;
         }
         cairo_show_text(t->cr, buf);
-        runes_term_flush(t);
+        cairo_surface_flush(t->surface);
     }
 
     runes_term_destroy(t);

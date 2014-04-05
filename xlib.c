@@ -59,11 +59,6 @@ cairo_surface_t *runes_surface_create(RunesWindow *w)
     return cairo_xlib_surface_create(w->dpy, w->w, vis, 240, 80);
 }
 
-void runes_window_flush(RunesWindow *w)
-{
-    XFlush(w->dpy);
-}
-
 void runes_window_destroy(RunesWindow *w)
 {
     XDestroyWindow(w->dpy, w->w);
