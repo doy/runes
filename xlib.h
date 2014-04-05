@@ -12,6 +12,8 @@ typedef struct {
 
 RunesWindow *runes_window_create();
 cairo_surface_t *runes_surface_create(RunesWindow *w);
+void runes_window_prepare_input(RunesWindow *w);
+void runes_window_read_key(RunesWindow *w, char **buf, size_t *len);
 void runes_window_destroy(RunesWindow *w);
 
 #endif
