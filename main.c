@@ -8,7 +8,7 @@ int main (int argc, char *argv[])
 
     t = runes_term_create();
 
-    cairo_select_font_face(t->cr, "7x14", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_select_font_face(t->cr, "monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(t->cr, 14.0);
     cairo_set_source_rgb(t->cr, 0.0, 0.0, 1.0);
     cairo_move_to(t->cr, 10.0, 50.0);
