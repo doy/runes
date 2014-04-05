@@ -7,6 +7,7 @@ typedef struct {
     Display *dpy;
     Window w;
     GC gc;
+    XIC ic;
 } RunesWindow;
 
 RunesWindow *runes_window_create();
