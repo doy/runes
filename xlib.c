@@ -54,9 +54,11 @@ RunesWindow *runes_window_create()
 cairo_surface_t *runes_surface_create(RunesWindow *w)
 {
     Visual *vis;
+    XWindowAttributes attrs;
 
+    XGetWindowAttributes(w->dpy, w->w, &attrs);
     vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
-    return cairo_xlib_surface_create(w->dpy, w->w, vis, 240, 80);
+    return cairo_xlib_surface_create(w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
 void runes_window_prepare_input(RunesWindow *w)
