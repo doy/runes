@@ -15,4 +15,6 @@ typedef struct runes_window RunesWindow;
 
 #include "xlib.h"
 
+#define UNUSED(x) ((void)x)
+
 #endif

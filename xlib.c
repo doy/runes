@@ -82,6 +82,8 @@ static void runes_process_event(uv_work_t *req, int status)
     XEvent *e;
     RunesWindow *w;
 
+    UNUSED(status);
+
     data = ((struct loop_data *)req->data);
     e = &data->e;
     w = data->t->w;

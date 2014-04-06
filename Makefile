@@ -1,7 +1,7 @@
 OUT      = runes
 OBJ      = runes.o display.o xlib.o term.o
-CFLAGS  ?= -g
-LDFLAGS ?= -g
+CFLAGS  ?= -g -Wall -Wextra -Werror
+LDFLAGS ?= -g -Wall -Wextra -Werror
 
 build: $(OUT)
 

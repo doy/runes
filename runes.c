@@ -7,6 +7,9 @@ int main (int argc, char *argv[])
 {
     RunesTerm *t;
 
+    UNUSED(argc);
+    UNUSED(argv);
+
     setlocale(LC_ALL, "");
 
     t = runes_term_create();
