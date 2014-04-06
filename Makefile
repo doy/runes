@@ -1,5 +1,5 @@
 OUT      = runes
-OBJ      = runes.o display.o xlib.o term.o
+OBJ      = runes.o display.o xlib.o term.o events.o
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
 

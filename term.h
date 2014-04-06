@@ -12,7 +12,6 @@ struct runes_term {
 };
 
 RunesTerm *runes_term_create();
-uv_loop_t *runes_loop_create(RunesTerm *t);
 void runes_term_destroy(RunesTerm *t);
 
 #endif

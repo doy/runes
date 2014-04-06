@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
-#include <uv.h>
 
 #include "runes.h"
 
@@ -62,31 +61,25 @@ cairo_surface_t *runes_surface_create(RunesWindow *w)
     return cairo_xlib_surface_create(w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
-struct loop_data {
-    uv_work_t req;
-    XEvent e;
-    RunesTerm *t;
-};
-
 static void runes_get_next_event(uv_work_t *req)
 {
-    struct loop_data *data;
+    struct xlib_loop_data *data;
 
-    data = (struct loop_data *)req->data;
-    XNextEvent(data->t->w->dpy, &data->e);
+    data = (struct xlib_loop_data *)req->data;
+    XNextEvent(data->data.t->w->dpy, &data->e);
 }
 
 static void runes_process_event(uv_work_t *req, int status)
 {
-    struct loop_data *data;
+    struct xlib_loop_data *data;
     XEvent *e;
     RunesWindow *w;
 
     UNUSED(status);
 
-    data = ((struct loop_data *)req->data);
+    data = ((struct xlib_loop_data *)req->data);
     e = &data->e;
-    w = data->t->w;
+    w = data->data.t->w;
 
     if (!XFilterEvent(e, None)) {
         switch (e->type) {
@@ -109,7 +102,7 @@ static void runes_process_event(uv_work_t *req, int status)
                 break;
             }
 
-            runes_display_glyph(data->t, buf, chars);
+            runes_display_glyph(data->data.t, buf, chars);
             free(buf);
             break;
         }
@@ -130,7 +123,7 @@ void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
     XSelectInput(t->w->dpy, t->w->w, mask|KeyPressMask);
     XSetICFocus(t->w->ic);
 
-    data = malloc(sizeof(struct loop_data));
+    data = malloc(sizeof(struct xlib_loop_data));
     ((struct loop_data *)data)->req.data = data;
     ((struct loop_data *)data)->t = t;
 

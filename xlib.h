@@ -10,6 +10,11 @@ struct runes_window {
     XIC ic;
 };
 
+struct xlib_loop_data {
+    struct loop_data data;
+    XEvent e;
+};
+
 RunesWindow *runes_window_create();
 cairo_surface_t *runes_surface_create(RunesWindow *w);
 void runes_loop_init(RunesTerm *t, uv_loop_t *loop);

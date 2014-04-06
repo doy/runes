@@ -12,6 +12,7 @@ typedef struct runes_window RunesWindow;
 
 #include "term.h"
 #include "display.h"
+#include "events.h"
 
 #include "xlib.h"
 
