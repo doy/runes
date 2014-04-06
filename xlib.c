@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
+#include <uv.h>
 
-#include "xlib.h"
+#include "runes.h"
 
 RunesWindow *runes_window_create()
 {
@@ -61,47 +62,77 @@ cairo_surface_t *runes_surface_create(RunesWindow *w)
     return cairo_xlib_surface_create(w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
-void runes_window_prepare_input(RunesWindow *w)
-{
-    unsigned long mask;
+struct loop_data {
+    uv_work_t req;
+    XEvent e;
+    RunesTerm *t;
+};
 
-    XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(w->dpy, w->w, mask|KeyPressMask);
-    XSetICFocus(w->ic);
+static void runes_get_next_event(uv_work_t *req)
+{
+    struct loop_data *data;
+
+    data = (struct loop_data *)req->data;
+    XNextEvent(data->t->w->dpy, &data->e);
 }
 
-void runes_window_read_key(RunesWindow *w, char **outbuf, size_t *outlen)
+static void runes_process_event(uv_work_t *req, int status)
 {
-    static char *buf = NULL;
-    static size_t len = 8;
-    XEvent e;
-    Status s;
-    KeySym sym;
-    size_t chars;
+    struct loop_data *data;
+    XEvent *e;
+    RunesWindow *w;
 
-    if (!buf) {
-        buf = malloc(len);
-    }
+    data = ((struct loop_data *)req->data);
+    e = &data->e;
+    w = data->t->w;
 
-    XNextEvent(w->dpy, &e);
-    if (XFilterEvent(&e, None) || e.type != KeyPress) {
-        *outlen = 0;
-        *outbuf = buf;
-        return;
-    }
+    if (!XFilterEvent(e, None)) {
+        switch (e->type) {
+        case KeyPress: {
+            char *buf = NULL;
+            size_t len = 8;
+            KeySym sym;
+            Status s;
+            size_t chars;
 
-    for (;;) {
-        chars = Xutf8LookupString(w->ic, &e.xkey, buf, len - 1, &sym, &s);
-        if (s == XBufferOverflow) {
-            len = chars + 1;
-            buf = realloc(buf, len);
-            continue;
+            buf = malloc(len);
+
+            for (;;) {
+                chars = Xutf8LookupString(w->ic, &e->xkey, buf, len - 1, &sym, &s);
+                if (s == XBufferOverflow) {
+                    len = chars + 1;
+                    buf = realloc(buf, len);
+                    continue;
+                }
+                break;
+            }
+
+            runes_display_glyph(data->t, buf, chars);
+            free(buf);
+            break;
         }
-        break;
+        default:
+            break;
+        }
     }
 
-    *outlen = chars;
-    *outbuf = buf;
+    uv_queue_work(req->loop, req, runes_get_next_event, runes_process_event);
+}
+
+void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
+{
+    unsigned long mask;
+    void *data;
+
+    XGetICValues(t->w->ic, XNFilterEvents, &mask, NULL);
+    XSelectInput(t->w->dpy, t->w->w, mask|KeyPressMask);
+    XSetICFocus(t->w->ic);
+
+    data = malloc(sizeof(struct loop_data));
+    ((struct loop_data *)data)->req.data = data;
+    ((struct loop_data *)data)->t = t;
+
+    uv_queue_work(loop, data, runes_get_next_event, runes_process_event);
 }
 
 void runes_window_destroy(RunesWindow *w)

@@ -1,36 +1,21 @@
-#include <cairo.h>
-#include <stdlib.h>
+#include <locale.h>
+#include <stdio.h>
 
 #include "runes.h"
 
-RunesTerm *runes_term_create()
+int main (int argc, char *argv[])
 {
     RunesTerm *t;
 
-    t = malloc(sizeof(RunesTerm));
+    setlocale(LC_ALL, "");
 
-    t->w       = runes_window_create();
-    t->surface = runes_surface_create(t->w);
-    t->cr      = cairo_create(t->surface);
+    t = runes_term_create();
 
-    return t;
-}
+    runes_display_init(t);
 
-void runes_prepare_input(RunesTerm *t)
-{
-    runes_window_prepare_input(t->w);
-}
+    uv_run(t->loop, UV_RUN_DEFAULT);
 
-void runes_read_key(RunesTerm *t, char **buf, size_t *len)
-{
-    runes_window_read_key(t->w, buf, len);
-}
+    runes_term_destroy(t);
 
-void runes_term_destroy(RunesTerm *t)
-{
-    cairo_destroy(t->cr);
-    cairo_surface_destroy(t->surface);
-    runes_window_destroy(t->w);
-
-    free(t);
+    return 0;
 }

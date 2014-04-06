@@ -2,20 +2,17 @@
 #define _RUNES_H
 
 #include <cairo.h>
+#include <uv.h>
+
+struct runes_term;
+struct runes_window;
+
+typedef struct runes_term RunesTerm;
+typedef struct runes_window RunesWindow;
+
+#include "term.h"
+#include "display.h"
 
 #include "xlib.h"
-
-typedef struct {
-    RunesWindow *w;
-    /* RunesBuffer *buf; */
-
-    cairo_surface_t *surface;
-    cairo_t *cr;
-} RunesTerm;
-
-RunesTerm *runes_term_create();
-void runes_prepare_input(RunesTerm *t);
-void runes_read_key(RunesTerm *t, char **buf, size_t *len);
-void runes_term_destroy(RunesTerm *t);
 
 #endif
