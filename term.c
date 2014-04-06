@@ -9,7 +9,7 @@ RunesTerm *runes_term_create()
     t = malloc(sizeof(RunesTerm));
 
     t->w       = runes_window_create();
-    t->surface = runes_surface_create(t->w);
+    t->surface = runes_surface_create(t);
     t->cr      = cairo_create(t->surface);
     t->loop    = runes_loop_create(t);
 

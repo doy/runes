@@ -16,7 +16,7 @@ struct xlib_loop_data {
 };
 
 RunesWindow *runes_window_create();
-cairo_surface_t *runes_surface_create(RunesWindow *w);
+cairo_surface_t *runes_surface_create(RunesTerm *t);
 void runes_loop_init(RunesTerm *t, uv_loop_t *loop);
 void runes_window_destroy(RunesWindow *w);
 
