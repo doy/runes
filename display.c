@@ -1,5 +1,3 @@
-#include <cairo.h>
-
 #include "runes.h"
 
 void runes_display_init(RunesTerm *t)

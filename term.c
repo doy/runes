@@ -1,4 +1,3 @@
-#include <cairo.h>
 #include <stdlib.h>
 
 #include "runes.h"
