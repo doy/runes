@@ -102,7 +102,7 @@ static void runes_process_event(uv_work_t *req, int status)
                 break;
             }
 
-            runes_display_glyph(data->data.t, buf, chars);
+            runes_handle_keyboard_event(data->data.t, buf, chars);
             free(buf);
             break;
         }

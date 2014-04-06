@@ -9,3 +9,7 @@ uv_loop_t *runes_loop_create(RunesTerm *t)
     return loop;
 }
 
+void runes_handle_keyboard_event(RunesTerm *t, char *buf, size_t len)
+{
+    runes_display_glyph(t, buf, len);
+}

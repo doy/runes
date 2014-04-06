@@ -7,5 +7,6 @@ struct loop_data {
 };
 
 uv_loop_t *runes_loop_create(RunesTerm *t);
+void runes_handle_keyboard_event(RunesTerm *t, char *buf, size_t len);
 
 #endif
