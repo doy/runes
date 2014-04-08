@@ -6,7 +6,8 @@
 #include "runes.h"
 
 static char *atom_names[RUNES_NUM_ATOMS] = {
-    "WM_DELETE_WINDOW"
+    "WM_DELETE_WINDOW",
+    "_NET_WM_PING"
 };
 
 RunesWindow *runes_window_create()
@@ -110,11 +111,21 @@ static void runes_process_event(uv_work_t *req, int status)
             free(buf);
             break;
         }
-        case ClientMessage:
-            if ((Atom)e->xclient.data.l[0] == t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
+        case ClientMessage: {
+            Atom a = e->xclient.data.l[0];
+            if (a == t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
                 runes_handle_close_window(t);
             }
+            else if (a == t->w->atoms[RUNES_ATOM_NET_WM_PING]) {
+                e->xclient.window = DefaultRootWindow(t->w->dpy);
+                XSendEvent(
+                    t->w->dpy, e->xclient.window, False,
+                    SubstructureNotifyMask | SubstructureRedirectMask,
+                    e
+                );
+            }
             break;
+        }
         default:
             break;
         }
@@ -139,7 +150,7 @@ void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
     ((struct loop_data *)data)->t = t;
 
     XInternAtoms(t->w->dpy, atom_names, RUNES_NUM_ATOMS, False, t->w->atoms);
-    XSetWMProtocols(t->w->dpy, t->w->w, &t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW], 1);
+    XSetWMProtocols(t->w->dpy, t->w->w, t->w->atoms, RUNES_NUM_ATOMS);
 
     uv_queue_work(loop, data, runes_get_next_event, runes_process_event);
 }

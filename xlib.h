@@ -5,6 +5,7 @@
 
 enum runes_atoms {
     RUNES_ATOM_WM_DELETE_WINDOW,
+    RUNES_ATOM_NET_WM_PING,
     RUNES_NUM_ATOMS
 };
 
