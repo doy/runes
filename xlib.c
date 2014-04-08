@@ -132,6 +132,12 @@ void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
 
 void runes_window_destroy(RunesWindow *w)
 {
+    XIM im;
+
+    im = XIMOfIC(w->ic);
+    XDestroyIC(w->ic);
+    XCloseIM(im);
+    XFreeGC(w->dpy, w->gc);
     XDestroyWindow(w->dpy, w->w);
     XCloseDisplay(w->dpy);
 
