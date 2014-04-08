@@ -5,6 +5,10 @@
 
 #include "runes.h"
 
+static char *atom_names[RUNES_NUM_ATOMS] = {
+    "WM_DELETE_WINDOW"
+};
+
 RunesWindow *runes_window_create()
 {
     RunesWindow *w;
@@ -73,13 +77,13 @@ static void runes_process_event(uv_work_t *req, int status)
 {
     struct xlib_loop_data *data;
     XEvent *e;
-    RunesWindow *w;
+    RunesTerm *t;
 
     UNUSED(status);
 
     data = ((struct xlib_loop_data *)req->data);
     e = &data->e;
-    w = data->data.t->w;
+    t = data->data.t;
 
     if (!XFilterEvent(e, None)) {
         switch (e->type) {
@@ -93,7 +97,7 @@ static void runes_process_event(uv_work_t *req, int status)
             buf = malloc(len);
 
             for (;;) {
-                chars = Xutf8LookupString(w->ic, &e->xkey, buf, len - 1, &sym, &s);
+                chars = Xutf8LookupString(t->w->ic, &e->xkey, buf, len - 1, &sym, &s);
                 if (s == XBufferOverflow) {
                     len = chars + 1;
                     buf = realloc(buf, len);
@@ -102,16 +106,23 @@ static void runes_process_event(uv_work_t *req, int status)
                 break;
             }
 
-            runes_handle_keyboard_event(data->data.t, buf, chars);
+            runes_handle_keyboard_event(t, buf, chars);
             free(buf);
             break;
         }
+        case ClientMessage:
+            if ((Atom)e->xclient.data.l[0] == t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
+                runes_handle_close_window(t);
+            }
+            break;
         default:
             break;
         }
     }
 
-    uv_queue_work(req->loop, req, runes_get_next_event, runes_process_event);
+    if (t->loop) {
+        uv_queue_work(t->loop, req, runes_get_next_event, runes_process_event);
+    }
 }
 
 void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
@@ -120,12 +131,15 @@ void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
     void *data;
 
     XGetICValues(t->w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(t->w->dpy, t->w->w, mask|KeyPressMask);
+    XSelectInput(t->w->dpy, t->w->w, mask|KeyPressMask|StructureNotifyMask);
     XSetICFocus(t->w->ic);
 
     data = malloc(sizeof(struct xlib_loop_data));
     ((struct loop_data *)data)->req.data = data;
     ((struct loop_data *)data)->t = t;
+
+    XInternAtoms(t->w->dpy, atom_names, RUNES_NUM_ATOMS, False, t->w->atoms);
+    XSetWMProtocols(t->w->dpy, t->w->w, &t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW], 1);
 
     uv_queue_work(loop, data, runes_get_next_event, runes_process_event);
 }

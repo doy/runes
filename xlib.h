@@ -3,11 +3,18 @@
 
 #include <X11/Xlib.h>
 
+enum runes_atoms {
+    RUNES_ATOM_WM_DELETE_WINDOW,
+    RUNES_NUM_ATOMS
+};
+
 struct runes_window {
     Display *dpy;
     Window w;
     GC gc;
     XIC ic;
+
+    Atom atoms[RUNES_NUM_ATOMS];
 };
 
 struct xlib_loop_data {
