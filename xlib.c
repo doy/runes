@@ -53,6 +53,9 @@ RunesWindow *runes_window_create()
         exit(1);
     }
 
+    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
+    XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_ATOMS);
+
     return w;
 }
 
@@ -148,9 +151,6 @@ void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
     data = malloc(sizeof(struct xlib_loop_data));
     ((struct loop_data *)data)->req.data = data;
     ((struct loop_data *)data)->t = t;
-
-    XInternAtoms(t->w->dpy, atom_names, RUNES_NUM_ATOMS, False, t->w->atoms);
-    XSetWMProtocols(t->w->dpy, t->w->w, t->w->atoms, RUNES_NUM_ATOMS);
 
     uv_queue_work(loop, data, runes_get_next_event, runes_process_event);
 }
