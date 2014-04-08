@@ -12,7 +12,7 @@ int main (int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    t = runes_term_create();
+    t = runes_term_create(argc, argv);
 
     runes_display_init(t);
 

@@ -1,16 +1,49 @@
 #include <cairo-xlib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/Xutil.h>
 
 #include "runes.h"
 
 static char *atom_names[RUNES_NUM_ATOMS] = {
     "WM_DELETE_WINDOW",
-    "_NET_WM_PING"
+    "_NET_WM_PING",
+    "_NET_WM_PID",
+    "_NET_WM_ICON_NAME",
+    "_NET_WM_NAME",
+    "UTF8_STRING"
 };
 
-RunesWindow *runes_window_create()
+static void runes_init_wm_properties(RunesWindow *w, int argc, char *argv[])
+{
+    pid_t pid;
+    XClassHint class_hints = { "runes", "runes" };
+    XWMHints wm_hints;
+    XSizeHints normal_hints;
+
+    wm_hints.flags = InputHint | StateHint;
+    wm_hints.input = True;
+    wm_hints.initial_state = NormalState;
+
+    /* XXX */
+    normal_hints.flags = 0;
+
+    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
+    XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
+
+    Xutf8SetWMProperties(w->dpy, w->w, "runes", "runes", argv, argc, &normal_hints, &wm_hints, &class_hints);
+
+    pid = getpid();
+    XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID], XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
+
+    XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME], w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace, (unsigned char *)"runes", 5);
+    XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME], w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace, (unsigned char *)"runes", 5);
+}
+
+RunesWindow *runes_window_create(int argc, char *argv[])
 {
     RunesWindow *w;
     unsigned long white;
@@ -53,8 +86,7 @@ RunesWindow *runes_window_create()
         exit(1);
     }
 
-    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
-    XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_ATOMS);
+    runes_init_wm_properties(w, argc, argv);
 
     return w;
 }

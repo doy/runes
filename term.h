@@ -11,7 +11,7 @@ struct runes_term {
     uv_loop_t *loop;
 };
 
-RunesTerm *runes_term_create();
+RunesTerm *runes_term_create(int argc, char *argv[]);
 void runes_term_destroy(RunesTerm *t);
 
 #endif
