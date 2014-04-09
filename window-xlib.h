@@ -30,7 +30,6 @@ typedef struct {
 
 void runes_window_backend_init(RunesTerm *t, int argc, char *argv[]);
 cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t);
-void runes_window_backend_loop_init(RunesTerm *t, uv_loop_t *loop);
 void runes_window_backend_cleanup(RunesTerm *t);
 
 #endif
