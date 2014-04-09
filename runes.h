@@ -6,15 +6,18 @@
 
 struct runes_term;
 struct runes_window;
+struct runes_pty;
 struct runes_loop_data;
 
 typedef struct runes_term RunesTerm;
 typedef struct runes_window RunesWindowBackend;
+typedef struct runes_pty RunesPtyBackend;
 typedef struct runes_loop_data RunesLoopData;
 
 #include "events.h"
 
 #include "window-xlib.h"
+#include "pty-unix.h"
 
 #include "term.h"
 #include "display.h"

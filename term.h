@@ -3,6 +3,7 @@
 
 struct runes_term {
     RunesWindowBackend w;
+    RunesPtyBackend pty;
 
     cairo_t *cr;
     uv_loop_t *loop;
