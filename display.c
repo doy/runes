@@ -13,6 +13,5 @@ void runes_display_glyph(RunesTerm *t, char *buf, size_t len)
     if (len) {
         buf[len] = '\0';
         cairo_show_text(t->cr, buf);
-        cairo_surface_flush(t->surface);
     }
 }
