@@ -1,5 +1,5 @@
 OUT      = runes
-OBJ      = runes.o display.o xlib.o term.o events.o
+OBJ      = runes.o display.o term.o events.o window-xlib.o
 LIBS     = cairo cairo-xlib libuv
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror

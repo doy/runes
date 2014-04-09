@@ -5,20 +5,17 @@
 
 int main (int argc, char *argv[])
 {
-    RunesTerm *t;
-
-    UNUSED(argc);
-    UNUSED(argv);
+    RunesTerm t;
 
     setlocale(LC_ALL, "");
 
-    t = runes_term_create(argc, argv);
+    runes_term_init(&t, argc, argv);
 
-    runes_display_init(t);
+    runes_display_init(&t);
 
-    uv_run(t->loop, UV_RUN_DEFAULT);
+    uv_run(t.loop, UV_RUN_DEFAULT);
 
-    runes_term_destroy(t);
+    runes_term_cleanup(&t);
 
     return 0;
 }

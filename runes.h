@@ -6,15 +6,18 @@
 
 struct runes_term;
 struct runes_window;
+struct runes_loop_data;
 
 typedef struct runes_term RunesTerm;
-typedef struct runes_window RunesWindow;
+typedef struct runes_window RunesWindowBackend;
+typedef struct runes_loop_data RunesLoopData;
+
+#include "events.h"
+
+#include "window-xlib.h"
 
 #include "term.h"
 #include "display.h"
-#include "events.h"
-
-#include "xlib.h"
 
 #define UNUSED(x) ((void)x)
 

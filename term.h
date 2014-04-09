@@ -2,16 +2,13 @@
 #define _RUNES_TERM_H
 
 struct runes_term {
-    RunesWindow *w;
-    /* RunesBuffer *buf; */
+    RunesWindowBackend w;
 
-    cairo_surface_t *surface;
     cairo_t *cr;
-
     uv_loop_t *loop;
 };
 
-RunesTerm *runes_term_create(int argc, char *argv[]);
-void runes_term_destroy(RunesTerm *t);
+void runes_term_init(RunesTerm *t, int argc, char *argv[]);
+void runes_term_cleanup(RunesTerm *t);
 
 #endif

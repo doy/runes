@@ -2,25 +2,18 @@
 
 #include "runes.h"
 
-RunesTerm *runes_term_create(int argc, char *argv[])
+void runes_term_init(RunesTerm *t, int argc, char *argv[])
 {
-    RunesTerm *t;
+    t->loop = uv_default_loop();
 
-    t = malloc(sizeof(RunesTerm));
+    runes_window_backend_init(t, argc, argv);
+    t->cr = cairo_create(runes_window_backend_surface_create(t));
 
-    t->w       = runes_window_create(argc, argv);
-    t->surface = runes_surface_create(t);
-    t->cr      = cairo_create(t->surface);
-    t->loop    = runes_loop_create(t);
-
-    return t;
+    runes_window_backend_loop_init(t, t->loop);
 }
 
-void runes_term_destroy(RunesTerm *t)
+void runes_term_cleanup(RunesTerm *t)
 {
     cairo_destroy(t->cr);
-    cairo_surface_destroy(t->surface);
-    runes_window_destroy(t->w);
-
-    free(t);
+    runes_window_backend_cleanup(t);
 }

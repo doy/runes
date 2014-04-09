@@ -1,4 +1,4 @@
-#ifndef _RUNES_XLIB_H
+#ifndef _RUNES_WINDOW_XLIB_H
 #define _RUNES_XLIB_H
 
 #include <X11/Xlib.h>
@@ -23,14 +23,14 @@ struct runes_window {
     Atom atoms[RUNES_NUM_ATOMS];
 };
 
-struct xlib_loop_data {
-    struct loop_data data;
+typedef struct {
+    RunesLoopData data;
     XEvent e;
-};
+} RunesXlibLoopData;
 
-RunesWindow *runes_window_create(int argc, char *argv[]);
-cairo_surface_t *runes_surface_create(RunesTerm *t);
-void runes_loop_init(RunesTerm *t, uv_loop_t *loop);
-void runes_window_destroy(RunesWindow *w);
+void runes_window_backend_init(RunesTerm *t, int argc, char *argv[]);
+cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t);
+void runes_window_backend_loop_init(RunesTerm *t, uv_loop_t *loop);
+void runes_window_backend_cleanup(RunesTerm *t);
 
 #endif

@@ -17,7 +17,7 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "UTF8_STRING"
 };
 
-static void runes_init_wm_properties(RunesWindow *w, int argc, char *argv[])
+static void runes_init_wm_properties(RunesWindowBackend *w, int argc, char *argv[])
 {
     pid_t pid;
     XClassHint class_hints = { "runes", "runes" };
@@ -43,13 +43,13 @@ static void runes_init_wm_properties(RunesWindow *w, int argc, char *argv[])
     XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME], w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace, (unsigned char *)"runes", 5);
 }
 
-RunesWindow *runes_window_create(int argc, char *argv[])
+void runes_window_backend_init(RunesTerm *t, int argc, char *argv[])
 {
-    RunesWindow *w;
+    RunesWindowBackend *w;
     unsigned long white;
     XIM im;
 
-    w = malloc(sizeof(RunesWindow));
+    w = &t->w;
 
     w->dpy = XOpenDisplay(NULL);
     white  = WhitePixel(w->dpy, DefaultScreen(w->dpy));
@@ -87,39 +87,41 @@ RunesWindow *runes_window_create(int argc, char *argv[])
     }
 
     runes_init_wm_properties(w, argc, argv);
-
-    return w;
 }
 
-cairo_surface_t *runes_surface_create(RunesTerm *t)
+cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
 {
+    RunesWindowBackend *w;
     Visual *vis;
     XWindowAttributes attrs;
 
-    XGetWindowAttributes(t->w->dpy, t->w->w, &attrs);
-    vis = DefaultVisual(t->w->dpy, DefaultScreen(t->w->dpy));
-    return cairo_xlib_surface_create(t->w->dpy, t->w->w, vis, attrs.width, attrs.height);
+    w = &t->w;
+    XGetWindowAttributes(w->dpy, w->w, &attrs);
+    vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
+    return cairo_xlib_surface_create(w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
 static void runes_get_next_event(uv_work_t *req)
 {
-    struct xlib_loop_data *data;
+    RunesXlibLoopData *data;
 
-    data = (struct xlib_loop_data *)req->data;
-    XNextEvent(data->data.t->w->dpy, &data->e);
+    data = (RunesXlibLoopData *)req->data;
+    XNextEvent(data->data.t->w.dpy, &data->e);
 }
 
 static void runes_process_event(uv_work_t *req, int status)
 {
-    struct xlib_loop_data *data;
+    RunesXlibLoopData *data;
     XEvent *e;
     RunesTerm *t;
+    RunesWindowBackend *w;
 
     UNUSED(status);
 
-    data = ((struct xlib_loop_data *)req->data);
+    data = ((RunesXlibLoopData *)req->data);
     e = &data->e;
     t = data->data.t;
+    w = &t->w;
 
     if (!XFilterEvent(e, None)) {
         switch (e->type) {
@@ -133,7 +135,7 @@ static void runes_process_event(uv_work_t *req, int status)
             buf = malloc(len);
 
             for (;;) {
-                chars = Xutf8LookupString(t->w->ic, &e->xkey, buf, len - 1, &sym, &s);
+                chars = Xutf8LookupString(w->ic, &e->xkey, buf, len - 1, &sym, &s);
                 if (s == XBufferOverflow) {
                     len = chars + 1;
                     buf = realloc(buf, len);
@@ -148,13 +150,13 @@ static void runes_process_event(uv_work_t *req, int status)
         }
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
-            if (a == t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
+            if (a == w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
                 runes_handle_close_window(t);
             }
-            else if (a == t->w->atoms[RUNES_ATOM_NET_WM_PING]) {
-                e->xclient.window = DefaultRootWindow(t->w->dpy);
+            else if (a == w->atoms[RUNES_ATOM_NET_WM_PING]) {
+                e->xclient.window = DefaultRootWindow(w->dpy);
                 XSendEvent(
-                    t->w->dpy, e->xclient.window, False,
+                    w->dpy, e->xclient.window, False,
                     SubstructureNotifyMask | SubstructureRedirectMask,
                     e
                 );
@@ -169,34 +171,40 @@ static void runes_process_event(uv_work_t *req, int status)
     if (t->loop) {
         uv_queue_work(t->loop, req, runes_get_next_event, runes_process_event);
     }
+    else {
+        free(req);
+    }
 }
 
-void runes_loop_init(RunesTerm *t, uv_loop_t *loop)
+void runes_window_backend_loop_init(RunesTerm *t, uv_loop_t *loop)
 {
+    RunesWindowBackend *w;
     unsigned long mask;
     void *data;
 
-    XGetICValues(t->w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(t->w->dpy, t->w->w, mask|KeyPressMask|StructureNotifyMask);
-    XSetICFocus(t->w->ic);
+    w = &t->w;
 
-    data = malloc(sizeof(struct xlib_loop_data));
-    ((struct loop_data *)data)->req.data = data;
-    ((struct loop_data *)data)->t = t;
+    XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
+    XSelectInput(w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask);
+    XSetICFocus(w->ic);
+
+    data = malloc(sizeof(RunesXlibLoopData));
+    ((RunesLoopData *)data)->req.data = data;
+    ((RunesLoopData *)data)->t = t;
 
     uv_queue_work(loop, data, runes_get_next_event, runes_process_event);
 }
 
-void runes_window_destroy(RunesWindow *w)
+void runes_window_backend_cleanup(RunesTerm *t)
 {
+    RunesWindowBackend *w;
     XIM im;
 
+    w = &t->w;
     im = XIMOfIC(w->ic);
     XDestroyIC(w->ic);
     XCloseIM(im);
     XFreeGC(w->dpy, w->gc);
     XDestroyWindow(w->dpy, w->w);
     XCloseDisplay(w->dpy);
-
-    free(w);
 }
