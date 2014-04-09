@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "runes.h"
 
 void runes_display_init(RunesTerm *t)
@@ -11,7 +13,16 @@ void runes_display_init(RunesTerm *t)
 void runes_display_glyph(RunesTerm *t, char *buf, size_t len)
 {
     if (len) {
+        char *nl;
         buf[len] = '\0';
+        while ((nl = strchr(buf, '\n'))) {
+            double x, y;
+            *nl = '\0';
+            cairo_show_text(t->cr, buf);
+            buf = nl + 1;
+            cairo_get_current_point(t->cr, &x, &y);
+            cairo_move_to(t->cr, 0.0, y + 14.0);
+        }
         cairo_show_text(t->cr, buf);
     }
 }
