@@ -24,5 +24,9 @@ void runes_display_glyph(RunesTerm *t, char *buf, size_t len)
             cairo_move_to(t->cr, 0.0, y + 14.0);
         }
         cairo_show_text(t->cr, buf);
+        /* we have to flush manually because XNextEvent (which normally handles
+         * flushing) will most likely be called again before the keystroke is
+         * handled */
+        runes_window_backend_flush(t);
     }
 }

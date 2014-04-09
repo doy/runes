@@ -196,6 +196,11 @@ cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
     return cairo_xlib_surface_create(w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
+void runes_window_backend_flush(RunesTerm *t)
+{
+    XFlush(t->w.dpy);
+}
+
 void runes_window_backend_cleanup(RunesTerm *t)
 {
     RunesWindowBackend *w;
