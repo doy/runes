@@ -18,6 +18,7 @@ typedef struct {
 void runes_pty_backend_init(RunesTerm *t);
 void runes_pty_backend_loop_init(RunesTerm *t);
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len);
+void runes_pty_backend_request_close(RunesTerm *t);
 void runes_pty_backend_cleanup(RunesTerm *t);
 
 #endif

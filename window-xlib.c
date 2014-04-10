@@ -14,7 +14,8 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "_NET_WM_PID",
     "_NET_WM_ICON_NAME",
     "_NET_WM_NAME",
-    "UTF8_STRING"
+    "UTF8_STRING",
+    "WM_PROTOCOLS"
 };
 
 static void runes_get_next_event(uv_work_t *req)
@@ -31,6 +32,7 @@ static void runes_process_event(uv_work_t *req, int status)
     XEvent *e;
     RunesTerm *t;
     RunesWindowBackend *w;
+    int should_close = 0;
 
     UNUSED(status);
 
@@ -67,7 +69,7 @@ static void runes_process_event(uv_work_t *req, int status)
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
             if (a == w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
-                runes_handle_close_window(t);
+                should_close = 1;
             }
             else if (a == w->atoms[RUNES_ATOM_NET_WM_PING]) {
                 e->xclient.window = DefaultRootWindow(w->dpy);
@@ -84,10 +86,11 @@ static void runes_process_event(uv_work_t *req, int status)
         }
     }
 
-    if (t->loop) {
+    if (!should_close) {
         uv_queue_work(t->loop, req, runes_get_next_event, runes_process_event);
     }
     else {
+        runes_handle_close_window(t);
         free(req);
     }
 }
@@ -199,6 +202,20 @@ cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
 void runes_window_backend_flush(RunesTerm *t)
 {
     XFlush(t->w.dpy);
+}
+
+void runes_window_backend_request_close(RunesTerm *t)
+{
+    XEvent e;
+
+    e.xclient.type = ClientMessage;
+    e.xclient.window = t->w.w;
+    e.xclient.message_type = t->w.atoms[RUNES_ATOM_WM_PROTOCOLS];
+    e.xclient.format = 32;
+    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_WM_DELETE_WINDOW];
+    e.xclient.data.l[1] = CurrentTime;
+
+    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
 }
 
 void runes_window_backend_cleanup(RunesTerm *t)

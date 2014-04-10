@@ -7,6 +7,8 @@ struct runes_loop_data {
 };
 
 void runes_handle_keyboard_event(RunesTerm *t, char *buf, size_t len);
+void runes_handle_pty_read(RunesTerm *t, char *buf, ssize_t len);
+void runes_handle_pty_close(RunesTerm *t);
 void runes_handle_close_window(RunesTerm *t);
 
 #endif
