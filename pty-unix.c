@@ -61,9 +61,10 @@ static void runes_got_pty_data(uv_work_t *req, int status)
     data = (RunesPtyLoopData *)req->data;
     t = data->data.t;
 
-    runes_display_glyph(data->data.t, data->buf, data->len);
-
-    uv_queue_work(t->loop, req, runes_read_pty, runes_got_pty_data);
+    if (data->len > 0) {
+        runes_display_glyph(data->data.t, data->buf, data->len);
+        uv_queue_work(t->loop, req, runes_read_pty, runes_got_pty_data);
+    }
 }
 
 void runes_pty_backend_loop_init(RunesTerm *t)
@@ -88,4 +89,5 @@ void runes_pty_backend_cleanup(RunesTerm *t)
 
     pty = &t->pty;
     close(pty->master);
+    kill(pty->child_pid, SIGHUP);
 }

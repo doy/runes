@@ -11,7 +11,7 @@ struct runes_pty {
 
 typedef struct {
     RunesLoopData data;
-    size_t len;
+    ssize_t len;
     char buf[RUNES_PTY_BUFFER_LENGTH];
 } RunesPtyLoopData;
 
