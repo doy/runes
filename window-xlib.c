@@ -204,6 +204,15 @@ void runes_window_backend_flush(RunesTerm *t)
     XFlush(t->w.dpy);
 }
 
+void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
+{
+    cairo_surface_t *surface;
+
+    surface = cairo_get_target(t->cr);
+    *xpixel = cairo_xlib_surface_get_width(surface);
+    *ypixel = cairo_xlib_surface_get_height(surface);
+}
+
 void runes_window_backend_request_close(RunesTerm *t)
 {
     XEvent e;
