@@ -4,6 +4,10 @@
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[])
 {
+    /* doing most of the pty initialization right at the beginning, because
+     * libuv will set up a bunch of state (including potentially things like
+     * spawning threads) when that is initialized, and i'm not really sure how
+     * that interacts with forking */
     runes_pty_backend_init(t);
 
     t->loop = uv_default_loop();
