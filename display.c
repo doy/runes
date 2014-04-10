@@ -37,11 +37,11 @@ void runes_display_get_term_size(RunesTerm *t, int *row, int *col, int *xpixel, 
 
 void runes_display_glyph(RunesTerm *t, char *buf, size_t len)
 {
-    cairo_font_extents_t extents;
-
-    cairo_font_extents(t->cr, &extents);
-
     if (len) {
+        cairo_font_extents_t extents;
+
+        cairo_font_extents(t->cr, &extents);
+
         char *nl;
         buf[len] = '\0';
         while ((nl = strchr(buf, '\n'))) {
