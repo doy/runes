@@ -7,7 +7,7 @@ void runes_handle_keyboard_event(RunesTerm *t, char *buf, size_t len)
 
 void runes_handle_pty_read(RunesTerm *t, char *buf, ssize_t len)
 {
-    runes_display_glyph(t, buf, len);
+    runes_vt100_process_string(t, buf, len);
 }
 
 void runes_handle_pty_close(RunesTerm *t)

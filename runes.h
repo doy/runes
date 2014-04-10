@@ -21,6 +21,7 @@ typedef struct runes_loop_data RunesLoopData;
 
 #include "term.h"
 #include "display.h"
+#include "vt100.h"
 
 #define UNUSED(x) ((void)x)
 
