@@ -12,24 +12,85 @@ static const char *ctrl_chars =
     "\030\031\032\033\034\035\036\037"
     "\177";
 
-static void runes_vt100_unhandled_escape_sequence(RunesTerm *t, int *p, char type)
-{
-    UNUSED(t);
+static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len);
+static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t len);
+static void runes_vt100_unhandled_escape_sequence(RunesTerm *t, int *p, char type);
 
-    fprintf(stderr, "unhandled escape sequence: \\033");
-    if (p) {
-        fprintf(stderr, "[");
-        if (p[0] != -1) {
-            fprintf(stderr, "%d", p[0]);
+void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
+{
+    int found;
+    size_t prefix;
+
+    buf[len] = '\0';
+    do {
+        found = 0;
+
+        prefix = strcspn(buf, ctrl_chars);
+        if (prefix) {
+            char tmp = buf[prefix];
+
+            buf[prefix] = '\0';
+            runes_display_show_string(t, buf, strlen(buf));
+            buf[prefix] = tmp;
+            buf += prefix;
+            found = 1;
         }
-        if (p[1] != -1) {
-            fprintf(stderr, ";%d", p[1]);
+
+        prefix = strspn(buf, ctrl_chars);
+        if (prefix) {
+            char *end = buf + prefix;
+
+            while (buf < end) {
+                buf = runes_vt100_handle_ctrl_char(t, buf, strlen(buf));
+            }
+            found = 1;
         }
-        if (p[2] != -1) {
-            fprintf(stderr, ";%d", p[2]);
-        }
+    } while (found);
+}
+
+static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
+{
+    switch (buf[0]) {
+    case '\010':   /* BS */
+        runes_display_backspace(t);
+        buf++;
+        break;
+    case '\011': { /* TAB */
+        int row, col;
+
+        runes_display_get_position(t, &row, &col);
+        runes_display_move_to(t, row, col - (col % 8) + 8);
+        buf++;
+        break;
     }
-    fprintf(stderr, "%c\n", type);
+    case '\012':   /* LF */
+    case '\013':   /* VT */
+    case '\014': { /* FF */
+        int row, col;
+
+        runes_display_get_position(t, &row, &col);
+        runes_display_move_to(t, row + 1, col);
+        buf++;
+        break;
+    }
+    case '\015': { /* CR */
+        int row, col;
+
+        runes_display_get_position(t, &row, &col);
+        runes_display_move_to(t, row, 0);
+        buf++;
+        break;
+    }
+    case '\033':
+        buf = runes_vt100_handle_escape_sequence(t, buf, len);
+        break;
+    default: {
+        buf++;
+        break;
+    }
+    }
+
+    return buf;
 }
 
 static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t len)
@@ -184,79 +245,22 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
     return buf;
 }
 
-static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
+static void runes_vt100_unhandled_escape_sequence(RunesTerm *t, int *p, char type)
 {
-    switch (buf[0]) {
-    case '\010':   /* BS */
-        runes_display_backspace(t);
-        buf++;
-        break;
-    case '\011': { /* TAB */
-        int row, col;
+    UNUSED(t);
 
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row, col - (col % 8) + 8);
-        buf++;
-        break;
-    }
-    case '\012':   /* LF */
-    case '\013':   /* VT */
-    case '\014': { /* FF */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row + 1, col);
-        buf++;
-        break;
-    }
-    case '\015': { /* CR */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row, 0);
-        buf++;
-        break;
-    }
-    case '\033':
-        buf = runes_vt100_handle_escape_sequence(t, buf, len);
-        break;
-    default: {
-        buf++;
-        break;
-    }
-    }
-
-    return buf;
-}
-
-void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
-{
-    int found;
-    size_t prefix;
-
-    buf[len] = '\0';
-    do {
-        found = 0;
-
-        prefix = strcspn(buf, ctrl_chars);
-        if (prefix) {
-            char tmp = buf[prefix];
-
-            buf[prefix] = '\0';
-            runes_display_show_string(t, buf, strlen(buf));
-            buf[prefix] = tmp;
-            buf += prefix;
-            found = 1;
+    fprintf(stderr, "unhandled escape sequence: \\033");
+    if (p) {
+        fprintf(stderr, "[");
+        if (p[0] != -1) {
+            fprintf(stderr, "%d", p[0]);
         }
-
-        prefix = strspn(buf, ctrl_chars);
-        if (prefix) {
-            char *end = buf + prefix;
-
-            while (buf < end) {
-                buf = runes_vt100_handle_ctrl_char(t, buf, strlen(buf));
-            }
-            found = 1;
+        if (p[1] != -1) {
+            fprintf(stderr, ";%d", p[1]);
         }
-    } while (found);
+        if (p[2] != -1) {
+            fprintf(stderr, ";%d", p[2]);
+        }
+    }
+    fprintf(stderr, "%c\n", type);
 }

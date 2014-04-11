@@ -6,6 +6,9 @@
 
 #include "runes.h"
 
+static void runes_pty_backend_read(uv_work_t *req);
+static void runes_pty_backend_got_data(uv_work_t *req, int status);
+
 void runes_pty_backend_init(RunesTerm *t)
 {
     RunesPtyBackend *pty;
@@ -57,33 +60,6 @@ void runes_pty_backend_set_window_size(RunesTerm *t)
     ioctl(t->pty.master, TIOCSWINSZ, &size);
 }
 
-static void runes_read_pty(uv_work_t *req)
-{
-    RunesPtyLoopData *data;
-
-    data = (RunesPtyLoopData *)req->data;
-    data->len = read(data->data.t->pty.master, data->buf, RUNES_PTY_BUFFER_LENGTH);
-}
-
-static void runes_got_pty_data(uv_work_t *req, int status)
-{
-    RunesTerm *t;
-    RunesPtyLoopData *data;
-
-    UNUSED(status);
-    data = (RunesPtyLoopData *)req->data;
-    t = data->data.t;
-
-    if (data->len > 0) {
-        runes_handle_pty_read(t, data->buf, data->len);
-        uv_queue_work(t->loop, req, runes_read_pty, runes_got_pty_data);
-    }
-    else {
-        runes_handle_pty_close(t);
-        free(req);
-    }
-}
-
 void runes_pty_backend_loop_init(RunesTerm *t)
 {
     void *data;
@@ -92,7 +68,7 @@ void runes_pty_backend_loop_init(RunesTerm *t)
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
 
-    uv_queue_work(t->loop, data, runes_read_pty, runes_got_pty_data);
+    uv_queue_work(t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
 }
 
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
@@ -114,4 +90,31 @@ void runes_pty_backend_cleanup(RunesTerm *t)
 
     pty = &t->pty;
     close(pty->master);
+}
+
+static void runes_pty_backend_read(uv_work_t *req)
+{
+    RunesPtyLoopData *data;
+
+    data = (RunesPtyLoopData *)req->data;
+    data->len = read(data->data.t->pty.master, data->buf, RUNES_PTY_BUFFER_LENGTH);
+}
+
+static void runes_pty_backend_got_data(uv_work_t *req, int status)
+{
+    RunesTerm *t;
+    RunesPtyLoopData *data;
+
+    UNUSED(status);
+    data = (RunesPtyLoopData *)req->data;
+    t = data->data.t;
+
+    if (data->len > 0) {
+        runes_handle_pty_read(t, data->buf, data->len);
+        uv_queue_work(t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
+    }
+    else {
+        runes_handle_pty_close(t);
+        free(req);
+    }
 }
