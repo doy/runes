@@ -16,10 +16,13 @@ static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len);
 static char *runes_vt100_handle_escape_sequence(
     RunesTerm *t, char *buf, size_t len);
 static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len);
+static char *runes_vt100_handle_osc(RunesTerm *t, char *buf, size_t len);
 static void runes_vt100_unhandled_escape_sequence(
     RunesTerm *t, char type);
 static void runes_vt100_unhandled_csi(
     RunesTerm *t, int p[3], char type);
+static void runes_vt100_unhandled_osc(
+    RunesTerm *t, int type, char *arg, char terminator);
 
 void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
 {
@@ -106,6 +109,10 @@ static char *runes_vt100_handle_escape_sequence(
     case '[': /* CSI */
         buf++;
         buf = runes_vt100_handle_csi(t, buf, len);
+        break;
+    case ']': /* OSC */
+        buf++;
+        buf = runes_vt100_handle_osc(t, buf, len);
         break;
     default:
         runes_vt100_unhandled_escape_sequence(t, buf[0]);
@@ -275,6 +282,27 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
     return buf + paramlen;
 }
 
+static char *runes_vt100_handle_osc(RunesTerm *t, char *buf, size_t len)
+{
+    int type, prefix;
+
+    UNUSED(len);
+
+    if (sscanf(buf, "%d%n", &type, &prefix) != 1) {
+        runes_vt100_unhandled_osc(t, -1, "", buf[0]);
+        return buf + 1;
+    }
+
+    switch (type) {
+    default:
+        runes_vt100_unhandled_osc(t, type, "", -1);
+        prefix++;
+        break;
+    }
+
+    return buf + prefix;
+}
+
 static void runes_vt100_unhandled_escape_sequence(
     RunesTerm *t, char type)
 {
@@ -299,4 +327,21 @@ static void runes_vt100_unhandled_csi(
         fprintf(stderr, ";%d", p[2]);
     }
     fprintf(stderr, "%c\n", type);
+}
+
+static void runes_vt100_unhandled_osc(
+    RunesTerm *t, int type, char *arg, char terminator)
+{
+    UNUSED(t);
+
+    fprintf(stderr, "unhandled escape sequence: \\033]");
+    if (type == -1) {
+        fprintf(stderr, "\\%hho\n", terminator);
+    }
+    else if (terminator == -1) {
+        fprintf(stderr, "%d;<unknown>\n", type);
+    }
+    else {
+        fprintf(stderr, "%d;%s\\%hho\n", type, arg, terminator);
+    }
 }
