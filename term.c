@@ -22,6 +22,8 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     t->cr = cairo_create(
         cairo_surface_create_similar_image(
             cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24, x, y));
+
+    runes_display_init(t);
 }
 
 void runes_term_cleanup(RunesTerm *t)
