@@ -19,6 +19,8 @@ struct runes_term {
     char font_bold;
     char font_underline;
 
+    char show_cursor;
+
     cairo_pattern_t *colors[8];
 
     int row;

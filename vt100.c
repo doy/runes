@@ -227,6 +227,36 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
             break;
         }
         break;
+    case 'h':
+        if (dec) {
+            switch (p[0]) {
+            case 25:
+                runes_display_show_cursor(t);
+                break;
+            default:
+                runes_vt100_unhandled_csi(t, dec, p, type);
+                break;
+            }
+        }
+        else {
+            runes_vt100_unhandled_csi(t, dec, p, type);
+        }
+        break;
+    case 'l':
+        if (dec) {
+            switch (p[0]) {
+            case 25:
+                runes_display_hide_cursor(t);
+                break;
+            default:
+                runes_vt100_unhandled_csi(t, dec, p, type);
+                break;
+            }
+        }
+        else {
+            runes_vt100_unhandled_csi(t, dec, p, type);
+        }
+        break;
     case 'm': { /* SGR */
         int i;
 

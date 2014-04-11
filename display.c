@@ -17,6 +17,9 @@ void runes_display_init(RunesTerm *t)
     t->colors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
     t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
+    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
+    t->show_cursor = 1;
+
     t->font_name      = "monospace";
     t->font_size      = 14.0;
     t->font_bold      = 0;
@@ -26,7 +29,6 @@ void runes_display_init(RunesTerm *t)
     cairo_set_scaled_font(t->cr, runes_display_make_font(t));
 
     runes_display_reset_text_attributes(t);
-    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
 
     cairo_save(t->cr);
     cairo_set_source(t->cr, t->bgcolor);
@@ -58,17 +60,19 @@ void runes_display_get_position(RunesTerm *t, int *row, int *col)
  * time, and shouldn't be left behind when it moves */
 void runes_display_draw_cursor(RunesTerm *t)
 {
-    double x, y;
-    double fontx, fonty, ascent;
+    if (t->show_cursor) {
+        double x, y;
+        double fontx, fonty, ascent;
 
-    cairo_save(t->backend_cr);
-    cairo_set_source(t->backend_cr, t->cursorcolor);
-    runes_display_move_to(t, t->row, t->col);
-    cairo_get_current_point(t->cr, &x, &y);
-    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-    cairo_rectangle(t->backend_cr, x, y - ascent, fontx, fonty);
-    cairo_fill(t->backend_cr);
-    cairo_restore(t->backend_cr);
+        cairo_save(t->backend_cr);
+        cairo_set_source(t->backend_cr, t->cursorcolor);
+        runes_display_move_to(t, t->row, t->col);
+        cairo_get_current_point(t->cr, &x, &y);
+        runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+        cairo_rectangle(t->backend_cr, x, y - ascent, fontx, fonty);
+        cairo_fill(t->backend_cr);
+        cairo_restore(t->backend_cr);
+    }
 }
 
 void runes_display_move_to(RunesTerm *t, int row, int col)
@@ -249,6 +253,16 @@ void runes_display_set_bg_color(RunesTerm *t, cairo_pattern_t *color)
 void runes_display_reset_bg_color(RunesTerm *t)
 {
     runes_display_set_bg_color(t, t->colors[0]);
+}
+
+void runes_display_show_cursor(RunesTerm *t)
+{
+    t->show_cursor = 1;
+}
+
+void runes_display_hide_cursor(RunesTerm *t)
+{
+    t->show_cursor = 0;
 }
 
 static void runes_display_get_font_dimensions(
