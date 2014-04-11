@@ -176,8 +176,8 @@ void runes_display_kill_line_forward(RunesTerm *t)
 
 void runes_display_reset_text_attributes(RunesTerm *t)
 {
-    runes_display_set_fg_color(t, t->colors[7]);
-    runes_display_set_bg_color(t, t->colors[0]);
+    runes_display_reset_fg_color(t);
+    runes_display_reset_bg_color(t);
 }
 
 void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color)
@@ -186,7 +186,17 @@ void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color)
     cairo_set_source(t->cr, t->fgcolor);
 }
 
+void runes_display_reset_fg_color(RunesTerm *t)
+{
+    runes_display_set_fg_color(t, t->colors[7]);
+}
+
 void runes_display_set_bg_color(RunesTerm *t, cairo_pattern_t *color)
 {
     t->bgcolor = color;
+}
+
+void runes_display_reset_bg_color(RunesTerm *t)
+{
+    runes_display_set_bg_color(t, t->colors[0]);
 }

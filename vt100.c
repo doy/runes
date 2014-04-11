@@ -107,7 +107,7 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
                 break;
             }
             break;
-        case 'm': {
+        case 'm': { /* SGR */
             int i;
 
             if (p[0] == -1) {
@@ -125,9 +125,15 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
                 case 34: case 35: case 36: case 37:
                     runes_display_set_fg_color(t, t->colors[p[i] - 30]);
                     break;
+                case 39:
+                    runes_display_reset_fg_color(t);
+                    break;
                 case 40: case 41: case 42: case 43:
                 case 44: case 45: case 46: case 47:
                     runes_display_set_bg_color(t, t->colors[p[i] - 40]);
+                    break;
+                case 49:
+                    runes_display_reset_bg_color(t);
                     break;
                 /* XXX ... */
                 default:

@@ -13,6 +13,8 @@ void runes_display_clear_screen_forward(RunesTerm *t);
 void runes_display_kill_line_forward(RunesTerm *t);
 void runes_display_reset_text_attributes(RunesTerm *t);
 void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color);
+void runes_display_reset_fg_color(RunesTerm *t);
 void runes_display_set_bg_color(RunesTerm *t, cairo_pattern_t *color);
+void runes_display_reset_bg_color(RunesTerm *t);
 
 #endif
