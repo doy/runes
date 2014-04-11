@@ -14,6 +14,8 @@ struct runes_term {
     cairo_pattern_t *cursorcolor;
     cairo_scaled_font_t *font;
 
+    cairo_pattern_t *colors[8];
+
     int row;
     int col;
 };

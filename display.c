@@ -7,9 +7,14 @@ void runes_display_init(RunesTerm *t)
     cairo_font_face_t *font_face;
     cairo_matrix_t font_matrix, ctm;
 
-    t->bgcolor     = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
-    t->fgcolor     = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
-    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
+    t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
+    t->colors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
+    t->colors[2] = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
+    t->colors[3] = cairo_pattern_create_rgb(1.0, 1.0, 0.0);
+    t->colors[4] = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
+    t->colors[5] = cairo_pattern_create_rgb(1.0, 0.0, 1.0);
+    t->colors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+    t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
     font_face = cairo_toy_font_face_create("monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_matrix_init_scale(&font_matrix, 14.0, 14.0);
@@ -18,10 +23,13 @@ void runes_display_init(RunesTerm *t)
 
     cairo_set_scaled_font(t->cr, t->font);
 
+    runes_display_reset_text_attributes(t);
+    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
+
+    cairo_save(t->cr);
     cairo_set_source(t->cr, t->bgcolor);
     cairo_paint(t->cr);
-
-    cairo_set_source(t->cr, t->fgcolor);
+    cairo_restore(t->cr);
 
     runes_display_move_to(t, 0, 0);
 
@@ -132,4 +140,21 @@ void runes_display_kill_line_forward(RunesTerm *t)
     cairo_restore(t->cr);
 
     runes_display_move_to(t, t->row, t->col);
+}
+
+void runes_display_reset_text_attributes(RunesTerm *t)
+{
+    runes_display_set_fg_color(t, t->colors[7]);
+    runes_display_set_bg_color(t, t->colors[0]);
+}
+
+void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color)
+{
+    t->fgcolor = color;
+    cairo_set_source(t->cr, t->fgcolor);
+}
+
+void runes_display_set_bg_color(RunesTerm *t, cairo_pattern_t *color)
+{
+    t->bgcolor = color;
 }

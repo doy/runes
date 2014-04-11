@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "runes.h"
@@ -16,8 +17,27 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
     UNUSED(len);
 
     if (buf[1] == '[') { /* CSI */
-        /* ignoring parameters, for now */
-        switch (buf[2]) {
+        int p[3] = { -1, -1, -1 };
+        int paramlen;
+        char type;
+
+        buf += 2;
+
+        /* XXX stop hardcoding the max number of parameters */
+        if (sscanf(buf, "%d;%d;%d%c%n", &p[0], &p[1], &p[2], &type, &paramlen) == 4) {
+            /* nothing */
+        }
+        else if (sscanf(buf, "%d;%d%c%n", &p[0], &p[1], &type, &paramlen) == 3) {
+            /* nothing */
+        }
+        else if (sscanf(buf, "%d%c%n", &p[0], &type, &paramlen) == 2) {
+            /* nothing */
+        }
+        else if (sscanf(buf, "%c%n", &type, &paramlen) == 1) {
+            /* nothing */
+        }
+
+        switch (type) {
         case 'D': { /* CUB */
             int row, col;
 
@@ -49,11 +69,40 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
         case 'K':   /* EL */
             runes_display_kill_line_forward(t);
             break;
+        case 'm': {
+            int i;
+
+            if (p[0] == -1) {
+                p[0] = 0;
+            }
+
+            for (i = 0; i < 3; ++i) {
+                switch (p[i]) {
+                case -1:
+                    break;
+                case 0:
+                    runes_display_reset_text_attributes(t);
+                    break;
+                case 30: case 31: case 32: case 33:
+                case 34: case 35: case 36: case 37:
+                    runes_display_set_fg_color(t, t->colors[p[i] - 30]);
+                    break;
+                case 40: case 41: case 42: case 43:
+                case 44: case 45: case 46: case 47:
+                    runes_display_set_bg_color(t, t->colors[p[i] - 40]);
+                    break;
+                /* XXX ... */
+                default:
+                    break;
+                }
+            }
+            break;
+        }
         default:
             break;
         }
 
-        buf += 3;
+        buf += paramlen;
     }
     else {
         /* do nothing, for now */
