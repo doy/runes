@@ -17,10 +17,11 @@ void runes_display_init(RunesTerm *t)
     t->colors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
     t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
-    t->font_name   = "monospace";
-    t->font_size   = 14.0;
-    t->font_bold   = 0;
-    t->font_italic = 0;
+    t->font_name      = "monospace";
+    t->font_size      = 14.0;
+    t->font_bold      = 0;
+    t->font_italic    = 0;
+    t->font_underline = 0;
 
     cairo_set_scaled_font(t->cr, runes_display_make_font(t));
 
@@ -87,6 +88,24 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
     if (len) {
         buf[len] = '\0';
         cairo_show_text(t->cr, buf);
+
+        if (t->font_underline) {
+            double x, y;
+            double fontx, fonty, ascent;
+
+            cairo_save(t->cr);
+            cairo_get_current_point(t->cr, &x, &y);
+            runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+            cairo_set_line_width(t->cr, 1);
+            cairo_move_to(
+                 t->cr, x - (fontx * strlen(buf)), y - ascent + fonty - 0.5);
+            cairo_line_to(t->cr, x, y - ascent + fonty - 0.5);
+            cairo_stroke(t->cr);
+            cairo_restore(t->cr);
+
+            runes_display_move_to(t, t->row, t->col);
+        }
+
         t->col += strlen(buf);
         /* we have to flush manually because XNextEvent (which normally handles
          * flushing) will most likely be called again before the keystroke is
@@ -172,6 +191,7 @@ void runes_display_reset_text_attributes(RunesTerm *t)
     runes_display_reset_bg_color(t);
     runes_display_reset_bold(t);
     runes_display_reset_italic(t);
+    runes_display_reset_underline(t);
 }
 
 void runes_display_set_bold(RunesTerm *t)
@@ -195,6 +215,18 @@ void runes_display_set_italic(RunesTerm *t)
 void runes_display_reset_italic(RunesTerm *t)
 {
     t->font_italic = 0;
+    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+}
+
+void runes_display_set_underline(RunesTerm *t)
+{
+    t->font_underline = 1;
+    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+}
+
+void runes_display_reset_underline(RunesTerm *t)
+{
+    t->font_underline = 0;
     cairo_set_scaled_font(t->cr, runes_display_make_font(t));
 }
 

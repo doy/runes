@@ -17,6 +17,7 @@ struct runes_term {
     double font_size;
     char font_italic;
     char font_bold;
+    char font_underline;
 
     cairo_pattern_t *colors[8];
 
