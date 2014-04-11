@@ -7,6 +7,9 @@ struct runes_term {
 
     cairo_t *cr;
     uv_loop_t *loop;
+
+    int row;
+    int col;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);
