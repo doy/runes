@@ -7,8 +7,9 @@ void runes_display_init(RunesTerm *t)
     cairo_font_face_t *font_face;
     cairo_matrix_t font_matrix, ctm;
 
-    t->bgcolor = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
-    t->fgcolor = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
+    t->bgcolor     = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+    t->fgcolor     = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
+    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
 
     font_face = cairo_toy_font_face_create("monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_matrix_init_scale(&font_matrix, 14.0, 14.0);
@@ -51,6 +52,23 @@ void runes_display_get_position(RunesTerm *t, int *row, int *col)
 {
     *row = t->row;
     *col = t->col;
+}
+
+/* note: this uses the backend cairo context because it should be redrawn every
+ * time, and shouldn't be left behind when it moves */
+void runes_display_draw_cursor(RunesTerm *t)
+{
+    double x, y;
+    double fontx, fonty, ascent;
+
+    cairo_save(t->backend_cr);
+    cairo_set_source(t->backend_cr, t->cursorcolor);
+    runes_display_move_to(t, t->row, t->col);
+    cairo_get_current_point(t->cr, &x, &y);
+    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+    cairo_rectangle(t->backend_cr, x, y - ascent, fontx, ascent);
+    cairo_fill(t->backend_cr);
+    cairo_restore(t->backend_cr);
 }
 
 void runes_display_move_to(RunesTerm *t, int row, int col)
