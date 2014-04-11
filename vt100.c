@@ -16,6 +16,14 @@ static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
     UNUSED(len);
 
     switch (buf[0]) {
+    case '\011': { /* TAB */
+        int row, col;
+
+        runes_display_get_position(t, &row, &col);
+        runes_display_move_to(t, row, col - (col % 8) + 8);
+        buf++;
+        break;
+    }
     case '\012':   /* LF */
     case '\013':   /* VT */
     case '\014': { /* FF */
