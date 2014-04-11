@@ -14,9 +14,7 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
 
     t->loop = uv_default_loop();
 
-    runes_pty_backend_loop_init(t);
-
-    runes_window_backend_init(t, argc, argv);
+    runes_window_backend_init(t);
     t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
     runes_window_backend_get_size(t, &x, &y);
     t->cr = cairo_create(
@@ -24,6 +22,9 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
             cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24, x, y));
 
     runes_display_init(t);
+
+    runes_window_backend_loop_init(t, argc, argv);
+    runes_pty_backend_loop_init(t);
 }
 
 void runes_term_cleanup(RunesTerm *t)

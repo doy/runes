@@ -22,9 +22,8 @@ static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_init_wm_properties(
     RunesTerm *t, int argc, char *argv[]);
-static void runes_window_backend_init_loop(RunesTerm *t);
 
-void runes_window_backend_init(RunesTerm *t, int argc, char *argv[])
+void runes_window_backend_init(RunesTerm *t)
 {
     RunesWindowBackend *w;
     unsigned long white;
@@ -66,9 +65,31 @@ void runes_window_backend_init(RunesTerm *t, int argc, char *argv[])
         fprintf(stderr, "failed\n");
         exit(1);
     }
+}
+
+void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
+{
+    RunesWindowBackend *w;
+    unsigned long mask;
+    void *data;
+
+    w = &t->w;
 
     runes_window_backend_init_wm_properties(t, argc, argv);
-    runes_window_backend_init_loop(t);
+
+    XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
+    XSelectInput(
+        w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask|ExposureMask);
+    XSetICFocus(w->ic);
+
+    data = malloc(sizeof(RunesXlibLoopData));
+    ((RunesLoopData *)data)->req.data = data;
+    ((RunesLoopData *)data)->t = t;
+
+    uv_queue_work(
+        t->loop, data,
+        runes_window_backend_get_next_event,
+        runes_window_backend_process_event);
 }
 
 cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
@@ -277,27 +298,4 @@ static void runes_window_backend_init_wm_properties(
 
     runes_window_backend_set_icon_name(t, "runes", 5);
     runes_window_backend_set_window_title(t, "runes", 5);
-}
-
-static void runes_window_backend_init_loop(RunesTerm *t)
-{
-    RunesWindowBackend *w;
-    unsigned long mask;
-    void *data;
-
-    w = &t->w;
-
-    XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(
-        w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask|ExposureMask);
-    XSetICFocus(w->ic);
-
-    data = malloc(sizeof(RunesXlibLoopData));
-    ((RunesLoopData *)data)->req.data = data;
-    ((RunesLoopData *)data)->t = t;
-
-    uv_queue_work(
-        t->loop, data,
-        runes_window_backend_get_next_event,
-        runes_window_backend_process_event);
 }
