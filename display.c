@@ -63,3 +63,18 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
         runes_window_backend_flush(t);
     }
 }
+
+void runes_display_backspace(RunesTerm *t)
+{
+    double x, y;
+    double fontx, fonty, ascent;
+
+    runes_display_move_to(t, t->row, t->col - 1);
+    cairo_set_source_rgb(t->cr, 1.0, 1.0, 1.0);
+    cairo_get_current_point(t->cr, &x, &y);
+    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+    cairo_rectangle(t->cr, x, y - ascent, x + fontx, y);
+    cairo_fill(t->cr);
+    cairo_set_source_rgb(t->cr, 0.0, 0.0, 1.0);
+    runes_display_move_to(t, t->row, t->col);
+}

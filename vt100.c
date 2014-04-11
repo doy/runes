@@ -16,6 +16,11 @@ static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
     UNUSED(len);
 
     switch (buf[0]) {
+    case '\010': { /* BS */
+        runes_display_backspace(t);
+        buf++;
+        break;
+    }
     case '\011': { /* TAB */
         int row, col;
 
