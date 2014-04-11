@@ -66,6 +66,9 @@ static void runes_process_event(uv_work_t *req, int status)
             free(buf);
             break;
         }
+        case Expose:
+            runes_window_backend_flush(t);
+            break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
             if (a == w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
@@ -130,7 +133,7 @@ static void runes_window_init_loop(RunesTerm *t)
     w = &t->w;
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask);
+    XSelectInput(w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask|ExposureMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
@@ -201,6 +204,8 @@ cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
 
 void runes_window_backend_flush(RunesTerm *t)
 {
+    cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
+    cairo_paint(t->backend_cr);
     XFlush(t->w.dpy);
 }
 
@@ -208,7 +213,7 @@ void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
 {
     cairo_surface_t *surface;
 
-    surface = cairo_get_target(t->cr);
+    surface = cairo_get_target(t->backend_cr);
     *xpixel = cairo_xlib_surface_get_width(surface);
     *ypixel = cairo_xlib_surface_get_height(surface);
 }

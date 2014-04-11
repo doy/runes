@@ -4,6 +4,8 @@
 
 void runes_display_init(RunesTerm *t)
 {
+    cairo_set_source_rgb(t->cr, 1.0, 1.0, 1.0);
+    cairo_paint(t->cr);
     cairo_select_font_face(t->cr, "monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(t->cr, 14.0);
     cairo_set_source_rgb(t->cr, 0.0, 0.0, 1.0);

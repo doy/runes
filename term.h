@@ -6,6 +6,7 @@ struct runes_term {
     RunesPtyBackend pty;
 
     cairo_t *cr;
+    cairo_t *backend_cr;
     uv_loop_t *loop;
 
     int row;
