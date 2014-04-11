@@ -21,7 +21,7 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_init_wm_properties(
-    RunesWindowBackend *w, int argc, char *argv[]);
+    RunesTerm *t, int argc, char *argv[]);
 static void runes_window_backend_init_loop(RunesTerm *t);
 
 void runes_window_backend_init(RunesTerm *t, int argc, char *argv[])
@@ -67,7 +67,7 @@ void runes_window_backend_init(RunesTerm *t, int argc, char *argv[])
         exit(1);
     }
 
-    runes_window_backend_init_wm_properties(w, argc, argv);
+    runes_window_backend_init_wm_properties(t, argc, argv);
     runes_window_backend_init_loop(t);
 }
 
@@ -99,6 +99,39 @@ void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
     surface = cairo_get_target(t->backend_cr);
     *xpixel = cairo_xlib_surface_get_width(surface);
     *ypixel = cairo_xlib_surface_get_height(surface);
+}
+
+void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
+{
+    RunesWindowBackend *w;
+
+    w = &t->w;
+
+    XChangeProperty(
+        w->dpy, w->w, XA_WM_ICON_NAME,
+        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        (unsigned char *)name, len);
+    XChangeProperty(
+        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
+        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        (unsigned char *)name, len);
+}
+
+void runes_window_backend_set_window_title(
+    RunesTerm *t, char *name, size_t len)
+{
+    RunesWindowBackend *w;
+
+    w = &t->w;
+
+    XChangeProperty(
+        w->dpy, w->w, XA_WM_NAME,
+        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        (unsigned char *)name, len);
+    XChangeProperty(
+        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME],
+        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        (unsigned char *)name, len);
 }
 
 void runes_window_backend_request_close(RunesTerm *t)
@@ -213,12 +246,15 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
 }
 
 static void runes_window_backend_init_wm_properties(
-    RunesWindowBackend *w, int argc, char *argv[])
+    RunesTerm *t, int argc, char *argv[])
 {
+    RunesWindowBackend *w;
     pid_t pid;
     XClassHint class_hints = { "runes", "runes" };
     XWMHints wm_hints;
     XSizeHints normal_hints;
+
+    w = &t->w;
 
     wm_hints.flags = InputHint | StateHint;
     wm_hints.input = True;
@@ -239,14 +275,8 @@ static void runes_window_backend_init_wm_properties(
         w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID],
         XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
 
-    XChangeProperty(
-        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
-        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
-        (unsigned char *)"runes", 5);
-    XChangeProperty(
-        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME],
-        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
-        (unsigned char *)"runes", 5);
+    runes_window_backend_set_icon_name(t, "runes", 5);
+    runes_window_backend_set_window_title(t, "runes", 5);
 }
 
 static void runes_window_backend_init_loop(RunesTerm *t)

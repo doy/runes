@@ -294,6 +294,48 @@ static char *runes_vt100_handle_osc(RunesTerm *t, char *buf, size_t len)
     }
 
     switch (type) {
+    case 0:
+        if (buf[prefix] == ';') {
+            size_t namelen;
+
+            namelen = strcspn(&buf[prefix + 1], "\007");
+            runes_window_backend_set_icon_name(t, &buf[prefix + 1], namelen);
+            runes_window_backend_set_window_title(
+                t, &buf[prefix + 1], namelen);
+            prefix += namelen + 2;
+        }
+        else {
+            runes_vt100_unhandled_osc(t, type, "", -1);
+            prefix++;
+        }
+        break;
+    case 1:
+        if (buf[prefix] == ';') {
+            size_t namelen;
+
+            namelen = strcspn(&buf[prefix + 1], "\007");
+            runes_window_backend_set_icon_name(t, &buf[prefix + 1], namelen);
+            prefix += namelen + 2;
+        }
+        else {
+            runes_vt100_unhandled_osc(t, type, "", -1);
+            prefix++;
+        }
+        break;
+    case 2:
+        if (buf[prefix] == ';') {
+            size_t namelen;
+
+            namelen = strcspn(&buf[prefix + 1], "\007");
+            runes_window_backend_set_window_title(
+                t, &buf[prefix + 1], namelen);
+            prefix += namelen + 2;
+        }
+        else {
+            runes_vt100_unhandled_osc(t, type, "", -1);
+            prefix++;
+        }
+        break;
     default:
         runes_vt100_unhandled_osc(t, type, "", -1);
         prefix++;
