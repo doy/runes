@@ -17,7 +17,9 @@ static char *runes_vt100_handle_escape_sequence(
     RunesTerm *t, char *buf, size_t len);
 static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len);
 static void runes_vt100_unhandled_escape_sequence(
-    RunesTerm *t, int *p, char type);
+    RunesTerm *t, char type);
+static void runes_vt100_unhandled_csi(
+    RunesTerm *t, int p[3], char type);
 
 void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
 {
@@ -106,7 +108,7 @@ static char *runes_vt100_handle_escape_sequence(
         buf = runes_vt100_handle_csi(t, buf, len);
         break;
     default:
-        runes_vt100_unhandled_escape_sequence(t, NULL, buf[0]);
+        runes_vt100_unhandled_escape_sequence(t, buf[0]);
         buf++;
         break;
     }
@@ -182,13 +184,13 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
             break;
         case 1:
             /* XXX */
-            runes_vt100_unhandled_escape_sequence(t, p, type);
+            runes_vt100_unhandled_csi(t, p, type);
             break;
         case 2:
             runes_display_clear_screen(t);
             break;
         default:
-            runes_vt100_unhandled_escape_sequence(t, p, type);
+            runes_vt100_unhandled_csi(t, p, type);
             break;
         }
         break;
@@ -200,14 +202,14 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
             break;
         case 1:
             /* XXX */
-            runes_vt100_unhandled_escape_sequence(t, p, type);
+            runes_vt100_unhandled_csi(t, p, type);
             break;
         case 2:
             /* XXX */
-            runes_vt100_unhandled_escape_sequence(t, p, type);
+            runes_vt100_unhandled_csi(t, p, type);
             break;
         default:
-            runes_vt100_unhandled_escape_sequence(t, p, type);
+            runes_vt100_unhandled_csi(t, p, type);
             break;
         }
         break;
@@ -259,14 +261,14 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
                 break;
             /* XXX ... */
             default:
-                runes_vt100_unhandled_escape_sequence(t, p, type);
+                runes_vt100_unhandled_csi(t, p, type);
                 break;
             }
         }
         break;
     }
     default:
-        runes_vt100_unhandled_escape_sequence(t, p, type);
+        runes_vt100_unhandled_csi(t, p, type);
         break;
     }
 
@@ -274,22 +276,27 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
 }
 
 static void runes_vt100_unhandled_escape_sequence(
-    RunesTerm *t, int *p, char type)
+    RunesTerm *t, char type)
 {
     UNUSED(t);
 
-    fprintf(stderr, "unhandled escape sequence: \\033");
-    if (p) {
-        fprintf(stderr, "[");
-        if (p[0] != -1) {
-            fprintf(stderr, "%d", p[0]);
-        }
-        if (p[1] != -1) {
-            fprintf(stderr, ";%d", p[1]);
-        }
-        if (p[2] != -1) {
-            fprintf(stderr, ";%d", p[2]);
-        }
+    fprintf(stderr, "unhandled escape sequence: \\033%c\n", type);
+}
+
+static void runes_vt100_unhandled_csi(
+    RunesTerm *t, int p[3], char type)
+{
+    UNUSED(t);
+
+    fprintf(stderr, "unhandled escape sequence: \\033[");
+    if (p[0] != -1) {
+        fprintf(stderr, "%d", p[0]);
+    }
+    if (p[1] != -1) {
+        fprintf(stderr, ";%d", p[1]);
+    }
+    if (p[2] != -1) {
+        fprintf(stderr, ";%d", p[2]);
     }
     fprintf(stderr, "%c\n", type);
 }
