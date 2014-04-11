@@ -43,6 +43,10 @@ void runes_pty_backend_init(RunesTerm *t)
             shell = "/bin/sh";
         }
 
+        setenv("TERM", "screen", 1);
+        unsetenv("LINES");
+        unsetenv("COLUMNS");
+
         execl(shell, shell, (char *)NULL);
     }
 }
