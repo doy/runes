@@ -4,11 +4,23 @@
 
 void runes_display_init(RunesTerm *t)
 {
-    cairo_set_source_rgb(t->cr, 1.0, 1.0, 1.0);
+    cairo_font_face_t *font_face;
+    cairo_matrix_t font_matrix, ctm;
+
+    t->bgcolor = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+    t->fgcolor = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
+
+    font_face = cairo_toy_font_face_create("monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_matrix_init_scale(&font_matrix, 14.0, 14.0);
+    cairo_get_matrix(t->cr, &ctm);
+    t->font = cairo_scaled_font_create(font_face, &font_matrix, &ctm, cairo_font_options_create());
+
+    cairo_set_scaled_font(t->cr, t->font);
+
+    cairo_set_source(t->cr, t->bgcolor);
     cairo_paint(t->cr);
-    cairo_select_font_face(t->cr, "monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_set_font_size(t->cr, 14.0);
-    cairo_set_source_rgb(t->cr, 0.0, 0.0, 1.0);
+
+    cairo_set_source(t->cr, t->fgcolor);
 
     runes_display_move_to(t, 0, 0);
 
@@ -74,7 +86,7 @@ void runes_display_backspace(RunesTerm *t)
     runes_display_move_to(t, t->row, t->col - 1);
 
     cairo_save(t->cr);
-    cairo_set_source_rgb(t->cr, 1.0, 1.0, 1.0);
+    cairo_set_source(t->cr, t->bgcolor);
     cairo_get_current_point(t->cr, &x, &y);
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
     cairo_rectangle(t->cr, x, y - ascent, x + fontx, y);
@@ -92,7 +104,7 @@ void runes_display_kill_line_forward(RunesTerm *t)
     int row, col, xpixel, ypixel;
 
     cairo_save(t->cr);
-    cairo_set_source_rgb(t->cr, 1.0, 1.0, 1.0);
+    cairo_set_source(t->cr, t->bgcolor);
     cairo_get_current_point(t->cr, &x, &y);
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
     runes_display_get_term_size(t, &row, &col, &xpixel, &ypixel);

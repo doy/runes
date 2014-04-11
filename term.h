@@ -9,6 +9,10 @@ struct runes_term {
     cairo_t *backend_cr;
     uv_loop_t *loop;
 
+    cairo_pattern_t *bgcolor;
+    cairo_pattern_t *fgcolor;
+    cairo_scaled_font_t *font;
+
     int row;
     int col;
 };
