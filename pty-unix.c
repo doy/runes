@@ -68,7 +68,8 @@ void runes_pty_backend_loop_init(RunesTerm *t)
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
 
-    uv_queue_work(t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
+    uv_queue_work(
+        t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
 }
 
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
@@ -97,7 +98,8 @@ static void runes_pty_backend_read(uv_work_t *req)
     RunesPtyLoopData *data;
 
     data = (RunesPtyLoopData *)req->data;
-    data->len = read(data->data.t->pty.master, data->buf, RUNES_PTY_BUFFER_LENGTH);
+    data->len = read(
+        data->data.t->pty.master, data->buf, RUNES_PTY_BUFFER_LENGTH);
 }
 
 static void runes_pty_backend_got_data(uv_work_t *req, int status)
@@ -111,7 +113,8 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
 
     if (data->len > 0) {
         runes_handle_pty_read(t, data->buf, data->len);
-        uv_queue_work(t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
+        uv_queue_work(
+            t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
     }
     else {
         runes_handle_pty_close(t);

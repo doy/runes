@@ -20,7 +20,8 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
 
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
-static void runes_window_backend_init_wm_properties(RunesWindowBackend *w, int argc, char *argv[]);
+static void runes_window_backend_init_wm_properties(
+    RunesWindowBackend *w, int argc, char *argv[]);
 static void runes_window_backend_init_loop(RunesTerm *t);
 
 void runes_window_backend_init(RunesTerm *t, int argc, char *argv[])
@@ -79,7 +80,8 @@ cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
     w = &t->w;
     XGetWindowAttributes(w->dpy, w->w, &attrs);
     vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
-    return cairo_xlib_surface_create(w->dpy, w->w, vis, attrs.width, attrs.height);
+    return cairo_xlib_surface_create(
+        w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
 void runes_window_backend_flush(RunesTerm *t)
@@ -162,7 +164,8 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             buf = malloc(len);
 
             for (;;) {
-                chars = Xutf8LookupString(w->ic, &e->xkey, buf, len - 1, &sym, &s);
+                chars = Xutf8LookupString(
+                    w->ic, &e->xkey, buf, len - 1, &sym, &s);
                 if (s == XBufferOverflow) {
                     len = chars + 1;
                     buf = realloc(buf, len);
@@ -199,7 +202,9 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
     }
 
     if (!should_close) {
-        uv_queue_work(t->loop, req, runes_window_backend_get_next_event, runes_window_backend_process_event);
+        uv_queue_work(
+            t->loop, req, runes_window_backend_get_next_event,
+            runes_window_backend_process_event);
     }
     else {
         runes_handle_close_window(t);
@@ -207,7 +212,8 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
     }
 }
 
-static void runes_window_backend_init_wm_properties(RunesWindowBackend *w, int argc, char *argv[])
+static void runes_window_backend_init_wm_properties(
+    RunesWindowBackend *w, int argc, char *argv[])
 {
     pid_t pid;
     XClassHint class_hints = { "runes", "runes" };
@@ -224,13 +230,23 @@ static void runes_window_backend_init_wm_properties(RunesWindowBackend *w, int a
     XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
     XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
 
-    Xutf8SetWMProperties(w->dpy, w->w, "runes", "runes", argv, argc, &normal_hints, &wm_hints, &class_hints);
+    Xutf8SetWMProperties(
+        w->dpy, w->w, "runes", "runes", argv, argc,
+        &normal_hints, &wm_hints, &class_hints);
 
     pid = getpid();
-    XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID], XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
+    XChangeProperty(
+        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID],
+        XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
 
-    XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME], w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace, (unsigned char *)"runes", 5);
-    XChangeProperty(w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME], w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace, (unsigned char *)"runes", 5);
+    XChangeProperty(
+        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
+        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        (unsigned char *)"runes", 5);
+    XChangeProperty(
+        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME],
+        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        (unsigned char *)"runes", 5);
 }
 
 static void runes_window_backend_init_loop(RunesTerm *t)
@@ -242,12 +258,16 @@ static void runes_window_backend_init_loop(RunesTerm *t)
     w = &t->w;
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask|ExposureMask);
+    XSelectInput(
+        w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask|ExposureMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
 
-    uv_queue_work(t->loop, data, runes_window_backend_get_next_event, runes_window_backend_process_event);
+    uv_queue_work(
+        t->loop, data,
+        runes_window_backend_get_next_event,
+        runes_window_backend_process_event);
 }

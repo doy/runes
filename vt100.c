@@ -13,8 +13,10 @@ static const char *ctrl_chars =
     "\177";
 
 static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len);
-static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_unhandled_escape_sequence(RunesTerm *t, int *p, char type);
+static char *runes_vt100_handle_escape_sequence(
+    RunesTerm *t, char *buf, size_t len);
+static void runes_vt100_unhandled_escape_sequence(
+    RunesTerm *t, int *p, char type);
 
 void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
 {
@@ -93,7 +95,8 @@ static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
     return buf;
 }
 
-static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t len)
+static char *runes_vt100_handle_escape_sequence(
+    RunesTerm *t, char *buf, size_t len)
 {
     UNUSED(len);
 
@@ -245,7 +248,8 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
     return buf;
 }
 
-static void runes_vt100_unhandled_escape_sequence(RunesTerm *t, int *p, char type)
+static void runes_vt100_unhandled_escape_sequence(
+    RunesTerm *t, int *p, char type)
 {
     UNUSED(t);
 

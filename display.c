@@ -2,7 +2,8 @@
 
 #include "runes.h"
 
-static void runes_display_get_font_dimensions(RunesTerm *t, double *fontx, double *fonty, double *ascent);
+static void runes_display_get_font_dimensions(
+    RunesTerm *t, double *fontx, double *fonty, double *ascent);
 
 void runes_display_init(RunesTerm *t)
 {
@@ -18,10 +19,12 @@ void runes_display_init(RunesTerm *t)
     t->colors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
     t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
-    font_face = cairo_toy_font_face_create("monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    font_face = cairo_toy_font_face_create(
+        "monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_matrix_init_scale(&font_matrix, 14.0, 14.0);
     cairo_get_matrix(t->cr, &ctm);
-    t->font = cairo_scaled_font_create(font_face, &font_matrix, &ctm, cairo_font_options_create());
+    t->font = cairo_scaled_font_create(
+        font_face, &font_matrix, &ctm, cairo_font_options_create());
 
     cairo_set_scaled_font(t->cr, t->font);
 
@@ -38,7 +41,8 @@ void runes_display_init(RunesTerm *t)
     runes_pty_backend_set_window_size(t);
 }
 
-void runes_display_get_term_size(RunesTerm *t, int *row, int *col, int *xpixel, int *ypixel)
+void runes_display_get_term_size(
+    RunesTerm *t, int *row, int *col, int *xpixel, int *ypixel)
 {
     double fontx, fonty, ascent;
     runes_window_backend_get_size(t, xpixel, ypixel);
@@ -138,7 +142,8 @@ void runes_display_clear_screen_forward(RunesTerm *t)
     cairo_get_current_point(t->cr, &x, &y);
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
     runes_display_get_term_size(t, &row, &col, &xpixel, &ypixel);
-    cairo_rectangle(t->cr, 0, y - ascent + fonty, xpixel, ypixel - y + ascent - fonty);
+    cairo_rectangle(
+        t->cr, 0, y - ascent + fonty, xpixel, ypixel - y + ascent - fonty);
     cairo_fill(t->cr);
     runes_window_backend_flush(t);
     cairo_restore(t->cr);
@@ -192,7 +197,8 @@ void runes_display_reset_bg_color(RunesTerm *t)
     runes_display_set_bg_color(t, t->colors[0]);
 }
 
-static void runes_display_get_font_dimensions(RunesTerm *t, double *fontx, double *fonty, double *ascent)
+static void runes_display_get_font_dimensions(
+    RunesTerm *t, double *fontx, double *fonty, double *ascent)
 {
     cairo_font_extents_t extents;
 

@@ -19,7 +19,9 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     runes_window_backend_init(t, argc, argv);
     t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
     runes_window_backend_get_size(t, &x, &y);
-    t->cr = cairo_create(cairo_surface_create_similar_image(cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24, x, y));
+    t->cr = cairo_create(
+        cairo_surface_create_similar_image(
+            cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24, x, y));
 }
 
 void runes_term_cleanup(RunesTerm *t)
