@@ -11,16 +11,61 @@ static const char *ctrl_chars =
     "\030\031\032\033\034\035\036\037"
     "\177";
 
-static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
+static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t len)
 {
     UNUSED(len);
 
+    if (buf[1] == '[') { /* CSI */
+        /* ignoring parameters, for now */
+        switch (buf[2]) {
+        case 'D': { /* CUB */
+            int row, col;
+
+            runes_display_get_position(t, &row, &col);
+            runes_display_move_to(t, row, col - 1);
+            break;
+        }
+        case 'B': { /* CUD */
+            int row, col;
+
+            runes_display_get_position(t, &row, &col);
+            runes_display_move_to(t, row + 1, col);
+        }
+        case 'C': { /* CUF */
+            int row, col;
+
+            runes_display_get_position(t, &row, &col);
+            runes_display_move_to(t, row, col + 1);
+        }
+        case 'A': { /* CUU */
+            int row, col;
+
+            runes_display_get_position(t, &row, &col);
+            runes_display_move_to(t, row - 1, col);
+        }
+        case 'K':   /* EL */
+            runes_display_kill_line_forward(t);
+        default:
+            break;
+        }
+
+        buf += 3;
+    }
+    else {
+        /* do nothing, for now */
+        buf++;
+    }
+
+    return buf;
+}
+
+static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
+{
     switch (buf[0]) {
-    case '\010': { /* BS */
+    case '\010':   /* BS */
         runes_display_backspace(t);
         buf++;
         break;
-    }
     case '\011': { /* TAB */
         int row, col;
 
@@ -47,6 +92,9 @@ static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
         buf++;
         break;
     }
+    case '\033':
+        buf = runes_vt100_handle_escape_sequence(t, buf, len);
+        break;
     default: {
         buf++;
         break;
@@ -79,13 +127,10 @@ void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
         prefix = strspn(buf, ctrl_chars);
         if (prefix) {
             char *end = buf + prefix;
-            char tmp = *end;
 
-            *end = '\0';
             while (buf < end) {
                 buf = runes_vt100_handle_ctrl_char(t, buf, strlen(buf));
             }
-            *end = tmp;
             found = 1;
         }
     } while (found);
