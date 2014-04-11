@@ -66,8 +66,46 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
             runes_display_move_to(t, row - 1, col);
             break;
         }
+        case 'H':   /* CUP */
+            if (p[0] == -1) {
+                p[0] = 0;
+            }
+            if (p[1] == -1) {
+                p[1] = 0;
+            }
+            runes_display_move_to(t, p[0], p[1]);
+            break;
+        case 'J':   /* ED */
+            switch (p[0]) {
+            case -1:
+            case 0:
+                runes_display_clear_screen_forward(t);
+                break;
+            case 1:
+                /* XXX */
+                break;
+            case 2:
+                runes_display_clear_screen(t);
+                break;
+            default:
+                break;
+            }
+            break;
         case 'K':   /* EL */
-            runes_display_kill_line_forward(t);
+            switch (p[0]) {
+            case -1:
+            case 0:
+                runes_display_kill_line_forward(t);
+                break;
+            case 1:
+                /* XXX */
+                break;
+            case 2:
+                /* XXX */
+                break;
+            default:
+                break;
+            }
             break;
         case 'm': {
             int i;
