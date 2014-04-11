@@ -30,21 +30,25 @@ static char *runes_vt100_handle_escape_sequence(RunesTerm *t, char *buf, size_t 
 
             runes_display_get_position(t, &row, &col);
             runes_display_move_to(t, row + 1, col);
+            break;
         }
         case 'C': { /* CUF */
             int row, col;
 
             runes_display_get_position(t, &row, &col);
             runes_display_move_to(t, row, col + 1);
+            break;
         }
         case 'A': { /* CUU */
             int row, col;
 
             runes_display_get_position(t, &row, &col);
             runes_display_move_to(t, row - 1, col);
+            break;
         }
         case 'K':   /* EL */
             runes_display_kill_line_forward(t);
+            break;
         default:
             break;
         }
