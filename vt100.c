@@ -213,8 +213,14 @@ static char *runes_vt100_handle_escape_sequence(
                 case 1:
                     runes_display_set_bold(t);
                     break;
+                case 3:
+                    runes_display_set_italic(t);
+                    break;
                 case 22:
                     runes_display_reset_bold(t);
+                    break;
+                case 23:
+                    runes_display_reset_italic(t);
                     break;
                 case 30: case 31: case 32: case 33:
                 case 34: case 35: case 36: case 37:

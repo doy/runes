@@ -171,6 +171,7 @@ void runes_display_reset_text_attributes(RunesTerm *t)
     runes_display_reset_fg_color(t);
     runes_display_reset_bg_color(t);
     runes_display_reset_bold(t);
+    runes_display_reset_italic(t);
 }
 
 void runes_display_set_bold(RunesTerm *t)
@@ -182,6 +183,18 @@ void runes_display_set_bold(RunesTerm *t)
 void runes_display_reset_bold(RunesTerm *t)
 {
     t->font_bold = 0;
+    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+}
+
+void runes_display_set_italic(RunesTerm *t)
+{
+    t->font_italic = 1;
+    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+}
+
+void runes_display_reset_italic(RunesTerm *t)
+{
+    t->font_italic = 0;
     cairo_set_scaled_font(t->cr, runes_display_make_font(t));
 }
 
