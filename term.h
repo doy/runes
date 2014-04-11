@@ -12,7 +12,11 @@ struct runes_term {
     cairo_pattern_t *bgcolor;
     cairo_pattern_t *fgcolor;
     cairo_pattern_t *cursorcolor;
-    cairo_scaled_font_t *font;
+
+    char *font_name;
+    double font_size;
+    char font_italic;
+    char font_bold;
 
     cairo_pattern_t *colors[8];
 

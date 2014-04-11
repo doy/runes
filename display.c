@@ -4,8 +4,7 @@
 
 static void runes_display_get_font_dimensions(
     RunesTerm *t, double *fontx, double *fonty, double *ascent);
-static cairo_scaled_font_t *runes_display_create_font(
-    RunesTerm *t, const char *name, double size, int bold, int italic);
+static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t);
 
 void runes_display_init(RunesTerm *t)
 {
@@ -18,8 +17,12 @@ void runes_display_init(RunesTerm *t)
     t->colors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
     t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
-    t->font = runes_display_create_font(t, "monospace", 14.0, 0, 0);
-    cairo_set_scaled_font(t->cr, t->font);
+    t->font_name   = "monospace";
+    t->font_size   = 14.0;
+    t->font_bold   = 0;
+    t->font_italic = 0;
+
+    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
 
     runes_display_reset_text_attributes(t);
     t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
@@ -202,17 +205,16 @@ static void runes_display_get_font_dimensions(
     *ascent = extents.ascent;
 }
 
-static cairo_scaled_font_t *runes_display_create_font(
-    RunesTerm *t, const char *name, double size, int bold, int italic)
+static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
 {
     cairo_font_face_t *font_face;
     cairo_matrix_t font_matrix, ctm;
 
     font_face = cairo_toy_font_face_create(
-        name,
-        italic ? CAIRO_FONT_SLANT_ITALIC : CAIRO_FONT_SLANT_NORMAL,
-        bold   ? CAIRO_FONT_WEIGHT_BOLD  : CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_matrix_init_scale(&font_matrix, size, size);
+        t->font_name,
+        t->font_italic ? CAIRO_FONT_SLANT_ITALIC : CAIRO_FONT_SLANT_NORMAL,
+        t->font_bold   ? CAIRO_FONT_WEIGHT_BOLD  : CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_matrix_init_scale(&font_matrix, t->font_size, t->font_size);
     cairo_get_matrix(t->cr, &ctm);
     return cairo_scaled_font_create(
         font_face, &font_matrix, &ctm, cairo_font_options_create());
