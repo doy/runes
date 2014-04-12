@@ -26,11 +26,9 @@ static void runes_window_backend_init_wm_properties(
 
 void runes_window_backend_init(RunesTerm *t)
 {
-    RunesWindowBackend *w;
+    RunesWindowBackend *w = &t->w;
     unsigned long white;
     XIM im;
-
-    w = &t->w;
 
     w->dpy = XOpenDisplay(NULL);
     white  = WhitePixel(w->dpy, DefaultScreen(w->dpy));
@@ -58,11 +56,9 @@ void runes_window_backend_init(RunesTerm *t)
 
 void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
 {
-    RunesWindowBackend *w;
+    RunesWindowBackend *w = &t->w;
     unsigned long mask;
     void *data;
-
-    w = &t->w;
 
     runes_window_backend_init_wm_properties(t, argc, argv);
 
@@ -83,11 +79,10 @@ void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
 
 cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
 {
-    RunesWindowBackend *w;
+    RunesWindowBackend *w = &t->w;
     Visual *vis;
     XWindowAttributes attrs;
 
-    w = &t->w;
     XGetWindowAttributes(w->dpy, w->w, &attrs);
     vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
     return cairo_xlib_surface_create(
@@ -113,9 +108,7 @@ void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
 
 void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
 {
-    RunesWindowBackend *w;
-
-    w = &t->w;
+    RunesWindowBackend *w = &t->w;
 
     XChangeProperty(
         w->dpy, w->w, XA_WM_ICON_NAME,
@@ -130,9 +123,7 @@ void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
 void runes_window_backend_set_window_title(
     RunesTerm *t, char *name, size_t len)
 {
-    RunesWindowBackend *w;
-
-    w = &t->w;
+    RunesWindowBackend *w = &t->w;
 
     XChangeProperty(
         w->dpy, w->w, XA_WM_NAME,
@@ -160,10 +151,9 @@ void runes_window_backend_request_close(RunesTerm *t)
 
 void runes_window_backend_cleanup(RunesTerm *t)
 {
-    RunesWindowBackend *w;
+    RunesWindowBackend *w = &t->w;
     XIM im;
 
-    w = &t->w;
     im = XIMOfIC(w->ic);
     XDestroyIC(w->ic);
     XCloseIM(im);
@@ -181,18 +171,13 @@ static void runes_window_backend_get_next_event(uv_work_t *req)
 
 static void runes_window_backend_process_event(uv_work_t *req, int status)
 {
-    RunesXlibLoopData *data;
-    XEvent *e;
-    RunesTerm *t;
-    RunesWindowBackend *w;
+    RunesXlibLoopData *data = req->data;
+    XEvent *e = &data->e;
+    RunesTerm *t = data->data.t;
+    RunesWindowBackend *w = &t->w;
     int should_close = 0;
 
     UNUSED(status);
-
-    data = ((RunesXlibLoopData *)req->data);
-    e = &data->e;
-    t = data->data.t;
-    w = &t->w;
 
     if (!XFilterEvent(e, None)) {
         switch (e->type) {
@@ -256,9 +241,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
 
 static void runes_window_backend_map_window(RunesTerm *t)
 {
-    RunesWindowBackend *w;
-
-    w = &t->w;
+    RunesWindowBackend *w = &t->w;
 
     XSelectInput(w->dpy, w->w, StructureNotifyMask);
     XMapWindow(w->dpy, w->w);
@@ -276,13 +259,11 @@ static void runes_window_backend_map_window(RunesTerm *t)
 static void runes_window_backend_init_wm_properties(
     RunesTerm *t, int argc, char *argv[])
 {
-    RunesWindowBackend *w;
+    RunesWindowBackend *w = &t->w;
     pid_t pid;
     XClassHint class_hints = { "runes", "runes" };
     XWMHints wm_hints;
     XSizeHints normal_hints;
-
-    w = &t->w;
 
     wm_hints.flags = InputHint | StateHint;
     wm_hints.input = True;
