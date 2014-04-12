@@ -2,6 +2,7 @@
 #define _RUNES_DISPLAY_H
 
 void runes_display_init(RunesTerm *t);
+void runes_display_set_window_size(RunesTerm *t, int width, int height);
 void runes_display_draw_cursor(RunesTerm *t);
 void runes_display_move_to(RunesTerm *t, int row, int col);
 void runes_display_show_string(RunesTerm *t, char *buf, size_t len);

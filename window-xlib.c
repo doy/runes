@@ -23,6 +23,8 @@ static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_map_window(RunesTerm *t);
 static void runes_window_backend_init_wm_properties(
     RunesTerm *t, int argc, char *argv[]);
+static void runes_window_backend_resize_window(
+    RunesTerm *t, int width, int height);
 
 void runes_window_backend_init(RunesTerm *t)
 {
@@ -208,6 +210,11 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
         case Expose:
             runes_window_backend_flush(t);
             break;
+        case ConfigureNotify:
+            while (XCheckTypedWindowEvent(w->dpy, w->w, ConfigureNotify, e));
+            runes_window_backend_resize_window(
+                t, e->xconfigure.width, e->xconfigure.height);
+            break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
             if (a == w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
@@ -286,4 +293,15 @@ static void runes_window_backend_init_wm_properties(
 
     runes_window_backend_set_icon_name(t, "runes", 5);
     runes_window_backend_set_window_title(t, "runes", 5);
+}
+
+static void runes_window_backend_resize_window(
+    RunesTerm *t, int width, int height)
+{
+    if (width != t->xpixel || height != t->ypixel) {
+        cairo_xlib_surface_set_size(
+            cairo_get_target(t->backend_cr), width, height);
+        runes_display_set_window_size(t, width, height);
+        runes_pty_backend_set_window_size(t);
+    }
 }
