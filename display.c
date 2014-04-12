@@ -58,12 +58,6 @@ void runes_display_get_term_size(
     *col = (int)(*xpixel / fontx);
 }
 
-void runes_display_get_position(RunesTerm *t, int *row, int *col)
-{
-    *row = t->row;
-    *col = t->col;
-}
-
 /* note: this uses the backend cairo context because it should be redrawn every
  * time, and shouldn't be left behind when it moves */
 void runes_display_draw_cursor(RunesTerm *t)

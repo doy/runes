@@ -63,40 +63,27 @@ static char *runes_vt100_handle_ctrl_char(RunesTerm *t, char *buf, size_t len)
         runes_display_backspace(t);
         buf++;
         break;
-    case '\011': { /* TAB */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row, col - (col % 8) + 8);
+    case '\011':   /* TAB */
+        runes_display_move_to(t, t->row, t->col - (t->col % 8) + 8);
         buf++;
         break;
-    }
     case '\012':   /* LF */
     case '\013':   /* VT */
-    case '\014': { /* FF */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row + 1, col);
+    case '\014':   /* FF */
+        runes_display_move_to(t, t->row + 1, t->col);
         buf++;
         break;
-    }
-    case '\015': { /* CR */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row, 0);
+    case '\015':   /* CR */
+        runes_display_move_to(t, t->row, 0);
         buf++;
         break;
-    }
     case '\033':
         buf++;
         buf = runes_vt100_handle_escape_sequence(t, buf, len);
         break;
-    default: {
+    default:
         buf++;
         break;
-    }
     }
 
     return buf;
@@ -151,34 +138,18 @@ static char *runes_vt100_handle_csi(RunesTerm *t, char *buf, size_t len)
     }
 
     switch (type) {
-    case 'D': { /* CUB */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row, col - 1);
+    case 'D':   /* CUB */
+        runes_display_move_to(t, t->row, t->col - 1);
         break;
-    }
-    case 'B': { /* CUD */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row + 1, col);
+    case 'B':   /* CUD */
+        runes_display_move_to(t, t->row + 1, t->col);
         break;
-    }
-    case 'C': { /* CUF */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row, col + 1);
+    case 'C':   /* CUF */
+        runes_display_move_to(t, t->row, t->col + 1);
         break;
-    }
-    case 'A': { /* CUU */
-        int row, col;
-
-        runes_display_get_position(t, &row, &col);
-        runes_display_move_to(t, row - 1, col);
+    case 'A':   /* CUU */
+        runes_display_move_to(t, t->row - 1, t->col);
         break;
-    }
     case 'H':   /* CUP */
         if (p[0] == -1) {
             p[0] = 0;
