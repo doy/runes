@@ -40,8 +40,6 @@ void runes_window_backend_init(RunesTerm *t)
 
     XSelectInput(w->dpy, w->w, StructureNotifyMask);
     XMapWindow(w->dpy, w->w);
-    w->gc = XCreateGC(w->dpy, w->w, 0, NULL);
-    XSetForeground(w->dpy, w->gc, white);
 
     for (;;) {
         XEvent e;
@@ -178,7 +176,6 @@ void runes_window_backend_cleanup(RunesTerm *t)
     im = XIMOfIC(w->ic);
     XDestroyIC(w->ic);
     XCloseIM(im);
-    XFreeGC(w->dpy, w->gc);
     XDestroyWindow(w->dpy, w->w);
     XCloseDisplay(w->dpy);
 }
