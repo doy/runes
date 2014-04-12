@@ -101,6 +101,10 @@ static char *runes_vt100_handle_escape_sequence(
         buf++;
         buf = runes_vt100_handle_osc(t, buf, len);
         break;
+    case 'M': /* RI */
+        buf++;
+        runes_display_move_to(t, t->row - 1, t->col);
+        break;
     default:
         runes_vt100_unhandled_escape_sequence(t, buf[0]);
         buf++;
