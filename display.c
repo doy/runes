@@ -8,6 +8,14 @@ static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t);
 
 void runes_display_init(RunesTerm *t)
 {
+    int x, y;
+
+    t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
+    runes_window_backend_get_size(t, &x, &y);
+    t->cr = cairo_create(
+        cairo_surface_create_similar_image(
+            cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24, x, y));
+
     t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
     t->colors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
     t->colors[2] = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
