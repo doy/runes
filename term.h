@@ -25,6 +25,11 @@ struct runes_term {
 
     int row;
     int col;
+
+    int rows;
+    int cols;
+    int xpixel;
+    int ypixel;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);

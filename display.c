@@ -9,9 +9,11 @@ static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t);
 void runes_display_init(RunesTerm *t)
 {
     int x, y;
+    double fontx, fonty, ascent;
 
     t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
     runes_window_backend_get_size(t, &x, &y);
+
     t->cr = cairo_create(
         cairo_surface_create_similar_image(
             cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24, x, y));
@@ -45,17 +47,14 @@ void runes_display_init(RunesTerm *t)
 
     runes_display_move_to(t, 0, 0);
 
-    runes_pty_backend_set_window_size(t);
-}
+    t->xpixel = x;
+    t->ypixel = y;
 
-void runes_display_get_term_size(
-    RunesTerm *t, int *row, int *col, int *xpixel, int *ypixel)
-{
-    double fontx, fonty, ascent;
-    runes_window_backend_get_size(t, xpixel, ypixel);
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-    *row = (int)(*ypixel / fonty);
-    *col = (int)(*xpixel / fontx);
+    t->rows = t->ypixel / fonty;
+    t->cols = t->xpixel / fontx;
+
+    runes_pty_backend_set_window_size(t);
 }
 
 /* note: this uses the backend cairo context because it should be redrawn every
@@ -154,7 +153,6 @@ void runes_display_clear_screen_forward(RunesTerm *t)
 {
     double x, y;
     double fontx, fonty, ascent;
-    int row, col, xpixel, ypixel;
 
     runes_display_kill_line_forward(t);
 
@@ -162,9 +160,10 @@ void runes_display_clear_screen_forward(RunesTerm *t)
     cairo_set_source(t->cr, t->bgcolor);
     cairo_get_current_point(t->cr, &x, &y);
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-    runes_display_get_term_size(t, &row, &col, &xpixel, &ypixel);
     cairo_rectangle(
-        t->cr, 0, y - ascent + fonty, xpixel, ypixel - y + ascent - fonty);
+        t->cr,
+        0,         y - ascent + fonty,
+        t->xpixel, t->ypixel - y + ascent - fonty);
     cairo_fill(t->cr);
     runes_window_backend_flush(t);
     cairo_restore(t->cr);
@@ -176,14 +175,12 @@ void runes_display_kill_line_forward(RunesTerm *t)
 {
     double x, y;
     double fontx, fonty, ascent;
-    int row, col, xpixel, ypixel;
 
     cairo_save(t->cr);
     cairo_set_source(t->cr, t->bgcolor);
     cairo_get_current_point(t->cr, &x, &y);
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-    runes_display_get_term_size(t, &row, &col, &xpixel, &ypixel);
-    cairo_rectangle(t->cr, x, y - ascent, xpixel - x, fonty);
+    cairo_rectangle(t->cr, x, y - ascent, t->xpixel - x, fonty);
     cairo_fill(t->cr);
     runes_window_backend_flush(t);
     cairo_restore(t->cr);

@@ -54,13 +54,11 @@ void runes_pty_backend_init(RunesTerm *t)
 void runes_pty_backend_set_window_size(RunesTerm *t)
 {
     struct winsize size;
-    int row, col, xpixel, ypixel;
 
-    runes_display_get_term_size(t, &row, &col, &xpixel, &ypixel);
-    size.ws_row = row;
-    size.ws_col = col;
-    size.ws_xpixel = xpixel;
-    size.ws_ypixel = ypixel;
+    size.ws_row = t->rows;
+    size.ws_col = t->cols;
+    size.ws_xpixel = t->xpixel;
+    size.ws_ypixel = t->ypixel;
     ioctl(t->pty.master, TIOCSWINSZ, &size);
 }
 
