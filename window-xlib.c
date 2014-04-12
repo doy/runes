@@ -20,6 +20,7 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
 
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
+static void runes_window_backend_map_window(RunesTerm *t);
 static void runes_window_backend_init_wm_properties(
     RunesTerm *t, int argc, char *argv[]);
 
@@ -38,18 +39,6 @@ void runes_window_backend_init(RunesTerm *t)
         0, 0, 240, 80, 0, white, white
     );
 
-    XSelectInput(w->dpy, w->w, StructureNotifyMask);
-    XMapWindow(w->dpy, w->w);
-
-    for (;;) {
-        XEvent e;
-
-        XNextEvent(w->dpy, &e);
-        if (e.type == MapNotify) {
-            break;
-        }
-    }
-
     XSetLocaleModifiers("");
     im = XOpenIM(w->dpy, NULL, NULL, NULL);
     w->ic = XCreateIC(
@@ -63,6 +52,8 @@ void runes_window_backend_init(RunesTerm *t)
         fprintf(stderr, "failed\n");
         exit(1);
     }
+
+    runes_window_backend_map_window(t);
 }
 
 void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
@@ -260,6 +251,25 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
     else {
         runes_handle_close_window(t);
         free(req);
+    }
+}
+
+static void runes_window_backend_map_window(RunesTerm *t)
+{
+    RunesWindowBackend *w;
+
+    w = &t->w;
+
+    XSelectInput(w->dpy, w->w, StructureNotifyMask);
+    XMapWindow(w->dpy, w->w);
+
+    for (;;) {
+        XEvent e;
+
+        XNextEvent(w->dpy, &e);
+        if (e.type == MapNotify) {
+            break;
+        }
     }
 }
 
