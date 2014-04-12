@@ -70,6 +70,8 @@ void runes_pty_backend_loop_init(RunesTerm *t)
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
 
+    runes_pty_backend_set_window_size(t);
+
     uv_queue_work(
         t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
 }

@@ -53,8 +53,6 @@ void runes_display_init(RunesTerm *t)
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
     t->rows = t->ypixel / fonty;
     t->cols = t->xpixel / fontx;
-
-    runes_pty_backend_set_window_size(t);
 }
 
 /* note: this uses the backend cairo context because it should be redrawn every
