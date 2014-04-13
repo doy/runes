@@ -267,9 +267,15 @@ static void runes_vt100_handle_cub(RunesTerm *t, char *buf, size_t len)
 
 static void runes_vt100_handle_cup(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 1, 1 }, nparams;
+    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0, 0 }, nparams;
 
     runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    if (params[0] == 0) {
+        params[0] = 1;
+    }
+    if (params[1] == 0) {
+        params[1] = 1;
+    }
     runes_display_move_to(t, params[0] - 1, params[1] - 1);
 }
 
