@@ -141,9 +141,8 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
         if (t->font_underline) {
             cairo_save(t->cr);
             cairo_set_line_width(t->cr, 1);
-            cairo_move_to(
-                 t->cr, x - (fontx * strlen(buf)), y - ascent + fonty - 0.5);
-            cairo_line_to(t->cr, x, y - ascent + fonty - 0.5);
+            cairo_move_to(t->cr, x, y - ascent + fonty - 0.5);
+            cairo_line_to(t->cr, x + (fontx * len), y - ascent + fonty - 0.5);
             cairo_stroke(t->cr);
             cairo_restore(t->cr);
 
