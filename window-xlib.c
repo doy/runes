@@ -19,6 +19,46 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "RUNES_FLUSH"
 };
 
+struct function_key {
+    KeySym sym;
+    char *str;
+    size_t len;
+};
+
+#define RUNES_KEY(sym, str) { sym, str, sizeof(str) - 1 }
+static struct function_key keys[] = {
+    RUNES_KEY(XK_Up,         "\e[A"),
+    RUNES_KEY(XK_Down,       "\e[B"),
+    RUNES_KEY(XK_Right,      "\e[C"),
+    RUNES_KEY(XK_Left,       "\e[D"),
+    RUNES_KEY(XK_Page_Up,    "\e[5~"),
+    RUNES_KEY(XK_Page_Down,  "\e[6~"),
+    RUNES_KEY(XK_Home,       "\e[H"),
+    RUNES_KEY(XK_End,        "\e[F"),
+    RUNES_KEY(XK_F1,         "\eOP"),
+    RUNES_KEY(XK_F2,         "\eOQ"),
+    RUNES_KEY(XK_F3,         "\eOR"),
+    RUNES_KEY(XK_F4,         "\eOS"),
+    RUNES_KEY(XK_F5,         "\e[15~"),
+    RUNES_KEY(XK_F6,         "\e[17~"),
+    RUNES_KEY(XK_F7,         "\e[18~"),
+    RUNES_KEY(XK_F8,         "\e[19~"),
+    RUNES_KEY(XK_F9,         "\e[20~"),
+    RUNES_KEY(XK_F10,        "\e[21~"),
+    RUNES_KEY(XK_F11,        "\e[23~"),
+    RUNES_KEY(XK_F12,        "\e[24~"),
+    RUNES_KEY(XK_F13,        "\e[25~"),
+    RUNES_KEY(XK_F14,        "\e[26~"),
+    RUNES_KEY(XK_F15,        "\e[28~"),
+    RUNES_KEY(XK_F16,        "\e[29~"),
+    RUNES_KEY(XK_F17,        "\e[31~"),
+    RUNES_KEY(XK_F18,        "\e[32~"),
+    RUNES_KEY(XK_F19,        "\e[33~"),
+    RUNES_KEY(XK_F20,        "\e[34~"),
+    RUNES_KEY(XK_VoidSymbol, "")
+};
+#undef RUNES_KEY
+
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_map_window(RunesTerm *t);
@@ -214,24 +254,26 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 break;
             }
 
-            if (chars) {
+            switch (s) {
+            case XLookupChars:
+            case XLookupBoth:
                 runes_pty_backend_write(t, buf, chars);
-            }
-            else if (sym) {
-                switch (sym) {
-                case XK_Up:
-                    runes_pty_backend_write(t, "\e[A", 3);
-                    break;
-                case XK_Down:
-                    runes_pty_backend_write(t, "\e[B", 3);
-                    break;
-                case XK_Right:
-                    runes_pty_backend_write(t, "\e[C", 3);
-                    break;
-                case XK_Left:
-                    runes_pty_backend_write(t, "\e[D", 3);
-                    break;
+                break;
+            case XLookupKeySym: {
+                struct function_key *key;
+
+                key = &keys[0];
+                while (key->sym != XK_VoidSymbol) {
+                    if (key->sym == sym) {
+                        runes_pty_backend_write(t, key->str, key->len);
+                        break;
+                    }
+                    key++;
                 }
+                break;
+            }
+            default:
+                break;
             }
             free(buf);
             break;
