@@ -61,9 +61,14 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
 
     old_cr = t->cr;
 
+    /* XXX this should really use cairo_surface_create_similar_image, but when
+     * i did that, drawing calls would occasionally block until an X event
+     * occurred for some reason. should look into this, because i think
+     * create_similar_image does things that are more efficient (using some
+     * xlib shm stuff) */
     t->cr = cairo_create(
-        cairo_surface_create_similar_image(
-            cairo_get_target(t->backend_cr), CAIRO_FORMAT_RGB24,
+        cairo_image_surface_create(
+            CAIRO_FORMAT_RGB24,
             t->xpixel, t->ypixel));
     cairo_set_source(t->cr, t->fgcolor);
     cairo_set_scaled_font(t->cr, runes_display_make_font(t));
