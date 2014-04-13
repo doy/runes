@@ -15,7 +15,8 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "_NET_WM_ICON_NAME",
     "_NET_WM_NAME",
     "UTF8_STRING",
-    "WM_PROTOCOLS"
+    "WM_PROTOCOLS",
+    "RUNES_FLUSH"
 };
 
 static void runes_window_backend_get_next_event(uv_work_t *req);
@@ -25,12 +26,15 @@ static void runes_window_backend_init_wm_properties(
     RunesTerm *t, int argc, char *argv[]);
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
+static void runes_window_backend_flush(RunesTerm *t);
 
 void runes_window_backend_init(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
     unsigned long white;
     XIM im;
+
+    XInitThreads();
 
     w->dpy = XOpenDisplay(NULL);
     white  = WhitePixel(w->dpy, DefaultScreen(w->dpy));
@@ -91,12 +95,19 @@ cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
         w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
-void runes_window_backend_flush(RunesTerm *t)
+void runes_window_backend_request_flush(RunesTerm *t)
 {
-    cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
-    cairo_paint(t->backend_cr);
-    runes_display_draw_cursor(t);
+    XEvent e;
+
+    e.xclient.type = ClientMessage;
+    e.xclient.window = t->w.w;
+    e.xclient.format = 32;
+    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_RUNES_FLUSH];
+
+    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
+    XLockDisplay(t->w.dpy);
     XFlush(t->w.dpy);
+    XUnlockDisplay(t->w.dpy);
 }
 
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
@@ -228,6 +239,9 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                     e
                 );
             }
+            else if (a == w->atoms[RUNES_ATOM_RUNES_FLUSH]) {
+                runes_window_backend_flush(t);
+            }
             break;
         }
         default:
@@ -304,4 +318,12 @@ static void runes_window_backend_resize_window(
         runes_display_set_window_size(t, width, height);
         runes_pty_backend_set_window_size(t);
     }
+}
+
+static void runes_window_backend_flush(RunesTerm *t)
+{
+    cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
+    cairo_paint(t->backend_cr);
+    runes_display_draw_cursor(t);
+    XFlush(t->w.dpy);
 }

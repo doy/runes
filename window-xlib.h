@@ -12,6 +12,7 @@ enum runes_atoms {
     RUNES_ATOM_NET_WM_NAME,
     RUNES_ATOM_UTF8_STRING,
     RUNES_ATOM_WM_PROTOCOLS,
+    RUNES_ATOM_RUNES_FLUSH,
     RUNES_NUM_ATOMS
 };
 
@@ -31,7 +32,7 @@ typedef struct {
 void runes_window_backend_init(RunesTerm *t);
 void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[]);
 cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t);
-void runes_window_backend_flush(RunesTerm *t);
+void runes_window_backend_request_flush(RunesTerm *t);
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel);
 void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len);
 void runes_window_backend_set_window_title(
