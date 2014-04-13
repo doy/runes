@@ -26,7 +26,7 @@ void runes_display_init(RunesTerm *t)
     t->fgcolor = t->colors[7];
     t->bgcolor = t->colors[0];
 
-    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
+    t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
     t->show_cursor = 1;
 
     t->font_name      = "monospace";
