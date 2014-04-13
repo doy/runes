@@ -164,7 +164,7 @@ static void runes_vt100_handle_bel(RunesTerm *t)
 
 static void runes_vt100_handle_bs(RunesTerm *t)
 {
-    runes_display_backspace(t);
+    runes_display_move_to(t, t->row, t->col - 1);
 }
 
 static void runes_vt100_handle_tab(RunesTerm *t)

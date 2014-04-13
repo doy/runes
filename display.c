@@ -185,24 +185,6 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-void runes_display_backspace(RunesTerm *t)
-{
-    double x, y;
-    double fontx, fonty, ascent;
-
-    runes_display_move_to(t, t->row, t->col - 1);
-
-    cairo_save(t->cr);
-    cairo_set_source(t->cr, t->bgcolor);
-    cairo_get_current_point(t->cr, &x, &y);
-    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-    cairo_rectangle(t->cr, x, y - ascent, fontx, fonty);
-    cairo_fill(t->cr);
-    cairo_restore(t->cr);
-
-    runes_display_move_to(t, t->row, t->col);
-}
-
 void runes_display_clear_screen(RunesTerm *t)
 {
     cairo_save(t->cr);
