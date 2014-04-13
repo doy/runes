@@ -214,7 +214,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 break;
             }
 
-            runes_handle_keyboard_event(t, buf, chars);
+            runes_pty_backend_write(t, buf, chars);
             free(buf);
             break;
         }
@@ -255,7 +255,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             runes_window_backend_process_event);
     }
     else {
-        runes_handle_close_window(t);
+        runes_pty_backend_request_close(t);
         free(req);
     }
 }

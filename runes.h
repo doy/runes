@@ -14,7 +14,10 @@ typedef struct runes_window RunesWindowBackend;
 typedef struct runes_pty RunesPtyBackend;
 typedef struct runes_loop_data RunesLoopData;
 
-#include "events.h"
+struct runes_loop_data {
+    uv_work_t req;
+    RunesTerm *t;
+};
 
 #include "window-xlib.h"
 #include "pty-unix.h"

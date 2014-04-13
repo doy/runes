@@ -116,12 +116,12 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
     t = data->data.t;
 
     if (data->len > 0) {
-        runes_handle_pty_read(t, data->buf, data->len);
+        runes_vt100_process_string(t, data->buf, data->len);
         uv_queue_work(
             t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
     }
     else {
-        runes_handle_pty_close(t);
+        runes_window_backend_request_close(t);
         free(req);
     }
 }
