@@ -344,6 +344,7 @@ static void runes_window_backend_init_wm_properties(
     XClassHint class_hints = { "runes", "runes" };
     XWMHints wm_hints;
     XSizeHints normal_hints;
+    double fontx, fonty, ascent;
 
     wm_hints.flags = InputHint | StateHint;
     wm_hints.input = True;
@@ -366,6 +367,9 @@ static void runes_window_backend_init_wm_properties(
 
     runes_window_backend_set_icon_name(t, "runes", 5);
     runes_window_backend_set_window_title(t, "runes", 5);
+
+    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+    XResizeWindow(w->dpy, w->w, fontx * 80, fonty * 24);
 }
 
 static void runes_window_backend_resize_window(

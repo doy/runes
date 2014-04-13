@@ -2,8 +2,6 @@
 
 #include "runes.h"
 
-static void runes_display_get_font_dimensions(
-    RunesTerm *t, double *fontx, double *fonty, double *ascent);
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t);
 
 void runes_display_init(RunesTerm *t)
@@ -89,6 +87,18 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
     if (old_cr) {
         cairo_destroy(old_cr);
     }
+}
+
+void runes_display_get_font_dimensions(
+    RunesTerm *t, double *fontx, double *fonty, double *ascent)
+{
+    cairo_font_extents_t extents;
+
+    cairo_scaled_font_extents(runes_display_make_font(t), &extents);
+
+    *fontx = extents.max_x_advance;
+    *fonty = extents.height;
+    *ascent = extents.ascent;
 }
 
 /* note: this uses the backend cairo context because it should be redrawn every
@@ -297,18 +307,6 @@ void runes_display_show_cursor(RunesTerm *t)
 void runes_display_hide_cursor(RunesTerm *t)
 {
     t->show_cursor = 0;
-}
-
-static void runes_display_get_font_dimensions(
-    RunesTerm *t, double *fontx, double *fonty, double *ascent)
-{
-    cairo_font_extents_t extents;
-
-    cairo_scaled_font_extents(runes_display_make_font(t), &extents);
-
-    *fontx = extents.max_x_advance;
-    *fonty = extents.height;
-    *ascent = extents.ascent;
 }
 
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
