@@ -206,7 +206,7 @@ static void runes_vt100_extract_sm_params(
      * separated by semicolons. */
     buf[len] = '\0';
     *nparams = 0;
-    for (;;) {
+    while ((size_t)(pos - buf) < len) {
         if (*nparams >= RUNES_VT100_CSI_MAX_PARAMS) {
             fprintf(stderr, "max CSI parameter length exceeded\n");
             break;
