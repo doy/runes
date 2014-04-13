@@ -3,11 +3,11 @@
 
 #include "runes.h"
 
-#define RUNES_VT100_CSI_MAX_PARAMS 256
+#define RUNES_PARSER_CSI_MAX_PARAMS 256
 %}
 
 %option reentrant noyywrap nodefault batch
-%option prefix="runes_vt100_yy"
+%option prefix="runes_parser_yy"
 %option extra-type="RunesTerm *"
 
 CTRL [\000-\037\177]
@@ -52,65 +52,65 @@ OSC1 {OSC}1;{TEXT}*{ST}
 OSC2 {OSC}2;{TEXT}*{ST}
 
 %{
-static void runes_vt100_handle_text(RunesTerm *t, char *text, size_t len);
-static void runes_vt100_handle_bel(RunesTerm *t);
-static void runes_vt100_handle_bs(RunesTerm *t);
-static void runes_vt100_handle_tab(RunesTerm *t);
-static void runes_vt100_handle_lf(RunesTerm *t);
-static void runes_vt100_handle_cr(RunesTerm *t);
-static void runes_vt100_handle_ri(RunesTerm *t);
-static void runes_vt100_extract_csi_params(
+static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
+static void runes_parser_handle_bel(RunesTerm *t);
+static void runes_parser_handle_bs(RunesTerm *t);
+static void runes_parser_handle_tab(RunesTerm *t);
+static void runes_parser_handle_lf(RunesTerm *t);
+static void runes_parser_handle_cr(RunesTerm *t);
+static void runes_parser_handle_ri(RunesTerm *t);
+static void runes_parser_extract_csi_params(
     char *buf, size_t len, int *params, int *nparams);
-static void runes_vt100_extract_sm_params(
+static void runes_parser_extract_sm_params(
     char *buf, size_t len, char *modes, int *params, int *nparams);
-static void runes_vt100_handle_cuu(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_cud(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_cuf(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_cub(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_cup(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_ed(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_el(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_sm(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_rm(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_sgr(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_decsed(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_decsel(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_osc0(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_osc1(RunesTerm *t, char *buf, size_t len);
-static void runes_vt100_handle_osc2(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_cuu(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_cud(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_cuf(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_cub(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_cup(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_ed(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_decsel(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_osc0(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_osc1(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 %}
 
 %%
 
-{TEXT}+ runes_vt100_handle_text(yyextra, yytext, yyleng);
+{TEXT}+ runes_parser_handle_text(yyextra, yytext, yyleng);
 
-{BEL} runes_vt100_handle_bel(yyextra);
-{BS}  runes_vt100_handle_bs(yyextra);
-{TAB} runes_vt100_handle_tab(yyextra);
+{BEL} runes_parser_handle_bel(yyextra);
+{BS}  runes_parser_handle_bs(yyextra);
+{TAB} runes_parser_handle_tab(yyextra);
 {LF}  |
 {VT}  |
-{FF}  runes_vt100_handle_lf(yyextra);
-{CR}  runes_vt100_handle_cr(yyextra);
+{FF}  runes_parser_handle_lf(yyextra);
+{CR}  runes_parser_handle_cr(yyextra);
 
-{RI} runes_vt100_handle_ri(yyextra);
+{RI} runes_parser_handle_ri(yyextra);
 
-{CUU} runes_vt100_handle_cuu(yyextra, yytext, yyleng);
-{CUD} runes_vt100_handle_cud(yyextra, yytext, yyleng);
-{CUF} runes_vt100_handle_cuf(yyextra, yytext, yyleng);
-{CUB} runes_vt100_handle_cub(yyextra, yytext, yyleng);
-{CUP} runes_vt100_handle_cup(yyextra, yytext, yyleng);
-{ED}  runes_vt100_handle_ed(yyextra, yytext, yyleng);
-{EL}  runes_vt100_handle_el(yyextra, yytext, yyleng);
-{SM}  runes_vt100_handle_sm(yyextra, yytext, yyleng);
-{RM}  runes_vt100_handle_rm(yyextra, yytext, yyleng);
-{SGR} runes_vt100_handle_sgr(yyextra, yytext, yyleng);
+{CUU} runes_parser_handle_cuu(yyextra, yytext, yyleng);
+{CUD} runes_parser_handle_cud(yyextra, yytext, yyleng);
+{CUF} runes_parser_handle_cuf(yyextra, yytext, yyleng);
+{CUB} runes_parser_handle_cub(yyextra, yytext, yyleng);
+{CUP} runes_parser_handle_cup(yyextra, yytext, yyleng);
+{ED}  runes_parser_handle_ed(yyextra, yytext, yyleng);
+{EL}  runes_parser_handle_el(yyextra, yytext, yyleng);
+{SM}  runes_parser_handle_sm(yyextra, yytext, yyleng);
+{RM}  runes_parser_handle_rm(yyextra, yytext, yyleng);
+{SGR} runes_parser_handle_sgr(yyextra, yytext, yyleng);
 
-{DECSED} runes_vt100_handle_decsed(yyextra, yytext, yyleng);
-{DECSEL} runes_vt100_handle_decsel(yyextra, yytext, yyleng);
+{DECSED} runes_parser_handle_decsed(yyextra, yytext, yyleng);
+{DECSEL} runes_parser_handle_decsel(yyextra, yytext, yyleng);
 
-{OSC0} runes_vt100_handle_osc0(yyextra, yytext, yyleng);
-{OSC1} runes_vt100_handle_osc1(yyextra, yytext, yyleng);
-{OSC2} runes_vt100_handle_osc2(yyextra, yytext, yyleng);
+{OSC0} runes_parser_handle_osc0(yyextra, yytext, yyleng);
+{OSC1} runes_parser_handle_osc1(yyextra, yytext, yyleng);
+{OSC2} runes_parser_handle_osc2(yyextra, yytext, yyleng);
 
 {CSI}[<=?]?{CSIPARAMS}(?s:.) {
     fprintf(
@@ -140,60 +140,60 @@ static void runes_vt100_handle_osc2(RunesTerm *t, char *buf, size_t len);
 
 %%
 
-void runes_vt100_process_string(RunesTerm *t, char *buf, size_t len)
+void runes_parser_process_string(RunesTerm *t, char *buf, size_t len)
 {
     YY_BUFFER_STATE state;
     yyscan_t scanner;
 
     yylex_init_extra(t, &scanner);
-    state = runes_vt100_yy_scan_bytes(buf, len, scanner);
-    runes_vt100_yylex(scanner);
-    runes_vt100_yy_delete_buffer(state, scanner);
+    state = runes_parser_yy_scan_bytes(buf, len, scanner);
+    runes_parser_yylex(scanner);
+    runes_parser_yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
 }
 
-static void runes_vt100_handle_text(RunesTerm *t, char *text, size_t len)
+static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len)
 {
     runes_display_show_string(t, text, len);
 }
 
-static void runes_vt100_handle_bel(RunesTerm *t)
+static void runes_parser_handle_bel(RunesTerm *t)
 {
     /* XXX */
 }
 
-static void runes_vt100_handle_bs(RunesTerm *t)
+static void runes_parser_handle_bs(RunesTerm *t)
 {
     runes_display_move_to(t, t->row, t->col - 1);
 }
 
-static void runes_vt100_handle_tab(RunesTerm *t)
+static void runes_parser_handle_tab(RunesTerm *t)
 {
     runes_display_move_to(t, t->row, t->col - (t->col % 8) + 8);
 }
 
-static void runes_vt100_handle_lf(RunesTerm *t)
+static void runes_parser_handle_lf(RunesTerm *t)
 {
     runes_display_move_to(t, t->row + 1, t->col);
 }
 
-static void runes_vt100_handle_cr(RunesTerm *t)
+static void runes_parser_handle_cr(RunesTerm *t)
 {
     runes_display_move_to(t, t->row, 0);
 }
 
-static void runes_vt100_handle_ri(RunesTerm *t)
+static void runes_parser_handle_ri(RunesTerm *t)
 {
     runes_display_move_to(t, t->row - 1, t->col);
 }
 
-static void runes_vt100_extract_csi_params(
+static void runes_parser_extract_csi_params(
     char *buf, size_t len, int *params, int *nparams)
 {
-    runes_vt100_extract_sm_params(buf, len, NULL, params, nparams);
+    runes_parser_extract_sm_params(buf, len, NULL, params, nparams);
 }
 
-static void runes_vt100_extract_sm_params(
+static void runes_parser_extract_sm_params(
     char *buf, size_t len, char *modes, int *params, int *nparams)
 {
     char tmp = buf[len];
@@ -207,7 +207,7 @@ static void runes_vt100_extract_sm_params(
     buf[len] = '\0';
     *nparams = 0;
     while ((size_t)(pos - buf) < len) {
-        if (*nparams >= RUNES_VT100_CSI_MAX_PARAMS) {
+        if (*nparams >= RUNES_PARSER_CSI_MAX_PARAMS) {
             fprintf(stderr, "max CSI parameter length exceeded\n");
             break;
         }
@@ -233,43 +233,43 @@ static void runes_vt100_extract_sm_params(
     }
 }
 
-static void runes_vt100_handle_cuu(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_cuu(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 1 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     runes_display_move_to(t, t->row - params[0], t->col);
 }
 
-static void runes_vt100_handle_cud(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_cud(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 1 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     runes_display_move_to(t, t->row + params[0], t->col);
 }
 
-static void runes_vt100_handle_cuf(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_cuf(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 1 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     runes_display_move_to(t, t->row, t->col + params[0]);
 }
 
-static void runes_vt100_handle_cub(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_cub(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 1 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     runes_display_move_to(t, t->row, t->col - params[0]);
 }
 
-static void runes_vt100_handle_cup(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_cup(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0, 0 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0, 0 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     if (params[0] == 0) {
         params[0] = 1;
     }
@@ -279,11 +279,11 @@ static void runes_vt100_handle_cup(RunesTerm *t, char *buf, size_t len)
     runes_display_move_to(t, params[0] - 1, params[1] - 1);
 }
 
-static void runes_vt100_handle_ed(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_ed(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     switch (params[0]) {
     case 0:
         runes_display_clear_screen_forward(t);
@@ -301,11 +301,11 @@ static void runes_vt100_handle_ed(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_el(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     switch (params[0]) {
     case 0:
         runes_display_kill_line_forward(t);
@@ -324,12 +324,12 @@ static void runes_vt100_handle_el(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_sm(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS], nparams, i;
-    char modes[RUNES_VT100_CSI_MAX_PARAMS] = { 0 };
+    int params[RUNES_PARSER_CSI_MAX_PARAMS], nparams, i;
+    char modes[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 };
 
-    runes_vt100_extract_sm_params(buf + 2, len - 3, modes, params, &nparams);
+    runes_parser_extract_sm_params(buf + 2, len - 3, modes, params, &nparams);
     for (i = 0; i < nparams; ++i) {
         switch (modes[i]) {
         case '?':
@@ -353,12 +353,12 @@ static void runes_vt100_handle_sm(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_rm(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS], nparams, i;
-    char modes[RUNES_VT100_CSI_MAX_PARAMS] = { 0 };
+    int params[RUNES_PARSER_CSI_MAX_PARAMS], nparams, i;
+    char modes[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 };
 
-    runes_vt100_extract_sm_params(buf + 2, len - 3, modes, params, &nparams);
+    runes_parser_extract_sm_params(buf + 2, len - 3, modes, params, &nparams);
     for (i = 0; i < nparams; ++i) {
         switch (modes[i]) {
         case '?':
@@ -382,11 +382,11 @@ static void runes_vt100_handle_rm(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_sgr(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0 }, nparams, i;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams, i;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     if (nparams < 1) {
         nparams = 1;
     }
@@ -434,11 +434,11 @@ static void runes_vt100_handle_sgr(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_decsed(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     switch (params[0]) {
     case 0:
         /* XXX not quite correct */
@@ -458,11 +458,11 @@ static void runes_vt100_handle_decsed(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_decsel(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_decsel(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_VT100_CSI_MAX_PARAMS] = { 0 }, nparams;
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams;
 
-    runes_vt100_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     switch (params[0]) {
     case 0:
         /* XXX not quite correct */
@@ -482,18 +482,18 @@ static void runes_vt100_handle_decsel(RunesTerm *t, char *buf, size_t len)
     }
 }
 
-static void runes_vt100_handle_osc0(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_osc0(RunesTerm *t, char *buf, size_t len)
 {
     runes_window_backend_set_icon_name(t, buf + 4, len - 5);
     runes_window_backend_set_window_title(t, buf + 4, len - 5);
 }
 
-static void runes_vt100_handle_osc1(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_osc1(RunesTerm *t, char *buf, size_t len)
 {
     runes_window_backend_set_icon_name(t, buf + 4, len - 5);
 }
 
-static void runes_vt100_handle_osc2(RunesTerm *t, char *buf, size_t len)
+static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len)
 {
     runes_window_backend_set_window_title(t, buf + 4, len - 5);
 }
