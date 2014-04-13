@@ -165,6 +165,7 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
         cairo_set_source(t->cr, t->bgcolor);
         cairo_get_current_point(t->cr, &x, &y);
         runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+        /* XXX broken with utf8 */
         cairo_rectangle(t->cr, x, y - ascent, fontx * len, fonty);
         cairo_fill(t->cr);
         cairo_restore(t->cr);
@@ -181,6 +182,7 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
             cairo_restore(t->cr);
         }
 
+        /* XXX broken with utf8 */
         t->col += len;
     }
 }

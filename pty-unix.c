@@ -43,6 +43,8 @@ void runes_pty_backend_init(RunesTerm *t)
             shell = "/bin/sh";
         }
 
+        /* XXX should use a different TERM value eventually, but for right now
+         * screen is compatible enough */
         setenv("TERM", "screen", 1);
         unsetenv("LINES");
         unsetenv("COLUMNS");
