@@ -112,7 +112,7 @@ static void runes_vt100_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {OSC1} runes_vt100_handle_osc1(yyextra, yytext, yyleng);
 {OSC2} runes_vt100_handle_osc2(yyextra, yytext, yyleng);
 
-{CSI}\??{CSIPARAMS}(?s:.) {
+{CSI}[<=?]?{CSIPARAMS}(?s:.) {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
