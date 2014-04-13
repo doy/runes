@@ -122,16 +122,24 @@ void runes_display_move_to(RunesTerm *t, int row, int col)
 void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
 {
     if (len) {
+        double x, y;
+        double fontx, fonty, ascent;
+
         buf[len] = '\0';
+
+        cairo_save(t->cr);
+        cairo_set_source(t->cr, t->bgcolor);
+        cairo_get_current_point(t->cr, &x, &y);
+        runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+        cairo_rectangle(t->cr, x, y - ascent, fontx * len, fonty);
+        cairo_fill(t->cr);
+        cairo_restore(t->cr);
+
+        cairo_move_to(t->cr, x, y);
         cairo_show_text(t->cr, buf);
 
         if (t->font_underline) {
-            double x, y;
-            double fontx, fonty, ascent;
-
             cairo_save(t->cr);
-            cairo_get_current_point(t->cr, &x, &y);
-            runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
             cairo_set_line_width(t->cr, 1);
             cairo_move_to(
                  t->cr, x - (fontx * strlen(buf)), y - ascent + fonty - 0.5);
@@ -142,7 +150,7 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
             runes_display_move_to(t, t->row, t->col);
         }
 
-        t->col += strlen(buf);
+        t->col += len;
         /* we have to flush manually because XNextEvent (which normally handles
          * flushing) will most likely be called again before the keystroke is
          * handled */
