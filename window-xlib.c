@@ -214,7 +214,25 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 break;
             }
 
-            runes_pty_backend_write(t, buf, chars);
+            if (chars) {
+                runes_pty_backend_write(t, buf, chars);
+            }
+            else if (sym) {
+                switch (sym) {
+                case XK_Up:
+                    runes_pty_backend_write(t, "\e[A", 3);
+                    break;
+                case XK_Down:
+                    runes_pty_backend_write(t, "\e[B", 3);
+                    break;
+                case XK_Right:
+                    runes_pty_backend_write(t, "\e[C", 3);
+                    break;
+                case XK_Left:
+                    runes_pty_backend_write(t, "\e[D", 3);
+                    break;
+                }
+            }
             free(buf);
             break;
         }
