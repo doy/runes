@@ -4,8 +4,6 @@ LIBS     = cairo cairo-xlib libuv
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
 
-GENERATED = parser.c
-
 build: $(OUT)
 
 $(OUT): $(OBJ)
@@ -18,6 +16,6 @@ $(OUT): $(OBJ)
 	$(LEX) -o $@ $^
 
 clean:
-	rm -f $(OUT) $(OBJ) $(GENERATED)
+	rm -f $(OUT) $(OBJ)
 
 .PHONY: build clean
