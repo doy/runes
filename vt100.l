@@ -124,8 +124,14 @@ static void runes_vt100_handle_osc2(RunesTerm *t, char *buf, size_t len);
         (int)yyleng - 1, yytext + 1);
 }
 
-{ESC} {
-    fprintf(stderr, "unhandled escape sequence\n");
+{ESC}{CTRL} {
+    fprintf(stderr, "unhandled escape sequence: \\%hho\n", yytext[1]);
+    yyless(1);
+}
+
+{ESC}{TEXT} {
+    fprintf(stderr, "unhandled escape sequence: %c\n", yytext[1]);
+    yyless(1);
 }
 
 {CTRL} {
