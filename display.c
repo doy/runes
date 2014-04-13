@@ -84,8 +84,6 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
     if (old_cr) {
         cairo_destroy(old_cr);
     }
-
-    runes_window_backend_request_flush(t);
 }
 
 /* note: this uses the backend cairo context because it should be redrawn every
@@ -150,10 +148,6 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
         }
 
         t->col += len;
-        /* we have to flush manually because XNextEvent (which normally handles
-         * flushing) will most likely be called again before the keystroke is
-         * handled */
-        runes_window_backend_request_flush(t);
     }
 }
 
@@ -170,7 +164,6 @@ void runes_display_backspace(RunesTerm *t)
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
     cairo_rectangle(t->cr, x, y - ascent, fontx, fonty);
     cairo_fill(t->cr);
-    runes_window_backend_request_flush(t);
     cairo_restore(t->cr);
 
     runes_display_move_to(t, t->row, t->col);
@@ -181,7 +174,6 @@ void runes_display_clear_screen(RunesTerm *t)
     cairo_save(t->cr);
     cairo_set_source(t->cr, t->bgcolor);
     cairo_paint(t->cr);
-    runes_window_backend_request_flush(t);
     cairo_restore(t->cr);
 
     runes_display_move_to(t, t->row, t->col);
@@ -203,7 +195,6 @@ void runes_display_clear_screen_forward(RunesTerm *t)
         0,         y - ascent + fonty,
         t->xpixel, t->ypixel - y + ascent - fonty);
     cairo_fill(t->cr);
-    runes_window_backend_request_flush(t);
     cairo_restore(t->cr);
 
     runes_display_move_to(t, t->row, t->col);
@@ -220,7 +211,6 @@ void runes_display_kill_line_forward(RunesTerm *t)
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
     cairo_rectangle(t->cr, x, y - ascent, t->xpixel - x, fonty);
     cairo_fill(t->cr);
-    runes_window_backend_request_flush(t);
     cairo_restore(t->cr);
 
     runes_display_move_to(t, t->row, t->col);

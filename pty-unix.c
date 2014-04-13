@@ -102,6 +102,7 @@ static void runes_pty_backend_read(uv_work_t *req)
     RunesPtyLoopData *data;
 
     data = (RunesPtyLoopData *)req->data;
+    runes_window_backend_request_flush(data->data.t);
     data->len = read(
         data->data.t->pty.master, data->buf, RUNES_PTY_BUFFER_LENGTH);
 }
