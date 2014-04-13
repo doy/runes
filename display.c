@@ -125,6 +125,8 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
 
         buf[len] = '\0';
 
+        runes_display_move_to(t, t->row, t->col);
+
         cairo_save(t->cr);
         cairo_set_source(t->cr, t->bgcolor);
         cairo_get_current_point(t->cr, &x, &y);
@@ -143,8 +145,6 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
             cairo_line_to(t->cr, x + (fontx * len), y - ascent + fonty - 0.5);
             cairo_stroke(t->cr);
             cairo_restore(t->cr);
-
-            runes_display_move_to(t, t->row, t->col);
         }
 
         t->col += len;
@@ -204,6 +204,8 @@ void runes_display_kill_line_forward(RunesTerm *t)
 {
     double x, y;
     double fontx, fonty, ascent;
+
+    runes_display_move_to(t, t->row, t->col);
 
     cairo_save(t->cr);
     cairo_set_source(t->cr, t->bgcolor);
