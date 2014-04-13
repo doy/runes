@@ -352,5 +352,5 @@ static void runes_window_backend_flush(RunesTerm *t)
     cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
     cairo_paint(t->backend_cr);
     runes_display_draw_cursor(t);
-    XFlush(t->w.dpy);
+    cairo_surface_flush(cairo_get_target(t->backend_cr));
 }
