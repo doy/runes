@@ -350,8 +350,19 @@ static void runes_window_backend_init_wm_properties(
     wm_hints.input = True;
     wm_hints.initial_state = NormalState;
 
-    /* XXX */
-    normal_hints.flags = 0;
+    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+
+    normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
+
+    normal_hints.min_width   = fontx;
+    normal_hints.min_height  = fonty;
+    normal_hints.width_inc   = fontx;
+    normal_hints.height_inc  = fonty;
+    normal_hints.base_width  = fontx * 80;
+    normal_hints.base_height = fonty * 24;
+
+    XResizeWindow(
+        w->dpy, w->w, normal_hints.base_width, normal_hints.base_height);
 
     XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
     XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
@@ -367,9 +378,6 @@ static void runes_window_backend_init_wm_properties(
 
     runes_window_backend_set_icon_name(t, "runes", 5);
     runes_window_backend_set_window_title(t, "runes", 5);
-
-    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-    XResizeWindow(w->dpy, w->w, fontx * 80, fonty * 24);
 }
 
 static void runes_window_backend_resize_window(
