@@ -4,9 +4,12 @@
 #include "runes.h"
 
 #define RUNES_PARSER_CSI_MAX_PARAMS 256
+
+#define YY_EXIT_FAILURE (UNUSED(yyscanner), 2)
 %}
 
-%option reentrant noyywrap nodefault batch
+%option reentrant nodefault batch
+%option noyywrap nounput noinput noyyalloc noyyrealloc noyyfree
 %option prefix="runes_parser_yy"
 %option extra-type="RunesTerm *"
 
@@ -160,6 +163,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len)
 static void runes_parser_handle_bel(RunesTerm *t)
 {
     /* XXX */
+    UNUSED(t);
 }
 
 static void runes_parser_handle_bs(RunesTerm *t)
@@ -196,7 +200,6 @@ static void runes_parser_extract_csi_params(
 static void runes_parser_extract_sm_params(
     char *buf, size_t len, char *modes, int *params, int *nparams)
 {
-    char tmp = buf[len];
     char *pos = buf;
 
     /* this assumes that it will only ever be called on a fully matched CSI
@@ -496,4 +499,24 @@ static void runes_parser_handle_osc1(RunesTerm *t, char *buf, size_t len)
 static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len)
 {
     runes_window_backend_set_window_title(t, buf + 4, len - 5);
+}
+
+/* XXX these are copied from the generated file so that I can add the UNUSED
+ * declarations, otherwise we get compilation errors */
+void *runes_parser_yyalloc(yy_size_t size, yyscan_t yyscanner)
+{
+    UNUSED(yyscanner);
+    return (void *)malloc(size);
+}
+
+void *runes_parser_yyrealloc(void *ptr, yy_size_t size, yyscan_t yyscanner)
+{
+    UNUSED(yyscanner);
+    return (void *)realloc((char *)ptr, size);
+}
+
+void runes_parser_yyfree(void *ptr, yyscan_t yyscanner)
+{
+    UNUSED(yyscanner);
+    free((char *) ptr);
 }

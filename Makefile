@@ -11,9 +11,6 @@ build: $(OUT)
 $(OUT): $(OBJ)
 	$(CC) $(shell pkg-config --libs $(LIBS)) $(LDFLAGS) -o $@ $^
 
-parser.o: parser.c
-	$(CC) $(shell pkg-config --cflags $(LIBS)) $(CFLAGS) -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wno-unused-value -c -o $@ $^
-
 %.o: %.c
 	$(CC) $(shell pkg-config --cflags $(LIBS)) $(CFLAGS) -c -o $@ $^
 
