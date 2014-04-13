@@ -312,6 +312,15 @@ static void runes_window_backend_init_wm_properties(
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height)
 {
+    /* XXX no idea why shrinking the window dimensions to 0 makes xlib think
+     * that the dimension is 65535 */
+    if (width < 1 || width >= 65535) {
+        width = 1;
+    }
+    if (height < 1 || height >= 65535) {
+        height = 1;
+    }
+
     if (width != t->xpixel || height != t->ypixel) {
         cairo_xlib_surface_set_size(
             cairo_get_target(t->backend_cr), width, height);
