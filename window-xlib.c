@@ -109,7 +109,8 @@ void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
     XSelectInput(
-        w->dpy, w->w, mask|KeyPressMask|StructureNotifyMask|ExposureMask);
+        w->dpy, w->w,
+        mask|KeyPressMask|StructureNotifyMask|ExposureMask|FocusChangeMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
@@ -284,6 +285,14 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             while (XCheckTypedWindowEvent(w->dpy, w->w, ConfigureNotify, e));
             runes_window_backend_resize_window(
                 t, e->xconfigure.width, e->xconfigure.height);
+            break;
+        case FocusIn:
+            runes_display_focus_in(t);
+            runes_window_backend_flush(t);
+            break;
+        case FocusOut:
+            runes_display_focus_out(t);
+            runes_window_backend_flush(t);
             break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];

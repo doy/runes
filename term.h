@@ -20,6 +20,7 @@ struct runes_term {
     char font_underline;
 
     char show_cursor;
+    char focused;
 
     cairo_pattern_t *colors[8];
 

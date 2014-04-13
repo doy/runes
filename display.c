@@ -26,6 +26,7 @@ void runes_display_init(RunesTerm *t)
 
     t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
     t->show_cursor = 1;
+    t->focused = 1;
 
     t->font_name      = "monospace";
     t->font_size      = 14.0;
@@ -114,10 +115,28 @@ void runes_display_draw_cursor(RunesTerm *t)
         runes_display_move_to(t, t->row, t->col);
         cairo_get_current_point(t->cr, &x, &y);
         runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-        cairo_rectangle(t->backend_cr, x, y - ascent, fontx, fonty);
-        cairo_fill(t->backend_cr);
+        if (t->focused) {
+            cairo_rectangle(t->backend_cr, x, y - ascent, fontx, fonty);
+            cairo_fill(t->backend_cr);
+        }
+        else {
+            cairo_set_line_width(t->backend_cr, 1);
+            cairo_rectangle(
+                t->backend_cr, x + 0.5, y - ascent + 0.5, fontx, fonty);
+            cairo_stroke(t->backend_cr);
+        }
         cairo_restore(t->backend_cr);
     }
+}
+
+void runes_display_focus_in(RunesTerm *t)
+{
+    t->focused = 1;
+}
+
+void runes_display_focus_out(RunesTerm *t)
+{
+    t->focused = 0;
 }
 
 void runes_display_move_to(RunesTerm *t, int row, int col)
