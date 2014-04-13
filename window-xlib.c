@@ -96,8 +96,6 @@ void runes_window_backend_init(RunesTerm *t)
         fprintf(stderr, "failed\n");
         exit(1);
     }
-
-    runes_window_backend_map_window(t);
 }
 
 void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
@@ -107,6 +105,7 @@ void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
     void *data;
 
     runes_window_backend_init_wm_properties(t, argc, argv);
+    runes_window_backend_map_window(t);
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
     XSelectInput(
