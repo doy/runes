@@ -14,16 +14,6 @@ struct runes_term {
     cairo_pattern_t *fgcolor;
     cairo_pattern_t *cursorcolor;
 
-    char *font_name;
-    double font_size;
-    char font_italic;
-    char font_bold;
-    char font_underline;
-
-    char show_cursor;
-    char focused;
-    char alternate;
-
     cairo_pattern_t *colors[8];
 
     int row;
@@ -35,6 +25,16 @@ struct runes_term {
     int cols;
     int xpixel;
     int ypixel;
+
+    char *font_name;
+    double font_size;
+    char font_italic;
+    char font_bold;
+    char font_underline;
+
+    char show_cursor;
+    char focused;
+    char alternate;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);
