@@ -119,7 +119,7 @@ void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
     XSelectInput(
         w->dpy, w->w,
-        mask|KeyPressMask|StructureNotifyMask|ExposureMask|FocusChangeMask);
+        mask|KeyPressMask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|StructureNotifyMask|ExposureMask|FocusChangeMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
