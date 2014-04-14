@@ -2108,6 +2108,9 @@ void runes_parser_process_string(RunesTerm *t, char *buf, size_t len)
     YY_BUFFER_STATE state;
     yyscan_t scanner;
 
+    /* XXX this will break if buf ends with a partial escape sequence or utf8
+     * character. we need to detect that and not consume the entire input in
+     * that case */
     runes_parser_yylex_init_extra(t,&scanner);
     state = runes_parser_yy_scan_bytes(buf, len, scanner);
     runes_parser_yylex(scanner);
