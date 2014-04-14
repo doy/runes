@@ -27,5 +27,7 @@ void runes_display_reset_bg_color(RunesTerm *t);
 void runes_display_show_cursor(RunesTerm *t);
 void runes_display_hide_cursor(RunesTerm *t);
 void runes_display_visual_bell(RunesTerm *t);
+void runes_display_save_cursor(RunesTerm *t);
+void runes_display_restore_cursor(RunesTerm *t);
 
 #endif

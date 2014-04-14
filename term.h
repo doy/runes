@@ -26,6 +26,8 @@ struct runes_term {
 
     int row;
     int col;
+    int saved_row;
+    int saved_col;
 
     int rows;
     int cols;

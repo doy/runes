@@ -40,6 +40,7 @@ void runes_display_init(RunesTerm *t)
 
     runes_display_reset_text_attributes(t);
     runes_display_move_to(t, 0, 0);
+    runes_display_save_cursor(t);
 }
 
 void runes_display_set_window_size(RunesTerm *t, int width, int height)
@@ -315,6 +316,19 @@ void runes_display_hide_cursor(RunesTerm *t)
 void runes_display_visual_bell(RunesTerm *t)
 {
     runes_window_backend_visual_bell(t);
+}
+
+void runes_display_save_cursor(RunesTerm *t)
+{
+    t->saved_row = t->row;
+    t->saved_col = t->col;
+    /* XXX do other stuff here? */
+}
+
+void runes_display_restore_cursor(RunesTerm *t)
+{
+    t->row = t->saved_row;
+    t->col = t->saved_col;
 }
 
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)

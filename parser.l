@@ -26,9 +26,11 @@ FF  \014
 CR  \015
 ESC \033
 
-CSI {ESC}\[
-OSC {ESC}\]
-RI  {ESC}M
+CSI   {ESC}\[
+OSC   {ESC}\]
+RI    {ESC}M
+DECSC {ESC}7
+DECRC {ESC}8
 
 DECCSI    {CSI}\?
 CSIPARAM1 ([0-9]+)?
@@ -62,6 +64,8 @@ static void runes_parser_handle_tab(RunesTerm *t);
 static void runes_parser_handle_lf(RunesTerm *t);
 static void runes_parser_handle_cr(RunesTerm *t);
 static void runes_parser_handle_ri(RunesTerm *t);
+static void runes_parser_handle_decsc(RunesTerm *t);
+static void runes_parser_handle_decrc(RunesTerm *t);
 static void runes_parser_extract_csi_params(
     char *buf, size_t len, int *params, int *nparams);
 static void runes_parser_extract_sm_params(
@@ -96,6 +100,8 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {CR}  runes_parser_handle_cr(yyextra);
 
 {RI} runes_parser_handle_ri(yyextra);
+{DECSC} runes_parser_handle_decsc(yyextra);
+{DECRC} runes_parser_handle_decrc(yyextra);
 
 {CUU} runes_parser_handle_cuu(yyextra, yytext, yyleng);
 {CUD} runes_parser_handle_cud(yyextra, yytext, yyleng);
@@ -192,6 +198,16 @@ static void runes_parser_handle_cr(RunesTerm *t)
 static void runes_parser_handle_ri(RunesTerm *t)
 {
     runes_display_move_to(t, t->row - 1, t->col);
+}
+
+static void runes_parser_handle_decsc(RunesTerm *t)
+{
+    runes_display_save_cursor(t);
+}
+
+static void runes_parser_handle_decrc(RunesTerm *t)
+{
+    runes_display_restore_cursor(t);
 }
 
 static void runes_parser_extract_csi_params(
