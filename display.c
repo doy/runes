@@ -12,6 +12,7 @@ void runes_display_init(RunesTerm *t)
     runes_window_backend_get_size(t, &x, &y);
 
     t->cr = NULL;
+    t->alternate_cr = NULL;
 
     t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
     t->colors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
@@ -329,6 +330,38 @@ void runes_display_restore_cursor(RunesTerm *t)
 {
     t->row = t->saved_row;
     t->col = t->saved_col;
+}
+
+void runes_display_use_alternate_buffer(RunesTerm *t)
+{
+    int x, y;
+
+    if (t->alternate) {
+        return;
+    }
+
+    runes_display_save_cursor(t);
+    t->alternate = 1;
+    t->alternate_cr = t->cr;
+    t->cr = NULL;
+    x = t->xpixel;
+    y = t->ypixel;
+    t->xpixel = -1;
+    t->ypixel = -1;
+    runes_display_set_window_size(t, x, y);
+}
+
+void runes_display_use_normal_buffer(RunesTerm *t)
+{
+    if (!t->alternate) {
+        return;
+    }
+
+    runes_display_restore_cursor(t);
+    t->alternate = 0;
+    cairo_destroy(t->cr);
+    t->cr = t->alternate_cr;
+    t->alternate_cr = NULL;
 }
 
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)

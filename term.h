@@ -7,6 +7,7 @@ struct runes_term {
 
     cairo_t *cr;
     cairo_t *backend_cr;
+    cairo_t *alternate_cr;
     uv_loop_t *loop;
 
     cairo_pattern_t *bgcolor;
@@ -21,6 +22,7 @@ struct runes_term {
 
     char show_cursor;
     char focused;
+    char alternate;
 
     cairo_pattern_t *colors[8];
 

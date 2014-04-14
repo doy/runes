@@ -29,5 +29,7 @@ void runes_display_hide_cursor(RunesTerm *t);
 void runes_display_visual_bell(RunesTerm *t);
 void runes_display_save_cursor(RunesTerm *t);
 void runes_display_restore_cursor(RunesTerm *t);
+void runes_display_use_alternate_buffer(RunesTerm *t);
+void runes_display_use_normal_buffer(RunesTerm *t);
 
 #endif

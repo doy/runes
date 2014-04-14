@@ -2330,6 +2330,9 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
             case 25:
                 runes_display_show_cursor(t);
                 break;
+            case 1049:
+                runes_display_use_alternate_buffer(t);
+                break;
             default:
                 fprintf(
                     stderr, "unknown SM parameter: %c%d\n",
@@ -2358,6 +2361,9 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
             switch (params[i]) {
             case 25:
                 runes_display_hide_cursor(t);
+                break;
+            case 1049:
+                runes_display_use_normal_buffer(t);
                 break;
             default:
                 fprintf(
