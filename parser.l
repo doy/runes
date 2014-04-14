@@ -171,8 +171,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len)
 
 static void runes_parser_handle_bel(RunesTerm *t)
 {
-    /* XXX */
-    UNUSED(t);
+    runes_display_visual_bell(t);
 }
 
 static void runes_parser_handle_bs(RunesTerm *t)
