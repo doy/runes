@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <X11/cursorfont.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
@@ -73,6 +74,8 @@ void runes_window_backend_init(RunesTerm *t)
     RunesWindowBackend *w = &t->w;
     unsigned long white;
     XIM im;
+    Cursor cursor;
+    XColor cursor_fg, cursor_bg;
 
     XInitThreads();
 
@@ -96,6 +99,12 @@ void runes_window_backend_init(RunesTerm *t)
         fprintf(stderr, "failed\n");
         exit(1);
     }
+
+    cursor = XCreateFontCursor(w->dpy, XC_xterm);
+    cursor_fg.red = cursor_fg.green = cursor_fg.blue = 65535;
+    cursor_bg.red = cursor_bg.green = cursor_bg.blue = 0;
+    XRecolorCursor(w->dpy, cursor, &cursor_fg, &cursor_bg);
+    XDefineCursor(w->dpy, w->w, cursor);
 }
 
 void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
