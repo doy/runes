@@ -26,5 +26,6 @@ void runes_display_set_bg_color(RunesTerm *t, cairo_pattern_t *color);
 void runes_display_reset_bg_color(RunesTerm *t);
 void runes_display_show_cursor(RunesTerm *t);
 void runes_display_hide_cursor(RunesTerm *t);
+void runes_display_visual_bell(RunesTerm *t);
 
 #endif

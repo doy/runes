@@ -37,6 +37,7 @@ void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel);
 void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len);
 void runes_window_backend_set_window_title(
     RunesTerm *t, char *name, size_t len);
+void runes_window_backend_visual_bell(RunesTerm *t);
 void runes_window_backend_request_close(RunesTerm *t);
 void runes_window_backend_cleanup(RunesTerm *t);
 

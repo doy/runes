@@ -197,6 +197,16 @@ void runes_window_backend_set_window_title(
         (unsigned char *)name, len);
 }
 
+void runes_window_backend_visual_bell(RunesTerm *t)
+{
+    cairo_pattern_t *white;
+
+    white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+    cairo_set_source(t->backend_cr, white);
+    cairo_paint(t->backend_cr);
+    runes_window_backend_flush(t);
+}
+
 void runes_window_backend_request_close(RunesTerm *t)
 {
     XEvent e;

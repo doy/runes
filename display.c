@@ -312,6 +312,11 @@ void runes_display_hide_cursor(RunesTerm *t)
     t->show_cursor = 0;
 }
 
+void runes_display_visual_bell(RunesTerm *t)
+{
+    runes_window_backend_visual_bell(t);
+}
+
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
 {
     cairo_font_face_t *font_face;
