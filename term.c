@@ -9,15 +9,13 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
      * spawning threads) when that is initialized, and i'm not really sure how
      * that interacts with forking */
     runes_pty_backend_init(t);
-
-    t->loop = uv_default_loop();
-
     runes_window_backend_init(t);
 
     runes_display_init(t);
+    t->loop = uv_default_loop();
 
-    runes_window_backend_loop_init(t, argc, argv);
     runes_pty_backend_loop_init(t);
+    runes_window_backend_loop_init(t, argc, argv);
 }
 
 void runes_term_cleanup(RunesTerm *t)
