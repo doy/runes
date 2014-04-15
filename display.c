@@ -14,6 +14,7 @@ void runes_display_init(RunesTerm *t)
 
     t->cr = NULL;
     t->alternate_cr = NULL;
+    t->alternate = 0;
 
     t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
     t->colors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
