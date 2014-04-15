@@ -385,6 +385,8 @@ void runes_display_use_alternate_buffer(RunesTerm *t)
 
 void runes_display_use_normal_buffer(RunesTerm *t)
 {
+    int x, y;
+
     if (!t->alternate) {
         return;
     }
@@ -394,6 +396,10 @@ void runes_display_use_normal_buffer(RunesTerm *t)
     cairo_destroy(t->cr);
     t->cr = t->alternate_cr;
     t->alternate_cr = NULL;
+    t->xpixel = -1;
+    t->ypixel = -1;
+    runes_window_backend_get_size(t, &x, &y);
+    runes_display_set_window_size(t, x, y);
 }
 
 void runes_display_set_scroll_region(
