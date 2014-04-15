@@ -27,6 +27,9 @@ struct runes_term {
     int cols;
     int xpixel;
     int ypixel;
+    int fontx;
+    int fonty;
+    int ascent;
 
     char *font_name;
     double font_size;

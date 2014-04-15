@@ -4,8 +4,6 @@
 void runes_display_init(RunesTerm *t);
 void runes_display_post_init(RunesTerm *t);
 void runes_display_set_window_size(RunesTerm *t, int width, int height);
-void runes_display_get_font_dimensions(
-    RunesTerm *t, double *fontx, double *fonty, double *ascent);
 void runes_display_draw_cursor(RunesTerm *t);
 void runes_display_focus_in(RunesTerm *t);
 void runes_display_focus_out(RunesTerm *t);

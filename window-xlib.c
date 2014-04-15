@@ -372,22 +372,19 @@ static void runes_window_backend_init_wm_properties(
     XClassHint class_hints = { "runes", "runes" };
     XWMHints wm_hints;
     XSizeHints normal_hints;
-    double fontx, fonty, ascent;
 
     wm_hints.flags = InputHint | StateHint;
     wm_hints.input = True;
     wm_hints.initial_state = NormalState;
 
-    runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-
     normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
 
-    normal_hints.min_width   = fontx;
-    normal_hints.min_height  = fonty;
-    normal_hints.width_inc   = fontx;
-    normal_hints.height_inc  = fonty;
-    normal_hints.base_width  = fontx * 80;
-    normal_hints.base_height = fonty * 24;
+    normal_hints.min_width   = t->fontx;
+    normal_hints.min_height  = t->fonty;
+    normal_hints.width_inc   = t->fontx;
+    normal_hints.height_inc  = t->fonty;
+    normal_hints.base_width  = t->fontx * 80;
+    normal_hints.base_height = t->fonty * 24;
 
     XResizeWindow(
         w->dpy, w->w, normal_hints.base_width, normal_hints.base_height);
