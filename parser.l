@@ -124,13 +124,25 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {OSC1} runes_parser_handle_osc1(yyextra, yytext, yyleng);
 {OSC2} runes_parser_handle_osc2(yyextra, yytext, yyleng);
 
-{CSI}[<=?]?{CSIPARAMS}(?s:.) {
+{CSI}[<=?]?{CSIPARAMS}{CTRL} {
+    fprintf(
+        stderr, "unhandled CSI sequence: \\033%*s\\%hho\n",
+        (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
+}
+
+{CSI}[<=?]?{CSIPARAMS}{TEXT} {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
 }
 
-{OSC}(?s:.) {
+{OSC}{CTRL} {
+    fprintf(
+        stderr, "unhandled OSC sequence: \\033%*s\\%hho\n",
+        (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
+}
+
+{OSC}{TEXT} {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
