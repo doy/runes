@@ -465,6 +465,7 @@ static void runes_display_scroll_down(RunesTerm *t, int rows)
     runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
 
     cairo_save(t->cr);
+    cairo_push_group(t->cr);
     cairo_set_source_surface(
         t->cr, cairo_get_target(t->cr), 0.0, -rows * fonty);
     if (t->scroll_top == 0 && t->scroll_bottom == t->rows - 1) {
@@ -477,6 +478,8 @@ static void runes_display_scroll_down(RunesTerm *t, int rows)
             t->xpixel, (t->scroll_bottom - t->scroll_top) * fonty);
         cairo_fill(t->cr);
     }
+    cairo_pop_group_to_source(t->cr);
+    cairo_paint(t->cr);
     cairo_set_source(t->cr, t->colors[0]);
     cairo_rectangle(
         t->cr,
