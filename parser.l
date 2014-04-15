@@ -47,6 +47,7 @@ CUB {CSI}{CSIPARAM1}D
 CUP {CSI}{CSIPARAM2}H
 ED  {CSI}{CSIPARAM1}J
 EL  {CSI}{CSIPARAM1}K
+IL  {CSI}{CSIPARAM1}L
 SM  {CSI}{SMPARAMS}h
 RM  {CSI}{SMPARAMS}l
 SGR {CSI}{CSIPARAMS}m
@@ -81,6 +82,7 @@ static void runes_parser_handle_cub(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_cup(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_ed(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_il(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len);
@@ -116,6 +118,7 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {CUP} runes_parser_handle_cup(yyextra, yytext, yyleng);
 {ED}  runes_parser_handle_ed(yyextra, yytext, yyleng);
 {EL}  runes_parser_handle_el(yyextra, yytext, yyleng);
+{IL}  runes_parser_handle_il(yyextra, yytext, yyleng);
 {SM}  runes_parser_handle_sm(yyextra, yytext, yyleng);
 {RM}  runes_parser_handle_rm(yyextra, yytext, yyleng);
 {SGR} runes_parser_handle_sgr(yyextra, yytext, yyleng);
@@ -367,6 +370,14 @@ static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len)
         fprintf(stderr, "unknown EL parameter %d\n", params[0]);
         break;
     }
+}
+
+static void runes_parser_handle_il(RunesTerm *t, char *buf, size_t len)
+{
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
+
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_display_scroll_up(t, params[0]);
 }
 
 static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)

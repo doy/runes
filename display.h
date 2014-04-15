@@ -34,5 +34,6 @@ void runes_display_use_alternate_buffer(RunesTerm *t);
 void runes_display_use_normal_buffer(RunesTerm *t);
 void runes_display_set_scroll_region(
     RunesTerm *t, int top, int bottom, int left, int right);
+void runes_display_scroll_up(RunesTerm *t, int rows);
 
 #endif
