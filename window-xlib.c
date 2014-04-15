@@ -391,6 +391,8 @@ static void runes_window_backend_init_wm_properties(
 
     XResizeWindow(
         w->dpy, w->w, normal_hints.base_width, normal_hints.base_height);
+    runes_window_backend_resize_window(
+        t, normal_hints.base_width, normal_hints.base_height);
 
     XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
     XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);

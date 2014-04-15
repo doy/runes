@@ -16,6 +16,7 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
 
     runes_pty_backend_loop_init(t);
     runes_window_backend_loop_init(t, argc, argv);
+    runes_display_post_init(t);
 }
 
 void runes_term_cleanup(RunesTerm *t)

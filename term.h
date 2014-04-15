@@ -20,6 +20,8 @@ struct runes_term {
     int col;
     int saved_row;
     int saved_col;
+    int scroll_top;
+    int scroll_bottom;
 
     int rows;
     int cols;

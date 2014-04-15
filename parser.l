@@ -33,11 +33,12 @@ VB    {ESC}g
 DECSC {ESC}7
 DECRC {ESC}8
 
-DECCSI    {CSI}\?
-CSIPARAM1 ([0-9]+)?
-CSIPARAM2 ([0-9]+(;[0-9]+)?)?
-CSIPARAMS ([0-9]+(;[0-9]+)*)?
-SMPARAMS  ([<=?]?[0-9]+(;[<=?]?[0-9]+)*)?
+DECCSI     {CSI}\?
+CSIPARAM1  ([0-9]+)?
+CSIPARAM2  ([0-9]+(;[0-9]+)?)?
+CSIPARAM24 ([0-9]+(;[0-9]+){1,3})?
+CSIPARAMS  ([0-9]+(;[0-9]+)*)?
+SMPARAMS   ([<=?]?[0-9]+(;[<=?]?[0-9]+)*)?
 
 CUU {CSI}{CSIPARAM1}A
 CUD {CSI}{CSIPARAM1}B
@@ -49,6 +50,7 @@ EL  {CSI}{CSIPARAM1}K
 SM  {CSI}{SMPARAMS}h
 RM  {CSI}{SMPARAMS}l
 SGR {CSI}{CSIPARAMS}m
+CSR {CSI}{CSIPARAM24}r
 
 DECSED {DECCSI}{CSIPARAM1}J
 DECSEL {DECCSI}{CSIPARAM1}K
@@ -82,6 +84,7 @@ static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_csr(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_decsel(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_osc0(RunesTerm *t, char *buf, size_t len);
@@ -116,6 +119,7 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {SM}  runes_parser_handle_sm(yyextra, yytext, yyleng);
 {RM}  runes_parser_handle_rm(yyextra, yytext, yyleng);
 {SGR} runes_parser_handle_sgr(yyextra, yytext, yyleng);
+{CSR} runes_parser_handle_csr(yyextra, yytext, yyleng);
 
 {DECSED} runes_parser_handle_decsed(yyextra, yytext, yyleng);
 {DECSEL} runes_parser_handle_decsel(yyextra, yytext, yyleng);
@@ -479,6 +483,17 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             break;
         }
     }
+}
+
+static void runes_parser_handle_csr(RunesTerm *t, char *buf, size_t len)
+{
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1, t->rows, 1, t->cols };
+    int nparams;
+
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
+
+    runes_display_set_scroll_region(
+        t, params[0], params[1], params[2], params[3]);
 }
 
 static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len)
