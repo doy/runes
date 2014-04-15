@@ -30,7 +30,7 @@ typedef struct {
 } RunesXlibLoopData;
 
 void runes_window_backend_init(RunesTerm *t);
-void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[]);
+void runes_window_backend_post_init(RunesTerm *t, int argc, char *argv[]);
 cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t);
 void runes_window_backend_request_flush(RunesTerm *t);
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel);

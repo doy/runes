@@ -53,18 +53,7 @@ void runes_pty_backend_init(RunesTerm *t)
     }
 }
 
-void runes_pty_backend_set_window_size(RunesTerm *t)
-{
-    struct winsize size;
-
-    size.ws_row = t->rows;
-    size.ws_col = t->cols;
-    size.ws_xpixel = t->xpixel;
-    size.ws_ypixel = t->ypixel;
-    ioctl(t->pty.master, TIOCSWINSZ, &size);
-}
-
-void runes_pty_backend_loop_init(RunesTerm *t)
+void runes_pty_backend_post_init(RunesTerm *t)
 {
     void *data;
 
@@ -76,6 +65,17 @@ void runes_pty_backend_loop_init(RunesTerm *t)
 
     uv_queue_work(
         t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
+}
+
+void runes_pty_backend_set_window_size(RunesTerm *t)
+{
+    struct winsize size;
+
+    size.ws_row = t->rows;
+    size.ws_col = t->cols;
+    size.ws_xpixel = t->xpixel;
+    size.ws_ypixel = t->ypixel;
+    ioctl(t->pty.master, TIOCSWINSZ, &size);
 }
 
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)

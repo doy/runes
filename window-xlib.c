@@ -107,7 +107,7 @@ void runes_window_backend_init(RunesTerm *t)
     XDefineCursor(w->dpy, w->w, cursor);
 }
 
-void runes_window_backend_loop_init(RunesTerm *t, int argc, char *argv[])
+void runes_window_backend_post_init(RunesTerm *t, int argc, char *argv[])
 {
     RunesWindowBackend *w = &t->w;
     unsigned long mask;

@@ -14,8 +14,8 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     runes_display_init(t);
     t->loop = uv_default_loop();
 
-    runes_pty_backend_loop_init(t);
-    runes_window_backend_loop_init(t, argc, argv);
+    runes_pty_backend_post_init(t);
+    runes_window_backend_post_init(t, argc, argv);
     runes_display_post_init(t);
 }
 
