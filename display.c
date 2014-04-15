@@ -166,22 +166,39 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
     if (len) {
         double x, y;
         double fontx, fonty, ascent;
+        int remaining = len, space_in_row = t->cols - t->col;
 
         buf[len] = '\0';
 
+        runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
+
         runes_display_move_to(t, t->row, t->col);
 
-        cairo_save(t->cr);
-        cairo_set_source(t->cr, t->bgcolor);
-        cairo_get_current_point(t->cr, &x, &y);
-        runes_display_get_font_dimensions(t, &fontx, &fonty, &ascent);
-        /* XXX broken with utf8 */
-        cairo_rectangle(t->cr, x, y - ascent, fontx * len, fonty);
-        cairo_fill(t->cr);
-        cairo_restore(t->cr);
+        do {
+            int to_write = remaining > space_in_row ? space_in_row : remaining;
+            char tmp;
 
-        cairo_move_to(t->cr, x, y);
-        cairo_show_text(t->cr, buf);
+            cairo_save(t->cr);
+            cairo_set_source(t->cr, t->bgcolor);
+            cairo_get_current_point(t->cr, &x, &y);
+            /* XXX broken with utf8 */
+            cairo_rectangle(t->cr, x, y - ascent, fontx * to_write, fonty);
+            cairo_fill(t->cr);
+            cairo_restore(t->cr);
+
+            cairo_move_to(t->cr, x, y);
+            tmp = buf[to_write];
+            buf[to_write] = '\0';
+            cairo_show_text(t->cr, buf);
+            buf[to_write] = tmp;
+
+            buf += to_write;
+            remaining -= to_write;
+            space_in_row = t->cols;
+            if (remaining) {
+                runes_display_move_to(t, t->row + 1, 0);
+            }
+        } while (remaining > 0);
 
         if (t->font_underline) {
             cairo_save(t->cr);
