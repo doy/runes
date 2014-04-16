@@ -179,26 +179,29 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
             cairo_show_text(t->cr, buf);
             buf[to_write] = tmp;
 
+            if (t->font_underline) {
+                cairo_save(t->cr);
+                cairo_set_line_width(t->cr, 1);
+                cairo_move_to(t->cr, x, y - t->ascent + t->fonty - 0.5);
+                cairo_line_to(
+                    t->cr,
+                    x + (t->fontx * to_write), y - t->ascent + t->fonty - 0.5);
+                cairo_stroke(t->cr);
+                cairo_restore(t->cr);
+            }
+
+
             buf += to_write;
             remaining -= to_write;
             space_in_row = t->cols;
             if (remaining) {
                 runes_display_move_to(t, t->row + 1, 0);
             }
+            else {
+                /* XXX broken with utf8 */
+                t->col += len;
+            }
         } while (remaining > 0);
-
-        if (t->font_underline) {
-            cairo_save(t->cr);
-            cairo_set_line_width(t->cr, 1);
-            cairo_move_to(t->cr, x, y - t->ascent + t->fonty - 0.5);
-            cairo_line_to(
-                t->cr, x + (t->fontx * len), y - t->ascent + t->fonty - 0.5);
-            cairo_stroke(t->cr);
-            cairo_restore(t->cr);
-        }
-
-        /* XXX broken with utf8 */
-        t->col += len;
     }
 }
 
