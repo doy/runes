@@ -4,6 +4,7 @@
 #include "runes.h"
 
 static void runes_display_calculate_font_dimensions(RunesTerm *t);
+static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int x, int y, int width, int height);
@@ -90,7 +91,6 @@ void runes_display_set_window_size(RunesTerm *t)
         cairo_set_source(t->cr, t->bgcolor);
     }
 
-    cairo_move_to(t->cr, 0.0, 0.0);
     cairo_paint(t->cr);
 
     cairo_restore(t->cr);
@@ -100,6 +100,7 @@ void runes_display_set_window_size(RunesTerm *t)
     }
 
     runes_pty_backend_set_window_size(t);
+    runes_display_position_cursor(t, t->cr);
 }
 
 /* note: this uses the backend cairo context because it should be redrawn every
@@ -116,7 +117,6 @@ void runes_display_draw_cursor(RunesTerm *t)
 
             cairo_save(t->backend_cr);
             cairo_set_source(t->backend_cr, t->cursorcolor);
-            runes_display_move_to(t, t->row, t->col);
             cairo_get_current_point(t->cr, &x, &y);
             cairo_set_line_width(t->backend_cr, 1);
             cairo_rectangle(
@@ -124,6 +124,7 @@ void runes_display_draw_cursor(RunesTerm *t)
                 x + 0.5, y - t->ascent + 0.5, t->fontx, t->fonty);
             cairo_stroke(t->backend_cr);
             cairo_restore(t->backend_cr);
+            runes_display_position_cursor(t, t->backend_cr);
         }
     }
 }
@@ -150,7 +151,7 @@ void runes_display_move_to(RunesTerm *t, int row, int col)
         t->row = t->scroll_bottom;
     }
 
-    cairo_move_to(t->cr, t->col * t->fontx, t->row * t->fonty + t->ascent);
+    runes_display_position_cursor(t, t->cr);
 }
 
 /* XXX broken with utf8 */
@@ -160,8 +161,6 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
         int remaining = len, space_in_row = t->cols - t->col;
 
         buf[len] = '\0';
-
-        runes_display_move_to(t, t->row, t->col);
 
         do {
             int to_write = remaining > space_in_row ? space_in_row : remaining;
@@ -178,7 +177,7 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
             if (t->font_underline) {
                 double x, y;
 
-                runes_display_move_to(t, t->row, t->col);
+                runes_display_position_cursor(t, t->cr);
                 cairo_get_current_point(t->cr, &x, &y);
                 cairo_save(t->cr);
                 cairo_set_line_width(t->cr, 1);
@@ -200,6 +199,7 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
             else {
                 /* XXX broken with utf8 */
                 t->col += len;
+                runes_display_position_cursor(t, t->cr);
             }
         } while (remaining > 0);
     }
@@ -404,6 +404,11 @@ static void runes_display_calculate_font_dimensions(RunesTerm *t)
     t->ascent = extents.ascent;
 }
 
+static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr)
+{
+    cairo_move_to(cr, t->col * t->fontx, t->row * t->fonty + t->ascent);
+}
+
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int x, int y, int width, int height)
@@ -414,8 +419,7 @@ static void runes_display_paint_rectangle(
         cr, x * t->fontx, y * t->fonty, width * t->fontx, height * t->fonty);
     cairo_fill(cr);
     cairo_restore(cr);
-
-    cairo_move_to(t->cr, t->col * t->fontx, t->row * t->fonty + t->ascent);
+    runes_display_position_cursor(t, t->cr);
 }
 
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
