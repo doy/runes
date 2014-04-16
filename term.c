@@ -14,6 +14,9 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     runes_window_backend_create_window(t, argc, argv);
 
     runes_display_set_window_size(t);
+
+    /* have to initialize these here instead of in display_init because they
+     * depend on the window size being set */
     t->scroll_top = 0;
     t->scroll_bottom = t->rows - 1;
 
