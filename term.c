@@ -14,6 +14,8 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     runes_window_backend_create_window(t, argc, argv);
 
     runes_display_set_window_size(t);
+    t->scroll_top = 0;
+    t->scroll_bottom = t->rows - 1;
 
     t->loop = uv_default_loop();
     runes_window_backend_start_loop(t);

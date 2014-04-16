@@ -35,8 +35,6 @@ void runes_display_init(RunesTerm *t)
     t->font_italic = 0;
     t->font_underline = 0;
 
-    t->scroll_top = 0;
-    t->scroll_bottom = t->rows - 1;
     t->row = 0;
     t->col = 0;
     t->saved_row = 0;
