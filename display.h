@@ -11,6 +11,7 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len);
 void runes_display_clear_screen(RunesTerm *t);
 void runes_display_clear_screen_forward(RunesTerm *t);
 void runes_display_kill_line_forward(RunesTerm *t);
+void runes_display_delete_characters(RunesTerm *t, int count);
 void runes_display_reset_text_attributes(RunesTerm *t);
 void runes_display_set_bold(RunesTerm *t);
 void runes_display_reset_bold(RunesTerm *t);
