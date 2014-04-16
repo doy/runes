@@ -141,14 +141,18 @@ void runes_display_focus_out(RunesTerm *t)
 
 void runes_display_move_to(RunesTerm *t, int row, int col)
 {
-    int scroll = row - t->scroll_bottom;
+    int height = t->scroll_bottom - t->scroll_top;
 
     t->row = row + t->scroll_top;
     t->col = col;
 
-    if (scroll > 0) {
-        runes_display_scroll_down(t, scroll);
+    if (row > height) {
+        runes_display_scroll_down(t, row - height);
         t->row = t->scroll_bottom;
+    }
+    else if (row < 0) {
+        runes_display_scroll_up(t, -row);
+        t->row = t->scroll_top;
     }
 
     runes_display_position_cursor(t, t->cr);
