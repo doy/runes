@@ -60,22 +60,38 @@ static struct function_key keys[] = {
 };
 #undef RUNES_KEY
 
+static cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t);
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_map_window(RunesTerm *t);
-static void runes_window_backend_init_wm_properties(
-    RunesTerm *t, int argc, char *argv[]);
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
 
-void runes_window_backend_init(RunesTerm *t)
+void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
     RunesWindowBackend *w = &t->w;
+    pid_t pid;
+    XClassHint class_hints = { "runes", "runes" };
+    XWMHints wm_hints;
+    XSizeHints normal_hints;
     unsigned long white;
     XIM im;
     Cursor cursor;
     XColor cursor_fg, cursor_bg;
+
+    wm_hints.flags = InputHint | StateHint;
+    wm_hints.input = True;
+    wm_hints.initial_state = NormalState;
+
+    normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
+
+    normal_hints.min_width   = t->fontx;
+    normal_hints.min_height  = t->fonty;
+    normal_hints.width_inc   = t->fontx;
+    normal_hints.height_inc  = t->fonty;
+    normal_hints.base_width  = t->fontx * 80;
+    normal_hints.base_height = t->fonty * 24;
 
     XInitThreads();
 
@@ -83,8 +99,8 @@ void runes_window_backend_init(RunesTerm *t)
     white  = WhitePixel(w->dpy, DefaultScreen(w->dpy));
     w->w   = XCreateSimpleWindow(
         w->dpy, DefaultRootWindow(w->dpy),
-        0, 0, 240, 80, 0, white, white
-    );
+        0, 0, normal_hints.base_width, normal_hints.base_height,
+        0, white, white);
 
     XSetLocaleModifiers("");
     im = XOpenIM(w->dpy, NULL, NULL, NULL);
@@ -100,21 +116,37 @@ void runes_window_backend_init(RunesTerm *t)
         exit(1);
     }
 
+    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
+    XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
+
+    Xutf8SetWMProperties(
+        w->dpy, w->w, "runes", "runes", argv, argc,
+        &normal_hints, &wm_hints, &class_hints);
+
+    pid = getpid();
+    XChangeProperty(
+        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID],
+        XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
+
+    runes_window_backend_set_icon_name(t, "runes", 5);
+    runes_window_backend_set_window_title(t, "runes", 5);
+
     cursor = XCreateFontCursor(w->dpy, XC_xterm);
     cursor_fg.red = cursor_fg.green = cursor_fg.blue = 65535;
     cursor_bg.red = cursor_bg.green = cursor_bg.blue = 0;
     XRecolorCursor(w->dpy, cursor, &cursor_fg, &cursor_bg);
     XDefineCursor(w->dpy, w->w, cursor);
+
+    t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
+
+    runes_window_backend_map_window(t);
 }
 
-void runes_window_backend_post_init(RunesTerm *t, int argc, char *argv[])
+void runes_window_backend_start_loop(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
     unsigned long mask;
     void *data;
-
-    runes_window_backend_init_wm_properties(t, argc, argv);
-    runes_window_backend_map_window(t);
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
     XSelectInput(
@@ -130,18 +162,6 @@ void runes_window_backend_post_init(RunesTerm *t, int argc, char *argv[])
         t->loop, data,
         runes_window_backend_get_next_event,
         runes_window_backend_process_event);
-}
-
-cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
-{
-    RunesWindowBackend *w = &t->w;
-    Visual *vis;
-    XWindowAttributes attrs;
-
-    XGetWindowAttributes(w->dpy, w->w, &attrs);
-    vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
-    return cairo_xlib_surface_create(
-        w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
 void runes_window_backend_request_flush(RunesTerm *t)
@@ -231,6 +251,18 @@ void runes_window_backend_cleanup(RunesTerm *t)
     XCloseIM(im);
     XDestroyWindow(w->dpy, w->w);
     XCloseDisplay(w->dpy);
+}
+
+static cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+    Visual *vis;
+    XWindowAttributes attrs;
+
+    XGetWindowAttributes(w->dpy, w->w, &attrs);
+    vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
+    return cairo_xlib_surface_create(
+        w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
 static void runes_window_backend_get_next_event(uv_work_t *req)
@@ -364,49 +396,6 @@ static void runes_window_backend_map_window(RunesTerm *t)
     }
 }
 
-static void runes_window_backend_init_wm_properties(
-    RunesTerm *t, int argc, char *argv[])
-{
-    RunesWindowBackend *w = &t->w;
-    pid_t pid;
-    XClassHint class_hints = { "runes", "runes" };
-    XWMHints wm_hints;
-    XSizeHints normal_hints;
-
-    wm_hints.flags = InputHint | StateHint;
-    wm_hints.input = True;
-    wm_hints.initial_state = NormalState;
-
-    normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
-
-    normal_hints.min_width   = t->fontx;
-    normal_hints.min_height  = t->fonty;
-    normal_hints.width_inc   = t->fontx;
-    normal_hints.height_inc  = t->fonty;
-    normal_hints.base_width  = t->fontx * 80;
-    normal_hints.base_height = t->fonty * 24;
-
-    XResizeWindow(
-        w->dpy, w->w, normal_hints.base_width, normal_hints.base_height);
-    runes_window_backend_resize_window(
-        t, normal_hints.base_width, normal_hints.base_height);
-
-    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
-    XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
-
-    Xutf8SetWMProperties(
-        w->dpy, w->w, "runes", "runes", argv, argc,
-        &normal_hints, &wm_hints, &class_hints);
-
-    pid = getpid();
-    XChangeProperty(
-        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID],
-        XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
-
-    runes_window_backend_set_icon_name(t, "runes", 5);
-    runes_window_backend_set_window_title(t, "runes", 5);
-}
-
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height)
 {
@@ -422,8 +411,7 @@ static void runes_window_backend_resize_window(
     if (width != t->xpixel || height != t->ypixel) {
         cairo_xlib_surface_set_size(
             cairo_get_target(t->backend_cr), width, height);
-        runes_display_set_window_size(t, width, height);
-        runes_pty_backend_set_window_size(t);
+        runes_display_set_window_size(t);
     }
 }
 

@@ -9,11 +9,12 @@ static void runes_display_scroll_down(RunesTerm *t, int rows);
 
 void runes_display_init(RunesTerm *t)
 {
-    t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
-
-    t->cr = NULL;
-    t->alternate_cr = NULL;
-    t->alternate = 0;
+    t->font_name      = "monospace";
+    t->font_size      = 14.0;
+    t->font_bold      = 0;
+    t->font_italic    = 0;
+    t->font_underline = 0;
+    runes_display_calculate_font_dimensions(t);
 
     t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
     t->colors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
@@ -23,42 +24,37 @@ void runes_display_init(RunesTerm *t)
     t->colors[5] = cairo_pattern_create_rgb(1.0, 0.0, 1.0);
     t->colors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
     t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
-    t->fgcolor = t->colors[7];
-    t->bgcolor = t->colors[0];
 
     t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
     t->show_cursor = 1;
     t->focused = 1;
 
-    t->font_name      = "monospace";
-    t->font_size      = 14.0;
-    t->font_bold      = 0;
-    t->font_italic    = 0;
+    t->fgcolor = t->colors[7];
+    t->bgcolor = t->colors[0];
+    t->font_bold = 0;
+    t->font_italic = 0;
     t->font_underline = 0;
 
-    runes_display_calculate_font_dimensions(t);
-}
-
-void runes_display_post_init(RunesTerm *t)
-{
-    int x, y;
-
-    runes_window_backend_get_size(t, &x, &y);
+    t->scroll_top = 0;
+    t->scroll_bottom = t->rows - 1;
+    t->row = 0;
+    t->col = 0;
+    t->saved_row = 0;
+    t->saved_col = 0;
 
     t->xpixel = -1;
     t->ypixel = -1;
-    runes_display_set_window_size(t, x, y);
-
-    runes_display_reset_text_attributes(t);
-    t->scroll_top = 0;
-    t->scroll_bottom = t->rows - 1;
-    runes_display_move_to(t, 0, 0);
-    runes_display_save_cursor(t);
+    t->cr = NULL;
+    t->alternate_cr = NULL;
+    t->alternate = 0;
 }
 
-void runes_display_set_window_size(RunesTerm *t, int width, int height)
+void runes_display_set_window_size(RunesTerm *t)
 {
+    int width, height;
     cairo_t *old_cr = NULL;
+
+    runes_window_backend_get_size(t, &width, &height);
 
     if (width == t->xpixel && height == t->ypixel) {
         return;
@@ -100,6 +96,8 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
     if (old_cr) {
         cairo_destroy(old_cr);
     }
+
+    runes_pty_backend_set_window_size(t);
 }
 
 /* note: this uses the backend cairo context because it should be redrawn every
@@ -347,8 +345,6 @@ void runes_display_restore_cursor(RunesTerm *t)
 
 void runes_display_use_alternate_buffer(RunesTerm *t)
 {
-    int x, y;
-
     if (t->alternate) {
         return;
     }
@@ -357,17 +353,13 @@ void runes_display_use_alternate_buffer(RunesTerm *t)
     t->alternate = 1;
     t->alternate_cr = t->cr;
     t->cr = NULL;
-    x = t->xpixel;
-    y = t->ypixel;
     t->xpixel = -1;
     t->ypixel = -1;
-    runes_display_set_window_size(t, x, y);
+    runes_display_set_window_size(t);
 }
 
 void runes_display_use_normal_buffer(RunesTerm *t)
 {
-    int x, y;
-
     if (!t->alternate) {
         return;
     }
@@ -379,8 +371,7 @@ void runes_display_use_normal_buffer(RunesTerm *t)
     t->alternate_cr = NULL;
     t->xpixel = -1;
     t->ypixel = -1;
-    runes_window_backend_get_size(t, &x, &y);
-    runes_display_set_window_size(t, x, y);
+    runes_display_set_window_size(t);
 }
 
 void runes_display_set_scroll_region(

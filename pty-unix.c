@@ -9,7 +9,7 @@
 static void runes_pty_backend_read(uv_work_t *req);
 static void runes_pty_backend_got_data(uv_work_t *req, int status);
 
-void runes_pty_backend_init(RunesTerm *t)
+void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 {
     RunesPtyBackend *pty;
 
@@ -53,15 +53,13 @@ void runes_pty_backend_init(RunesTerm *t)
     }
 }
 
-void runes_pty_backend_post_init(RunesTerm *t)
+void runes_pty_backend_start_loop(RunesTerm *t)
 {
     void *data;
 
     data = malloc(sizeof(RunesPtyLoopData));
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
-
-    runes_pty_backend_set_window_size(t);
 
     uv_queue_work(
         t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
