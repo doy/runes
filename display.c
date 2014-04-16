@@ -15,9 +15,6 @@ void runes_display_init(RunesTerm *t)
 {
     t->font_name      = "monospace";
     t->font_size      = 14.0;
-    t->font_bold      = 0;
-    t->font_italic    = 0;
-    t->font_underline = 0;
     runes_display_calculate_font_dimensions(t);
 
     t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
@@ -30,25 +27,9 @@ void runes_display_init(RunesTerm *t)
     t->colors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
     t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
-    t->show_cursor = 1;
-    t->focused = 1;
 
     t->fgcolor = t->colors[7];
     t->bgcolor = t->colors[0];
-    t->font_bold = 0;
-    t->font_italic = 0;
-    t->font_underline = 0;
-
-    t->row = 0;
-    t->col = 0;
-    t->saved_row = 0;
-    t->saved_col = 0;
-
-    t->xpixel = -1;
-    t->ypixel = -1;
-    t->cr = NULL;
-    t->alternate_cr = NULL;
-    t->alternate = 0;
 }
 
 void runes_display_set_window_size(RunesTerm *t)
@@ -107,12 +88,8 @@ void runes_display_set_window_size(RunesTerm *t)
  * time, and shouldn't be left behind when it moves */
 void runes_display_draw_cursor(RunesTerm *t)
 {
-    if (t->show_cursor) {
-        if (t->focused) {
-            runes_display_paint_rectangle(
-                t, t->backend_cr, t->cursorcolor, t->col, t->row, 1, 1);
-        }
-        else {
+    if (!t->hide_cursor) {
+        if (t->unfocused) {
             double x, y;
 
             cairo_save(t->backend_cr);
@@ -126,17 +103,21 @@ void runes_display_draw_cursor(RunesTerm *t)
             cairo_restore(t->backend_cr);
             runes_display_position_cursor(t, t->backend_cr);
         }
+        else {
+            runes_display_paint_rectangle(
+                t, t->backend_cr, t->cursorcolor, t->col, t->row, 1, 1);
+        }
     }
 }
 
 void runes_display_focus_in(RunesTerm *t)
 {
-    t->focused = 1;
+    t->unfocused = 0;
 }
 
 void runes_display_focus_out(RunesTerm *t)
 {
-    t->focused = 0;
+    t->unfocused = 1;
 }
 
 void runes_display_move_to(RunesTerm *t, int row, int col)
@@ -315,12 +296,12 @@ void runes_display_reset_bg_color(RunesTerm *t)
 
 void runes_display_show_cursor(RunesTerm *t)
 {
-    t->show_cursor = 1;
+    t->hide_cursor = 0;
 }
 
 void runes_display_hide_cursor(RunesTerm *t)
 {
-    t->show_cursor = 0;
+    t->hide_cursor = 1;
 }
 
 void runes_display_visual_bell(RunesTerm *t)

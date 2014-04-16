@@ -37,8 +37,8 @@ struct runes_term {
     char font_bold;
     char font_underline;
 
-    char show_cursor;
-    char focused;
+    char hide_cursor;
+    char unfocused;
     char alternate;
 
     char application_keypad;

@@ -1,9 +1,12 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "runes.h"
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[])
 {
+    memset((void *)t, 0, sizeof(*t));
+
     /* doing most of the pty initialization right at the beginning, because
      * libuv will set up a bunch of state (including potentially things like
      * spawning threads) when that is initialized, and i'm not really sure how
@@ -19,9 +22,6 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
      * depend on the window size being set */
     t->scroll_top = 0;
     t->scroll_bottom = t->rows - 1;
-
-    t->application_keypad = 0;
-    t->application_cursor = 0;
 
     t->loop = uv_default_loop();
     runes_window_backend_start_loop(t);
