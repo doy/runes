@@ -82,15 +82,16 @@ void runes_display_set_window_size(RunesTerm *t)
     cairo_set_scaled_font(t->cr, runes_display_make_font(t));
 
     cairo_save(t->cr);
-    cairo_set_source(t->cr, t->bgcolor);
-    cairo_move_to(t->cr, 0.0, 0.0);
-    cairo_paint(t->cr);
 
     if (old_cr) {
         cairo_set_source_surface(t->cr, cairo_get_target(old_cr), 0.0, 0.0);
-        cairo_move_to(t->cr, 0.0, 0.0);
-        cairo_paint(t->cr);
     }
+    else {
+        cairo_set_source(t->cr, t->bgcolor);
+    }
+
+    cairo_move_to(t->cr, 0.0, 0.0);
+    cairo_paint(t->cr);
 
     cairo_restore(t->cr);
 
