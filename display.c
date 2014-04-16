@@ -447,7 +447,7 @@ static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
         t->font_italic ? CAIRO_FONT_SLANT_ITALIC : CAIRO_FONT_SLANT_NORMAL,
         t->font_bold   ? CAIRO_FONT_WEIGHT_BOLD  : CAIRO_FONT_WEIGHT_NORMAL);
     cairo_matrix_init_scale(&font_matrix, t->font_size, t->font_size);
-    cairo_get_matrix(t->backend_cr, &ctm);
+    cairo_matrix_init_identity(&ctm);
     return cairo_scaled_font_create(
         font_face, &font_matrix, &ctm, cairo_font_options_create());
 }
