@@ -20,6 +20,9 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     t->scroll_top = 0;
     t->scroll_bottom = t->rows - 1;
 
+    t->application_keypad = 0;
+    t->application_cursor = 0;
+
     t->loop = uv_default_loop();
     runes_window_backend_start_loop(t);
     runes_pty_backend_start_loop(t);

@@ -26,12 +26,14 @@ FF  \014
 CR  \015
 ESC \033
 
-CSI   {ESC}\[
-OSC   {ESC}\]
-RI    {ESC}M
-VB    {ESC}g
-DECSC {ESC}7
-DECRC {ESC}8
+DECKPAM {ESC}=
+DECKPNM {ESC}>
+CSI     {ESC}\[
+OSC     {ESC}\]
+RI      {ESC}M
+VB      {ESC}g
+DECSC   {ESC}7
+DECRC   {ESC}8
 
 DECCSI     {CSI}\?
 CSIPARAM1  ([0-9]+)?
@@ -68,6 +70,8 @@ static void runes_parser_handle_bs(RunesTerm *t);
 static void runes_parser_handle_tab(RunesTerm *t);
 static void runes_parser_handle_lf(RunesTerm *t);
 static void runes_parser_handle_cr(RunesTerm *t);
+static void runes_parser_handle_deckpam(RunesTerm *t);
+static void runes_parser_handle_deckpnm(RunesTerm *t);
 static void runes_parser_handle_ri(RunesTerm *t);
 static void runes_parser_handle_vb(RunesTerm *t);
 static void runes_parser_handle_decsc(RunesTerm *t);
@@ -108,10 +112,12 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {FF}  runes_parser_handle_lf(yyextra);
 {CR}  runes_parser_handle_cr(yyextra);
 
-{RI} runes_parser_handle_ri(yyextra);
-{VB} runes_parser_handle_vb(yyextra);
-{DECSC} runes_parser_handle_decsc(yyextra);
-{DECRC} runes_parser_handle_decrc(yyextra);
+{DECKPAM} runes_parser_handle_deckpam(yyextra);
+{DECKPNM} runes_parser_handle_deckpnm(yyextra);
+{RI}      runes_parser_handle_ri(yyextra);
+{VB}      runes_parser_handle_vb(yyextra);
+{DECSC}   runes_parser_handle_decsc(yyextra);
+{DECRC}   runes_parser_handle_decrc(yyextra);
 
 {CUU} runes_parser_handle_cuu(yyextra, yytext, yyleng);
 {CUD} runes_parser_handle_cud(yyextra, yytext, yyleng);
@@ -217,6 +223,16 @@ static void runes_parser_handle_lf(RunesTerm *t)
 static void runes_parser_handle_cr(RunesTerm *t)
 {
     runes_display_move_to(t, t->row, 0);
+}
+
+static void runes_parser_handle_deckpam(RunesTerm *t)
+{
+    t->application_keypad = 1;
+}
+
+static void runes_parser_handle_deckpnm(RunesTerm *t)
+{
+    t->application_keypad = 0;
 }
 
 static void runes_parser_handle_ri(RunesTerm *t)
@@ -401,6 +417,8 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
         switch (modes[i]) {
         case '?':
             switch (params[i]) {
+            case 1:
+                t->application_cursor = 1;
             case 25:
                 runes_display_show_cursor(t);
                 break;
@@ -433,6 +451,8 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
         switch (modes[i]) {
         case '?':
             switch (params[i]) {
+            case 1:
+                t->application_cursor = 0;
             case 25:
                 runes_display_hide_cursor(t);
                 break;

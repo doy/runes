@@ -40,6 +40,9 @@ struct runes_term {
     char show_cursor;
     char focused;
     char alternate;
+
+    char application_keypad;
+    char application_cursor;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);

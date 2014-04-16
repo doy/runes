@@ -56,6 +56,21 @@ static struct function_key keys[] = {
     RUNES_KEY(XK_F18,        "\e[32~"),
     RUNES_KEY(XK_F19,        "\e[33~"),
     RUNES_KEY(XK_F20,        "\e[34~"),
+    /* XXX keypad keys need to go here too */
+    RUNES_KEY(XK_VoidSymbol, "")
+};
+
+static struct function_key application_keypad_keys[] = {
+    /* XXX i don't have a keypad on my laptop, need to get one for testing */
+    RUNES_KEY(XK_VoidSymbol, "")
+};
+
+static struct function_key application_cursor_keys[] = {
+    RUNES_KEY(XK_Up,    "\eOA"),
+    RUNES_KEY(XK_Down,  "\eOB"),
+    RUNES_KEY(XK_Right, "\eOC"),
+    RUNES_KEY(XK_Left,  "\eOD"),
+    /* XXX home/end? */
     RUNES_KEY(XK_VoidSymbol, "")
 };
 #undef RUNES_KEY
@@ -304,13 +319,42 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             case XLookupKeySym: {
                 struct function_key *key;
 
-                key = &keys[0];
-                while (key->sym != XK_VoidSymbol) {
-                    if (key->sym == sym) {
+                if (t->application_keypad) {
+                    if (t->application_cursor) {
+                        key = &application_cursor_keys[0];
+                        while (key->sym != XK_VoidSymbol) {
+                            if (key->sym == sym) {
+                                break;
+                            }
+                            key++;
+                        }
+                        if (key->sym != XK_VoidSymbol) {
+                            runes_pty_backend_write(t, key->str, key->len);
+                            break;
+                        }
+                    }
+                    key = &application_keypad_keys[0];
+                    while (key->sym != XK_VoidSymbol) {
+                        if (key->sym == sym) {
+                            break;
+                        }
+                        key++;
+                    }
+                    if (key->sym != XK_VoidSymbol) {
                         runes_pty_backend_write(t, key->str, key->len);
                         break;
                     }
+                }
+                key = &keys[0];
+                while (key->sym != XK_VoidSymbol) {
+                    if (key->sym == sym) {
+                        break;
+                    }
                     key++;
+                }
+                if (key->sym != XK_VoidSymbol) {
+                    runes_pty_backend_write(t, key->str, key->len);
+                    break;
                 }
                 break;
             }
