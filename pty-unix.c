@@ -11,9 +11,8 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status);
 
 void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 {
-    RunesPtyBackend *pty;
+    RunesPtyBackend *pty = &t->pty;
 
-    pty = &t->pty;
     pty->master = posix_openpt(O_RDWR);
     grantpt(pty->master);
     unlockpt(pty->master);
@@ -83,17 +82,15 @@ void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
 
 void runes_pty_backend_request_close(RunesTerm *t)
 {
-    RunesPtyBackend *pty;
+    RunesPtyBackend *pty = &t->pty;
 
-    pty = &t->pty;
     kill(pty->child_pid, SIGHUP);
 }
 
 void runes_pty_backend_cleanup(RunesTerm *t)
 {
-    RunesPtyBackend *pty;
+    RunesPtyBackend *pty = &t->pty;
 
-    pty = &t->pty;
     close(pty->master);
 }
 
@@ -109,12 +106,10 @@ static void runes_pty_backend_read(uv_work_t *req)
 
 static void runes_pty_backend_got_data(uv_work_t *req, int status)
 {
-    RunesTerm *t;
-    RunesPtyLoopData *data;
+    RunesPtyLoopData *data = req->data;
+    RunesTerm *t = data->data.t;
 
     UNUSED(status);
-    data = (RunesPtyLoopData *)req->data;
-    t = data->data.t;
 
     if (data->len > 0) {
         runes_parser_process_string(t, data->buf, data->len);
