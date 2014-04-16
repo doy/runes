@@ -60,7 +60,6 @@ static struct function_key keys[] = {
 };
 #undef RUNES_KEY
 
-static cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t);
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_map_window(RunesTerm *t);
@@ -79,6 +78,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     XIM im;
     Cursor cursor;
     XColor cursor_fg, cursor_bg;
+    Visual *vis;
 
     wm_hints.flags = InputHint | StateHint;
     wm_hints.input = True;
@@ -137,7 +137,11 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     XRecolorCursor(w->dpy, cursor, &cursor_fg, &cursor_bg);
     XDefineCursor(w->dpy, w->w, cursor);
 
-    t->backend_cr = cairo_create(runes_window_backend_surface_create(t));
+    vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
+    t->backend_cr = cairo_create(
+        cairo_xlib_surface_create(
+            w->dpy, w->w, vis,
+            normal_hints.base_width, normal_hints.base_height));
 
     runes_window_backend_map_window(t);
 }
@@ -177,6 +181,20 @@ void runes_window_backend_request_flush(RunesTerm *t)
     XLockDisplay(t->w.dpy);
     XFlush(t->w.dpy);
     XUnlockDisplay(t->w.dpy);
+}
+
+void runes_window_backend_request_close(RunesTerm *t)
+{
+    XEvent e;
+
+    e.xclient.type = ClientMessage;
+    e.xclient.window = t->w.w;
+    e.xclient.message_type = t->w.atoms[RUNES_ATOM_WM_PROTOCOLS];
+    e.xclient.format = 32;
+    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_WM_DELETE_WINDOW];
+    e.xclient.data.l[1] = CurrentTime;
+
+    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
 }
 
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
@@ -227,20 +245,6 @@ void runes_window_backend_visual_bell(RunesTerm *t)
     runes_window_backend_flush(t);
 }
 
-void runes_window_backend_request_close(RunesTerm *t)
-{
-    XEvent e;
-
-    e.xclient.type = ClientMessage;
-    e.xclient.window = t->w.w;
-    e.xclient.message_type = t->w.atoms[RUNES_ATOM_WM_PROTOCOLS];
-    e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_WM_DELETE_WINDOW];
-    e.xclient.data.l[1] = CurrentTime;
-
-    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
-}
-
 void runes_window_backend_cleanup(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
@@ -251,18 +255,6 @@ void runes_window_backend_cleanup(RunesTerm *t)
     XCloseIM(im);
     XDestroyWindow(w->dpy, w->w);
     XCloseDisplay(w->dpy);
-}
-
-static cairo_surface_t *runes_window_backend_surface_create(RunesTerm *t)
-{
-    RunesWindowBackend *w = &t->w;
-    Visual *vis;
-    XWindowAttributes attrs;
-
-    XGetWindowAttributes(w->dpy, w->w, &attrs);
-    vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
-    return cairo_xlib_surface_create(
-        w->dpy, w->w, vis, attrs.width, attrs.height);
 }
 
 static void runes_window_backend_get_next_event(uv_work_t *req)
