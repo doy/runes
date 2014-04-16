@@ -62,7 +62,6 @@ static struct function_key keys[] = {
 
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
-static void runes_window_backend_map_window(RunesTerm *t);
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
@@ -143,7 +142,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
             w->dpy, w->w, vis,
             normal_hints.base_width, normal_hints.base_height));
 
-    runes_window_backend_map_window(t);
+    XMapWindow(w->dpy, w->w);
 }
 
 void runes_window_backend_start_loop(RunesTerm *t)
@@ -368,23 +367,6 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
     else {
         runes_pty_backend_request_close(t);
         free(req);
-    }
-}
-
-static void runes_window_backend_map_window(RunesTerm *t)
-{
-    RunesWindowBackend *w = &t->w;
-
-    XSelectInput(w->dpy, w->w, StructureNotifyMask);
-    XMapWindow(w->dpy, w->w);
-
-    for (;;) {
-        XEvent e;
-
-        XNextEvent(w->dpy, &e);
-        if (e.type == MapNotify) {
-            break;
-        }
     }
 }
 
