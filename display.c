@@ -397,6 +397,11 @@ void runes_display_scroll_up(RunesTerm *t, int rows)
     cairo_restore(t->cr);
 }
 
+void runes_display_cleanup(RunesTerm *t)
+{
+    cairo_destroy(t->cr);
+}
+
 static void runes_display_calculate_font_dimensions(RunesTerm *t)
 {
     cairo_font_extents_t extents;

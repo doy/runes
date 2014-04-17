@@ -30,7 +30,7 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
 
 void runes_term_cleanup(RunesTerm *t)
 {
-    cairo_destroy(t->cr);
+    runes_display_cleanup(t);
     runes_window_backend_cleanup(t);
     runes_pty_backend_cleanup(t);
 }
