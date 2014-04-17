@@ -427,6 +427,7 @@ static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
     font = cairo_scaled_font_create(
         font_face, &font_matrix, &ctm, font_options);
     cairo_font_options_destroy(font_options);
+    cairo_font_face_destroy(font_face);
     return font;
 }
 
