@@ -256,6 +256,7 @@ void runes_window_backend_visual_bell(RunesTerm *t)
     white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
     cairo_set_source(t->backend_cr, white);
     cairo_paint(t->backend_cr);
+    cairo_surface_flush(cairo_get_target(t->backend_cr));
     runes_window_backend_flush(t);
 }
 
