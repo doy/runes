@@ -1,6 +1,7 @@
 #include <cairo-xlib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <X11/cursorfont.h>
 #include <X11/Xlib.h>
@@ -405,10 +406,14 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_VISUAL_BELL]) {
                 cairo_pattern_t *white;
+                struct timespec tm = { 0, 20000000 };
 
                 white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
                 cairo_set_source(t->backend_cr, white);
                 cairo_paint(t->backend_cr);
+                cairo_surface_flush(cairo_get_target(t->backend_cr));
+                XFlush(w->dpy);
+                nanosleep(&tm, NULL);
                 runes_window_backend_flush(t);
             }
             break;
