@@ -3,7 +3,7 @@
 
 #include "runes.h"
 
-static void runes_display_calculate_font_dimensions(RunesTerm *t);
+static void runes_display_recalculate_font(RunesTerm *t);
 static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
@@ -13,9 +13,9 @@ static void runes_display_scroll_down(RunesTerm *t, int rows);
 
 void runes_display_init(RunesTerm *t)
 {
-    t->font_name      = "monospace";
-    t->font_size      = 14.0;
-    runes_display_calculate_font_dimensions(t);
+    t->font_name = "monospace";
+    t->font_size = 14.0;
+    runes_display_recalculate_font(t);
 
     t->colors[0] = cairo_pattern_create_rgb(0.0, 0.0, 0.0);
     t->colors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
@@ -61,7 +61,7 @@ void runes_display_set_window_size(RunesTerm *t)
             CAIRO_FORMAT_RGB24,
             t->xpixel, t->ypixel));
     cairo_set_source(t->cr, t->fgcolor);
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    cairo_set_scaled_font(t->cr, t->font);
 
     cairo_save(t->cr);
 
@@ -214,37 +214,43 @@ void runes_display_reset_text_attributes(RunesTerm *t)
 void runes_display_set_bold(RunesTerm *t)
 {
     t->font_bold = 1;
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    runes_display_recalculate_font(t);
+    cairo_set_scaled_font(t->cr, t->font);
 }
 
 void runes_display_reset_bold(RunesTerm *t)
 {
     t->font_bold = 0;
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    runes_display_recalculate_font(t);
+    cairo_set_scaled_font(t->cr, t->font);
 }
 
 void runes_display_set_italic(RunesTerm *t)
 {
     t->font_italic = 1;
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    runes_display_recalculate_font(t);
+    cairo_set_scaled_font(t->cr, t->font);
 }
 
 void runes_display_reset_italic(RunesTerm *t)
 {
     t->font_italic = 0;
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    runes_display_recalculate_font(t);
+    cairo_set_scaled_font(t->cr, t->font);
 }
 
 void runes_display_set_underline(RunesTerm *t)
 {
     t->font_underline = 1;
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    runes_display_recalculate_font(t);
+    cairo_set_scaled_font(t->cr, t->font);
 }
 
 void runes_display_reset_underline(RunesTerm *t)
 {
     t->font_underline = 0;
-    cairo_set_scaled_font(t->cr, runes_display_make_font(t));
+    runes_display_recalculate_font(t);
+    cairo_set_scaled_font(t->cr, t->font);
 }
 
 void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color)
@@ -371,11 +377,15 @@ void runes_display_cleanup(RunesTerm *t)
     cairo_destroy(t->cr);
 }
 
-static void runes_display_calculate_font_dimensions(RunesTerm *t)
+static void runes_display_recalculate_font(RunesTerm *t)
 {
     cairo_font_extents_t extents;
 
-    cairo_scaled_font_extents(runes_display_make_font(t), &extents);
+    if (t->font) {
+        cairo_scaled_font_destroy(t->font);
+    }
+    t->font = runes_display_make_font(t);
+    cairo_scaled_font_extents(t->font, &extents);
 
     t->fontx = extents.max_x_advance;
     t->fonty = extents.height;

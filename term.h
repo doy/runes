@@ -33,6 +33,8 @@ struct runes_term {
 
     char *font_name;
     double font_size;
+    cairo_scaled_font_t *font;
+
     char font_italic;
     char font_bold;
     char font_underline;
