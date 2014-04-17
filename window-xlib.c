@@ -98,6 +98,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     Cursor cursor;
     XColor cursor_fg, cursor_bg;
     Visual *vis;
+    cairo_surface_t *surface;
 
     wm_hints.flags = InputHint | StateHint;
     wm_hints.input = True;
@@ -157,10 +158,10 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     XDefineCursor(w->dpy, w->w, cursor);
 
     vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
-    t->backend_cr = cairo_create(
-        cairo_xlib_surface_create(
-            w->dpy, w->w, vis,
-            normal_hints.base_width, normal_hints.base_height));
+    surface = cairo_xlib_surface_create(
+        w->dpy, w->w, vis, normal_hints.base_width, normal_hints.base_height);
+    t->backend_cr = cairo_create(surface);
+    cairo_surface_destroy(surface);
 
     XMapWindow(w->dpy, w->w);
 }
@@ -274,6 +275,7 @@ void runes_window_backend_cleanup(RunesTerm *t)
     RunesWindowBackend *w = &t->w;
     XIM im;
 
+    cairo_destroy(t->backend_cr);
     im = XIMOfIC(w->ic);
     XDestroyIC(w->ic);
     XCloseIM(im);
@@ -415,6 +417,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
                 cairo_set_source(t->backend_cr, white);
                 cairo_paint(t->backend_cr);
+                cairo_pattern_destroy(white);
                 cairo_surface_flush(cairo_get_target(t->backend_cr));
                 XFlush(w->dpy);
                 nanosleep(&tm, NULL);
@@ -496,6 +499,7 @@ static void runes_window_backend_set_urgent(RunesTerm *t)
     hints = XGetWMHints(t->w.dpy, t->w.w);
     hints->flags |= XUrgencyHint;
     XSetWMHints(t->w.dpy, t->w.w, hints);
+    XFree(hints);
 }
 
 static void runes_window_backend_clear_urgent(RunesTerm *t)
@@ -505,4 +509,5 @@ static void runes_window_backend_clear_urgent(RunesTerm *t)
     hints = XGetWMHints(t->w.dpy, t->w.w);
     hints->flags &= ~XUrgencyHint;
     XSetWMHints(t->w.dpy, t->w.w, hints);
+    XFree(hints);
 }

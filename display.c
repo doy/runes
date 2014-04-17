@@ -36,6 +36,7 @@ void runes_display_set_window_size(RunesTerm *t)
 {
     int width, height;
     cairo_t *old_cr = NULL;
+    cairo_surface_t *surface;
 
     runes_window_backend_get_size(t, &width, &height);
 
@@ -56,10 +57,10 @@ void runes_display_set_window_size(RunesTerm *t)
      * occurred for some reason. should look into this, because i think
      * create_similar_image does things that are more efficient (using some
      * xlib shm stuff) */
-    t->cr = cairo_create(
-        cairo_image_surface_create(
-            CAIRO_FORMAT_RGB24,
-            t->xpixel, t->ypixel));
+    surface = cairo_image_surface_create(
+        CAIRO_FORMAT_RGB24, t->xpixel, t->ypixel);
+    t->cr = cairo_create(surface);
+    cairo_surface_destroy(surface);
     cairo_set_source(t->cr, t->fgcolor);
     cairo_set_scaled_font(t->cr, t->font);
 
@@ -195,6 +196,7 @@ void runes_display_delete_characters(RunesTerm *t, int count)
     cairo_pattern_set_matrix(pattern, &matrix);
     runes_display_paint_rectangle(
         t, t->cr, pattern, t->col, t->row, t->cols - t->col - count, 1);
+    cairo_pattern_destroy(pattern);
     cairo_pop_group_to_source(t->cr);
     cairo_paint(t->cr);
     runes_display_paint_rectangle(
@@ -365,6 +367,7 @@ void runes_display_scroll_up(RunesTerm *t, int rows)
         t, t->cr, pattern,
         0, t->scroll_top + rows,
         t->cols, t->scroll_bottom - t->scroll_top + 1 - rows);
+    cairo_pattern_destroy(pattern);
     cairo_pop_group_to_source(t->cr);
     cairo_paint(t->cr);
     runes_display_paint_rectangle(
@@ -374,6 +377,12 @@ void runes_display_scroll_up(RunesTerm *t, int rows)
 
 void runes_display_cleanup(RunesTerm *t)
 {
+    int i;
+
+    for (i = 0; i < 8; ++i) {
+        cairo_pattern_destroy(t->colors[i]);
+    }
+    cairo_pattern_destroy(t->cursorcolor);
     cairo_destroy(t->cr);
 }
 
@@ -444,6 +453,7 @@ static void runes_display_scroll_down(RunesTerm *t, int rows)
     runes_display_paint_rectangle(
         t, t->cr, pattern,
         0, t->scroll_top, t->cols, t->scroll_bottom - t->scroll_top);
+    cairo_pattern_destroy(pattern);
     cairo_pop_group_to_source(t->cr);
     cairo_paint(t->cr);
     runes_display_paint_rectangle(
