@@ -202,7 +202,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len)
 
 static void runes_parser_handle_bel(RunesTerm *t)
 {
-    runes_display_visual_bell(t);
+    runes_window_backend_request_visual_bell(t);
 }
 
 static void runes_parser_handle_bs(RunesTerm *t)
@@ -242,7 +242,7 @@ static void runes_parser_handle_ri(RunesTerm *t)
 
 static void runes_parser_handle_vb(RunesTerm *t)
 {
-    runes_display_visual_bell(t);
+    runes_window_backend_request_visual_bell(t);
 }
 
 static void runes_parser_handle_decsc(RunesTerm *t)

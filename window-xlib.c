@@ -17,7 +17,8 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "_NET_WM_NAME",
     "UTF8_STRING",
     "WM_PROTOCOLS",
-    "RUNES_FLUSH"
+    "RUNES_FLUSH",
+    "RUNES_VISUAL_BELL"
 };
 
 struct function_key {
@@ -198,6 +199,21 @@ void runes_window_backend_request_flush(RunesTerm *t)
     XUnlockDisplay(t->w.dpy);
 }
 
+void runes_window_backend_request_visual_bell(RunesTerm *t)
+{
+    XEvent e;
+
+    e.xclient.type = ClientMessage;
+    e.xclient.window = t->w.w;
+    e.xclient.format = 32;
+    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_RUNES_VISUAL_BELL];
+
+    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
+    XLockDisplay(t->w.dpy);
+    XFlush(t->w.dpy);
+    XUnlockDisplay(t->w.dpy);
+}
+
 void runes_window_backend_request_close(RunesTerm *t)
 {
     XEvent e;
@@ -248,16 +264,6 @@ void runes_window_backend_set_window_title(
         w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME],
         w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
-}
-
-void runes_window_backend_visual_bell(RunesTerm *t)
-{
-    cairo_pattern_t *white;
-
-    white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
-    cairo_set_source(t->backend_cr, white);
-    cairo_paint(t->backend_cr);
-    runes_window_backend_flush(t);
 }
 
 void runes_window_backend_cleanup(RunesTerm *t)
@@ -395,6 +401,14 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 );
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_FLUSH]) {
+                runes_window_backend_flush(t);
+            }
+            else if (a == w->atoms[RUNES_ATOM_RUNES_VISUAL_BELL]) {
+                cairo_pattern_t *white;
+
+                white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+                cairo_set_source(t->backend_cr, white);
+                cairo_paint(t->backend_cr);
                 runes_window_backend_flush(t);
             }
             break;

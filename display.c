@@ -278,11 +278,6 @@ void runes_display_hide_cursor(RunesTerm *t)
     t->hide_cursor = 1;
 }
 
-void runes_display_visual_bell(RunesTerm *t)
-{
-    runes_window_backend_visual_bell(t);
-}
-
 void runes_display_save_cursor(RunesTerm *t)
 {
     t->saved_row = t->row;
