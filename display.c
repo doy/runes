@@ -84,32 +84,6 @@ void runes_display_set_window_size(RunesTerm *t)
     runes_display_position_cursor(t, t->cr);
 }
 
-/* note: this uses the backend cairo context because it should be redrawn every
- * time, and shouldn't be left behind when it moves */
-void runes_display_draw_cursor(RunesTerm *t)
-{
-    if (!t->hide_cursor) {
-        if (t->unfocused) {
-            double x, y;
-
-            cairo_save(t->backend_cr);
-            cairo_set_source(t->backend_cr, t->cursorcolor);
-            cairo_get_current_point(t->cr, &x, &y);
-            cairo_set_line_width(t->backend_cr, 1);
-            cairo_rectangle(
-                t->backend_cr,
-                x + 0.5, y - t->ascent + 0.5, t->fontx, t->fonty);
-            cairo_stroke(t->backend_cr);
-            cairo_restore(t->backend_cr);
-            runes_display_position_cursor(t, t->backend_cr);
-        }
-        else {
-            runes_display_paint_rectangle(
-                t, t->backend_cr, t->cursorcolor, t->col, t->row, 1, 1);
-        }
-    }
-}
-
 void runes_display_focus_in(RunesTerm *t)
 {
     t->unfocused = 0;

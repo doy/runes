@@ -3,7 +3,6 @@
 
 void runes_display_init(RunesTerm *t);
 void runes_display_set_window_size(RunesTerm *t);
-void runes_display_draw_cursor(RunesTerm *t);
 void runes_display_focus_in(RunesTerm *t);
 void runes_display_focus_out(RunesTerm *t);
 void runes_display_move_to(RunesTerm *t, int row, int col);

@@ -80,6 +80,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
+static void runes_window_backend_draw_cursor(RunesTerm *t);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
@@ -437,6 +438,30 @@ static void runes_window_backend_flush(RunesTerm *t)
 {
     cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
     cairo_paint(t->backend_cr);
-    runes_display_draw_cursor(t);
+    runes_window_backend_draw_cursor(t);
     cairo_surface_flush(cairo_get_target(t->backend_cr));
+}
+
+static void runes_window_backend_draw_cursor(RunesTerm *t)
+{
+    if (!t->hide_cursor) {
+        cairo_save(t->backend_cr);
+        cairo_set_source(t->backend_cr, t->cursorcolor);
+        if (t->unfocused) {
+            cairo_set_line_width(t->backend_cr, 1);
+            cairo_rectangle(
+                t->backend_cr,
+                t->col * t->fontx + 0.5, t->row * t->fonty + 0.5,
+                t->fontx, t->fonty);
+            cairo_stroke(t->backend_cr);
+        }
+        else {
+            cairo_rectangle(
+                t->backend_cr,
+                t->col * t->fontx, t->row * t->fonty,
+                t->fontx, t->fonty);
+            cairo_fill(t->backend_cr);
+        }
+        cairo_restore(t->backend_cr);
+    }
 }
