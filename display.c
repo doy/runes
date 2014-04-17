@@ -412,7 +412,9 @@ static void runes_display_paint_rectangle(
 
 static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
 {
+    cairo_scaled_font_t *font;
     cairo_font_face_t *font_face;
+    cairo_font_options_t *font_options;
     cairo_matrix_t font_matrix, ctm;
 
     font_face = cairo_toy_font_face_create(
@@ -421,8 +423,11 @@ static cairo_scaled_font_t *runes_display_make_font(RunesTerm *t)
         t->font_bold   ? CAIRO_FONT_WEIGHT_BOLD  : CAIRO_FONT_WEIGHT_NORMAL);
     cairo_matrix_init_scale(&font_matrix, t->font_size, t->font_size);
     cairo_matrix_init_identity(&ctm);
-    return cairo_scaled_font_create(
-        font_face, &font_matrix, &ctm, cairo_font_options_create());
+    font_options = cairo_font_options_create();
+    font = cairo_scaled_font_create(
+        font_face, &font_matrix, &ctm, font_options);
+    cairo_font_options_destroy(font_options);
+    return font;
 }
 
 static void runes_display_scroll_down(RunesTerm *t, int rows)
