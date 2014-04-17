@@ -83,6 +83,8 @@ static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
 static void runes_window_backend_draw_cursor(RunesTerm *t);
+static void runes_window_backend_set_urgent(RunesTerm *t);
+static void runes_window_backend_clear_urgent(RunesTerm *t);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
@@ -381,6 +383,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 t, e->xconfigure.width, e->xconfigure.height);
             break;
         case FocusIn:
+            runes_window_backend_clear_urgent(t);
             runes_display_focus_in(t);
             runes_window_backend_flush(t);
             break;
@@ -408,6 +411,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 cairo_pattern_t *white;
                 struct timespec tm = { 0, 20000000 };
 
+                runes_window_backend_set_urgent(t);
                 white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
                 cairo_set_source(t->backend_cr, white);
                 cairo_paint(t->backend_cr);
@@ -483,4 +487,22 @@ static void runes_window_backend_draw_cursor(RunesTerm *t)
         }
         cairo_restore(t->backend_cr);
     }
+}
+
+static void runes_window_backend_set_urgent(RunesTerm *t)
+{
+    XWMHints *hints;
+
+    hints = XGetWMHints(t->w.dpy, t->w.w);
+    hints->flags |= XUrgencyHint;
+    XSetWMHints(t->w.dpy, t->w.w, hints);
+}
+
+static void runes_window_backend_clear_urgent(RunesTerm *t)
+{
+    XWMHints *hints;
+
+    hints = XGetWMHints(t->w.dpy, t->w.w);
+    hints->flags &= ~XUrgencyHint;
+    XSetWMHints(t->w.dpy, t->w.w, hints);
 }
