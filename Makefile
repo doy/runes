@@ -1,6 +1,6 @@
 OUT      = runes
 OBJ      = runes.o display.o term.o parser.o window-xlib.o pty-unix.o
-LIBS     = cairo cairo-xlib libuv
+LIBS     = cairo cairo-xlib libuv pangocairo
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
 

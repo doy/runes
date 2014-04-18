@@ -2,6 +2,7 @@
 #define _RUNES_H
 
 #include <cairo.h>
+#include <pango/pangocairo.h>
 #include <uv.h>
 
 struct runes_term;
