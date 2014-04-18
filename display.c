@@ -149,7 +149,6 @@ void runes_display_show_string_ascii(RunesTerm *t, char *buf, size_t len)
                 cairo_restore(t->cr);
             }
 
-
             buf += to_write;
             remaining -= to_write;
             space_in_row = t->cols;
