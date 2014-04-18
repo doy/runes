@@ -119,7 +119,7 @@ void runes_display_move_to(RunesTerm *t, int row, int col)
     runes_display_position_cursor(t, t->cr);
 }
 
-void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
+void runes_display_show_string_ascii(RunesTerm *t, char *buf, size_t len)
 {
     if (len) {
         int remaining = len, space_in_row = t->cols - t->col;
@@ -157,12 +157,17 @@ void runes_display_show_string(RunesTerm *t, char *buf, size_t len)
                 runes_display_move_to(t, t->row + 1, 0);
             }
             else {
-                /* XXX broken with utf8 */
                 t->col += len;
                 runes_display_position_cursor(t, t->cr);
             }
         } while (remaining > 0);
     }
+}
+
+void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
+{
+    /* XXX */
+    runes_display_show_string_ascii(t, buf, len);
 }
 
 void runes_display_clear_screen(RunesTerm *t)

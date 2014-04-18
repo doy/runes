@@ -13,8 +13,14 @@
 %option prefix="runes_parser_yy"
 %option extra-type="RunesTerm *"
 
-CTRL [\000-\037\177]
-TEXT [^\000-\037\177]
+CTRL    [\000-\037\177]
+ASCII   [\040-\176]
+LEAD2   [\300-\337]
+LEAD3   [\340-\357]
+LEAD4   [\360-\367]
+CONT    [\200-\277]
+UNICHAR ({LEAD2}{CONT}|{LEAD3}{CONT}{CONT}|{LEAD4}{CONT}{CONT}{CONT})
+CHAR    ({ASCII}|{UNICHAR})
 
 ST  \007
 BEL \007
@@ -59,12 +65,11 @@ CSR {CSI}{CSIPARAM24}r
 DECSED {DECCSI}{CSIPARAM1}J
 DECSEL {DECCSI}{CSIPARAM1}K
 
-OSC0 {OSC}0;{TEXT}*{ST}
-OSC1 {OSC}1;{TEXT}*{ST}
-OSC2 {OSC}2;{TEXT}*{ST}
+OSC0 {OSC}0;{CHAR}*{ST}
+OSC1 {OSC}1;{CHAR}*{ST}
+OSC2 {OSC}2;{CHAR}*{ST}
 
 %{
-static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 static void runes_parser_handle_bel(RunesTerm *t);
 static void runes_parser_handle_bs(RunesTerm *t);
 static void runes_parser_handle_tab(RunesTerm *t);
@@ -98,11 +103,11 @@ static void runes_parser_handle_decsel(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_osc0(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_osc1(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_ascii(RunesTerm *t, char *text, size_t len);
+static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 %}
 
 %%
-
-{TEXT}+ runes_parser_handle_text(yyextra, yytext, yyleng);
 
 {BEL} runes_parser_handle_bel(yyextra);
 {BS}  runes_parser_handle_bs(yyextra);
@@ -140,13 +145,16 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 {OSC1} runes_parser_handle_osc1(yyextra, yytext, yyleng);
 {OSC2} runes_parser_handle_osc2(yyextra, yytext, yyleng);
 
+{ASCII}+ runes_parser_handle_ascii(yyextra, yytext, yyleng);
+{CHAR}+  runes_parser_handle_text(yyextra, yytext, yyleng);
+
 {CSI}[<=?]?{CSIPARAMS}{CTRL} {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
 }
 
-{CSI}[<=?]?{CSIPARAMS}{TEXT} {
+{CSI}[<=?]?{CSIPARAMS}{CHAR} {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
@@ -158,7 +166,7 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
 }
 
-{OSC}{TEXT} {
+{OSC}{CHAR} {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
@@ -166,16 +174,20 @@ static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 
 {ESC}{CTRL} {
     fprintf(stderr, "unhandled escape sequence: \\%hho\n", yytext[1]);
-    yyless(1);
 }
 
-{ESC}{TEXT} {
-    fprintf(stderr, "unhandled escape sequence: %c\n", yytext[1]);
-    yyless(1);
+{ESC}{CHAR} {
+    fprintf(
+        stderr, "unhandled escape sequence: %*s\n",
+        (int)yyleng - 1, yytext + 1);
 }
 
 {CTRL} {
     fprintf(stderr, "unhandled control character: \\%hho\n", yytext[0]);
+}
+
+(?s:.) {
+    fprintf(stderr, "invalid utf8 byte: \\%hho\n", yytext[0]);
 }
 
 %%
@@ -193,11 +205,6 @@ void runes_parser_process_string(RunesTerm *t, char *buf, size_t len)
     runes_parser_yylex(scanner);
     runes_parser_yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
-}
-
-static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len)
-{
-    runes_display_show_string(t, text, len);
 }
 
 static void runes_parser_handle_bel(RunesTerm *t)
@@ -600,6 +607,16 @@ static void runes_parser_handle_osc1(RunesTerm *t, char *buf, size_t len)
 static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len)
 {
     runes_window_backend_set_window_title(t, buf + 4, len - 5);
+}
+
+static void runes_parser_handle_ascii(RunesTerm *t, char *text, size_t len)
+{
+    runes_display_show_string_ascii(t, text, len);
+}
+
+static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len)
+{
+    runes_display_show_string_utf8(t, text, len);
 }
 
 /* XXX these are copied from the generated file so that I can add the UNUSED
