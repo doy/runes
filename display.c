@@ -403,10 +403,11 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 
     metrics = pango_context_get_metrics(context, desc, NULL);
 
-    t->fontx  = pango_font_metrics_get_approximate_char_width(metrics) / PANGO_SCALE;
-    ascent = pango_font_metrics_get_ascent(metrics);
-    descent = pango_font_metrics_get_descent(metrics);
-    t->fonty  = (ascent + descent) / PANGO_SCALE;
+    t->fontx = PANGO_PIXELS(
+        pango_font_metrics_get_approximate_char_width(metrics));
+    ascent   = pango_font_metrics_get_ascent(metrics);
+    descent  = pango_font_metrics_get_descent(metrics);
+    t->fonty = PANGO_PIXELS(ascent + descent);
 
     pango_font_description_free(desc);
     if (!t->layout) {
