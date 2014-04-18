@@ -385,6 +385,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     PangoFontDescription *desc;
     PangoContext *context;
     PangoFontMetrics *metrics;
+    int ascent, descent;
 
     desc = pango_font_description_from_string(t->font_name);
 
@@ -399,8 +400,9 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     metrics = pango_context_get_metrics(context, desc, NULL);
 
     t->fontx  = pango_font_metrics_get_approximate_char_width(metrics) / PANGO_SCALE;
-    t->ascent = pango_font_metrics_get_ascent(metrics) / PANGO_SCALE;
-    t->fonty  = t->ascent + pango_font_metrics_get_descent(metrics) / PANGO_SCALE;
+    ascent = pango_font_metrics_get_ascent(metrics);
+    descent = pango_font_metrics_get_descent(metrics);
+    t->fonty  = (ascent + descent) / PANGO_SCALE;
 
     pango_font_description_free(desc);
     if (!t->layout) {
