@@ -1205,14 +1205,15 @@ YY_RULE_SETUP
 #line 206 "parser.l"
 {
     fprintf(stderr, "invalid utf8 byte: \\%hho\n", yytext[0]);
+    return -1;
 }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 210 "parser.l"
+#line 211 "parser.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 1216 "parser.c"
+#line 1217 "parser.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2304,7 +2305,7 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 210 "parser.l"
+#line 211 "parser.l"
 
 
 

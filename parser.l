@@ -205,6 +205,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 
 (?s:.) {
     fprintf(stderr, "invalid utf8 byte: \\%hho\n", yytext[0]);
+    return -1;
 }
 
 %%
