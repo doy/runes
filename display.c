@@ -65,11 +65,19 @@ void runes_display_set_window_size(RunesTerm *t)
         pango_cairo_update_layout(t->cr, t->layout);
     }
     else {
+        PangoAttrList *attrs;
+        PangoFontDescription *font_desc;
+
+        attrs = pango_attr_list_new();
+        font_desc = pango_font_description_from_string(t->font_name);
+
         t->layout = pango_cairo_create_layout(t->cr);
-        pango_layout_set_attributes(t->layout, pango_attr_list_new());
+        pango_layout_set_attributes(t->layout, attrs);
+        pango_layout_set_font_description(t->layout, font_desc);
+
+        pango_attr_list_unref(attrs);
+        pango_font_description_free(font_desc);
     }
-    pango_layout_set_font_description(
-        t->layout, pango_font_description_from_string(t->font_name));
 
     cairo_save(t->cr);
 
@@ -425,6 +433,7 @@ void runes_display_cleanup(RunesTerm *t)
 {
     int i;
 
+    g_object_unref(t->layout);
     for (i = 0; i < 8; ++i) {
         cairo_pattern_destroy(t->colors[i]);
     }
@@ -457,6 +466,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     descent  = pango_font_metrics_get_descent(metrics);
     t->fonty = PANGO_PIXELS(ascent + descent);
 
+    pango_font_metrics_unref(metrics);
     pango_font_description_free(desc);
     if (!t->layout) {
         g_object_unref(context);
