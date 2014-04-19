@@ -355,12 +355,11 @@ void runes_display_restore_cursor(RunesTerm *t)
 
 void runes_display_use_alternate_buffer(RunesTerm *t)
 {
-    if (t->alternate) {
+    if (t->alternate_cr) {
         return;
     }
 
     runes_display_save_cursor(t);
-    t->alternate = 1;
     t->alternate_cr = t->cr;
     t->cr = NULL;
     t->xpixel = -1;
@@ -370,12 +369,11 @@ void runes_display_use_alternate_buffer(RunesTerm *t)
 
 void runes_display_use_normal_buffer(RunesTerm *t)
 {
-    if (!t->alternate) {
+    if (!t->alternate_cr) {
         return;
     }
 
     runes_display_restore_cursor(t);
-    t->alternate = 0;
     cairo_destroy(t->cr);
     t->cr = t->alternate_cr;
     t->alternate_cr = NULL;
