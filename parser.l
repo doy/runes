@@ -517,14 +517,14 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             break;
         case 30: case 31: case 32: case 33:
         case 34: case 35: case 36: case 37:
-            runes_display_set_fg_color(t, t->colors[params[i] - 30]);
+            runes_display_set_fg_color(t, params[i] - 30);
             break;
         case 39:
             runes_display_reset_fg_color(t);
             break;
         case 40: case 41: case 42: case 43:
         case 44: case 45: case 46: case 47:
-            runes_display_set_bg_color(t, t->colors[params[i] - 40]);
+            runes_display_set_bg_color(t, params[i] - 40);
             break;
         case 49:
             runes_display_reset_bg_color(t);

@@ -10,11 +10,13 @@ struct runes_term {
     cairo_t *alternate_cr;
     uv_loop_t *loop;
 
-    cairo_pattern_t *bgcolor;
-    cairo_pattern_t *fgcolor;
     cairo_pattern_t *cursorcolor;
 
     cairo_pattern_t *colors[8];
+    cairo_pattern_t *brightcolors[8];
+
+    int fgcolor;
+    int bgcolor;
 
     int row;
     int col;
@@ -33,6 +35,7 @@ struct runes_term {
     char *font_name;
     PangoLayout *layout;
 
+    char bold;
     char hide_cursor;
     char unfocused;
 
