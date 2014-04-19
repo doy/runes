@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "runes.h"
@@ -163,10 +164,46 @@ void runes_display_show_string_ascii(RunesTerm *t, char *buf, size_t len)
     }
 }
 
+/* XXX this is gross and kind of slow, but i can't find a better way to do it.
+ * i need to be able to convert the string into clusters before laying it out,
+ * since i'm not going to be using the full layout anyway, but the only way i
+ * can see to do that is with pango_get_log_attrs, which only returns character
+ * (not byte) offsets, so i have to reparse the utf8 myself once i get the
+ * results. not ideal. */
 void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 {
-    /* XXX */
-    runes_display_show_string_ascii(t, buf, len);
+    size_t i, pos, char_len;
+    PangoLogAttr *attrs;
+
+    char_len = g_utf8_strlen(buf, len);
+    attrs = malloc(sizeof(PangoLogAttr) * (char_len + 1));
+    pango_get_log_attrs(buf, len, -1, NULL, attrs, char_len + 1);
+
+    pos = 0;
+    for (i = 1; i < char_len + 1; ++i) {
+        if (attrs[i].is_cursor_position) {
+            char *startpos;
+            size_t cluster_len;
+
+            runes_display_paint_rectangle(
+                t, t->cr, t->bgcolor, t->col, t->row, 1, 1);
+
+            startpos = g_utf8_offset_to_pointer(buf, pos);
+            cluster_len = g_utf8_offset_to_pointer(buf, i) - startpos;
+            pango_layout_set_text(t->layout, startpos, cluster_len);
+            pango_cairo_update_layout(t->cr, t->layout);
+            pango_cairo_show_layout(t->cr, t->layout);
+            if (t->col + 1 >= t->cols) {
+                runes_display_move_to(t, t->row + 1, 0);
+            }
+            else {
+                runes_display_move_to(t, t->row, t->col + 1);
+            }
+            pos = i;
+        }
+    }
+
+    free(attrs);
 }
 
 void runes_display_clear_screen(RunesTerm *t)
