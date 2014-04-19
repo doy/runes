@@ -33,8 +33,6 @@ struct runes_term {
     char *font_name;
     PangoLayout *layout;
 
-    char font_underline;
-
     char hide_cursor;
     char unfocused;
     char alternate;

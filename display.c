@@ -136,21 +136,6 @@ void runes_display_show_string_ascii(RunesTerm *t, char *buf, size_t len)
             pango_cairo_update_layout(t->cr, t->layout);
             pango_cairo_show_layout(t->cr, t->layout);
 
-            if (t->font_underline) {
-                double x, y;
-
-                runes_display_position_cursor(t, t->cr);
-                cairo_get_current_point(t->cr, &x, &y);
-                cairo_save(t->cr);
-                cairo_set_line_width(t->cr, 1);
-                cairo_move_to(t->cr, x, y + t->fonty - 0.5);
-                cairo_line_to(
-                    t->cr,
-                    x + (t->fontx * to_write), y + t->fonty - 0.5);
-                cairo_stroke(t->cr);
-                cairo_restore(t->cr);
-            }
-
             buf += to_write;
             remaining -= to_write;
             space_in_row = t->cols;
@@ -300,12 +285,20 @@ void runes_display_reset_italic(RunesTerm *t)
 
 void runes_display_set_underline(RunesTerm *t)
 {
-    t->font_underline = 1;
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(t->layout);
+    pango_attr_list_change(
+        attrs, pango_attr_underline_new(PANGO_UNDERLINE_SINGLE));
 }
 
 void runes_display_reset_underline(RunesTerm *t)
 {
-    t->font_underline = 0;
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(t->layout);
+    pango_attr_list_change(
+        attrs, pango_attr_underline_new(PANGO_UNDERLINE_NONE));
 }
 
 void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color)
