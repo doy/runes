@@ -109,81 +109,95 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 
 %%
 
-{BEL} runes_parser_handle_bel(yyextra);
-{BS}  runes_parser_handle_bs(yyextra);
-{TAB} runes_parser_handle_tab(yyextra);
+{BEL} runes_parser_handle_bel(yyextra); return -1;
+{BS}  runes_parser_handle_bs(yyextra); return -1;
+{TAB} runes_parser_handle_tab(yyextra); return -1;
 {LF}  |
 {VT}  |
-{FF}  runes_parser_handle_lf(yyextra);
-{CR}  runes_parser_handle_cr(yyextra);
+{FF}  runes_parser_handle_lf(yyextra); return -1;
+{CR}  runes_parser_handle_cr(yyextra); return -1;
 
-{DECKPAM} runes_parser_handle_deckpam(yyextra);
-{DECKPNM} runes_parser_handle_deckpnm(yyextra);
-{RI}      runes_parser_handle_ri(yyextra);
-{VB}      runes_parser_handle_vb(yyextra);
-{DECSC}   runes_parser_handle_decsc(yyextra);
-{DECRC}   runes_parser_handle_decrc(yyextra);
+{DECKPAM} runes_parser_handle_deckpam(yyextra); return -1;
+{DECKPNM} runes_parser_handle_deckpnm(yyextra); return -1;
+{RI}      runes_parser_handle_ri(yyextra); return -1;
+{VB}      runes_parser_handle_vb(yyextra); return -1;
+{DECSC}   runes_parser_handle_decsc(yyextra); return -1;
+{DECRC}   runes_parser_handle_decrc(yyextra); return -1;
 
-{CUU} runes_parser_handle_cuu(yyextra, yytext, yyleng);
-{CUD} runes_parser_handle_cud(yyextra, yytext, yyleng);
-{CUF} runes_parser_handle_cuf(yyextra, yytext, yyleng);
-{CUB} runes_parser_handle_cub(yyextra, yytext, yyleng);
-{CUP} runes_parser_handle_cup(yyextra, yytext, yyleng);
-{ED}  runes_parser_handle_ed(yyextra, yytext, yyleng);
-{EL}  runes_parser_handle_el(yyextra, yytext, yyleng);
-{IL}  runes_parser_handle_il(yyextra, yytext, yyleng);
-{DCH} runes_parser_handle_dch(yyextra, yytext, yyleng);
-{SM}  runes_parser_handle_sm(yyextra, yytext, yyleng);
-{RM}  runes_parser_handle_rm(yyextra, yytext, yyleng);
-{SGR} runes_parser_handle_sgr(yyextra, yytext, yyleng);
-{CSR} runes_parser_handle_csr(yyextra, yytext, yyleng);
+{CUU} runes_parser_handle_cuu(yyextra, yytext, yyleng); return -1;
+{CUD} runes_parser_handle_cud(yyextra, yytext, yyleng); return -1;
+{CUF} runes_parser_handle_cuf(yyextra, yytext, yyleng); return -1;
+{CUB} runes_parser_handle_cub(yyextra, yytext, yyleng); return -1;
+{CUP} runes_parser_handle_cup(yyextra, yytext, yyleng); return -1;
+{ED}  runes_parser_handle_ed(yyextra, yytext, yyleng); return -1;
+{EL}  runes_parser_handle_el(yyextra, yytext, yyleng); return -1;
+{IL}  runes_parser_handle_il(yyextra, yytext, yyleng); return -1;
+{DCH} runes_parser_handle_dch(yyextra, yytext, yyleng); return -1;
+{SM}  runes_parser_handle_sm(yyextra, yytext, yyleng); return -1;
+{RM}  runes_parser_handle_rm(yyextra, yytext, yyleng); return -1;
+{SGR} runes_parser_handle_sgr(yyextra, yytext, yyleng); return -1;
+{CSR} runes_parser_handle_csr(yyextra, yytext, yyleng); return -1;
 
-{DECSED} runes_parser_handle_decsed(yyextra, yytext, yyleng);
-{DECSEL} runes_parser_handle_decsel(yyextra, yytext, yyleng);
+{DECSED} runes_parser_handle_decsed(yyextra, yytext, yyleng); return -1;
+{DECSEL} runes_parser_handle_decsel(yyextra, yytext, yyleng); return -1;
 
-{OSC0} runes_parser_handle_osc0(yyextra, yytext, yyleng);
-{OSC1} runes_parser_handle_osc1(yyextra, yytext, yyleng);
-{OSC2} runes_parser_handle_osc2(yyextra, yytext, yyleng);
+{OSC0} runes_parser_handle_osc0(yyextra, yytext, yyleng); return -1;
+{OSC1} runes_parser_handle_osc1(yyextra, yytext, yyleng); return -1;
+{OSC2} runes_parser_handle_osc2(yyextra, yytext, yyleng); return -1;
 
-{ASCII}+ runes_parser_handle_ascii(yyextra, yytext, yyleng);
-{CHAR}+  runes_parser_handle_text(yyextra, yytext, yyleng);
+{ASCII}+ runes_parser_handle_ascii(yyextra, yytext, yyleng); return -1;
+{CHAR}+  runes_parser_handle_text(yyextra, yytext, yyleng); return -1;
+
+{CSI}[<=?]?{CSIPARAMS}[0-9;] |
+{CSI}                        |
+{OSC}                        |
+{ESC}                        return yyleng;
+
+<<EOF>> return 0;
 
 {CSI}[<=?]?{CSIPARAMS}{CTRL} {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
+    return -1;
 }
 
 {CSI}[<=?]?{CSIPARAMS}{CHAR} {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
+    return -1;
 }
 
 {OSC}{CTRL} {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
+    return -1;
 }
 
 {OSC}{CHAR} {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
+    return -1;
 }
 
 {ESC}{CTRL} {
     fprintf(stderr, "unhandled escape sequence: \\%hho\n", yytext[1]);
+    return -1;
 }
 
 {ESC}{CHAR} {
     fprintf(
         stderr, "unhandled escape sequence: %*s\n",
         (int)yyleng - 1, yytext + 1);
+    return -1;
 }
 
 {CTRL} {
     fprintf(stderr, "unhandled control character: \\%hho\n", yytext[0]);
+    return -1;
 }
 
 (?s:.) {
@@ -196,13 +210,18 @@ void runes_parser_process_string(RunesTerm *t, char *buf, size_t len)
 {
     YY_BUFFER_STATE state;
     yyscan_t scanner;
+    int remaining;
 
     /* XXX this will break if buf ends with a partial escape sequence or utf8
      * character. we need to detect that and not consume the entire input in
      * that case */
     yylex_init_extra(t, &scanner);
     state = runes_parser_yy_scan_bytes(buf, len, scanner);
-    runes_parser_yylex(scanner);
+    while ((remaining = runes_parser_yylex(scanner)) == -1);
+    t->remaininglen = remaining;
+    if (t->remaininglen) {
+        memmove(t->readbuf, &buf[len - t->remaininglen], t->remaininglen);
+    }
     runes_parser_yy_delete_buffer(state, scanner);
     yylex_destroy(scanner);
 }

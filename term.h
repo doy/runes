@@ -37,6 +37,10 @@ struct runes_term {
     char *font_name;
     PangoLayout *layout;
 
+    char readbuf[RUNES_READ_BUFFER_LENGTH];
+    int readlen;
+    int remaininglen;
+
     char bold;
     char inverse;
     char hide_cursor;

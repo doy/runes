@@ -5,6 +5,8 @@
 #include <pango/pangocairo.h>
 #include <uv.h>
 
+#define RUNES_READ_BUFFER_LENGTH 4096
+
 struct runes_term;
 struct runes_window;
 struct runes_pty;

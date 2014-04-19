@@ -56,7 +56,7 @@ void runes_pty_backend_start_loop(RunesTerm *t)
 {
     void *data;
 
-    data = malloc(sizeof(RunesPtyLoopData));
+    data = malloc(sizeof(RunesLoopData));
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
 
@@ -96,23 +96,25 @@ void runes_pty_backend_cleanup(RunesTerm *t)
 
 static void runes_pty_backend_read(uv_work_t *req)
 {
-    RunesPtyLoopData *data;
+    RunesLoopData *data = req->data;
+    RunesTerm *t = data->t;
 
-    data = (RunesPtyLoopData *)req->data;
-    runes_window_backend_request_flush(data->data.t);
-    data->len = read(
-        data->data.t->pty.master, data->buf, RUNES_PTY_BUFFER_LENGTH);
+    runes_window_backend_request_flush(t);
+    t->readlen = read(
+        t->pty.master, t->readbuf + t->remaininglen,
+        RUNES_READ_BUFFER_LENGTH - t->remaininglen);
 }
 
 static void runes_pty_backend_got_data(uv_work_t *req, int status)
 {
-    RunesPtyLoopData *data = req->data;
-    RunesTerm *t = data->data.t;
+    RunesLoopData *data = req->data;
+    RunesTerm *t = data->t;
 
     UNUSED(status);
 
-    if (data->len > 0) {
-        runes_parser_process_string(t, data->buf, data->len);
+    if (t->readlen > 0) {
+        runes_parser_process_string(
+            t, t->readbuf, t->readlen + t->remaininglen);
         uv_queue_work(
             t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
     }
