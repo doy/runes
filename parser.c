@@ -2515,6 +2515,7 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
             switch (params[i]) {
             case 1:
                 t->application_cursor = 1;
+                break;
             case 25:
                 runes_display_show_cursor(t);
                 break;
@@ -2549,6 +2550,7 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
             switch (params[i]) {
             case 1:
                 t->application_cursor = 0;
+                break;
             case 25:
                 runes_display_hide_cursor(t);
                 break;
