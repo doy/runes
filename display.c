@@ -66,6 +66,7 @@ void runes_display_set_window_size(RunesTerm *t)
     }
     else {
         t->layout = pango_cairo_create_layout(t->cr);
+        pango_layout_set_attributes(t->layout, pango_attr_list_new());
     }
     pango_layout_set_font_description(
         t->layout, pango_font_description_from_string(t->font_name));
@@ -267,38 +268,44 @@ void runes_display_reset_text_attributes(RunesTerm *t)
 
 void runes_display_set_bold(RunesTerm *t)
 {
-    t->font_bold = 1;
-    runes_display_recalculate_font_metrics(t);
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(t->layout);
+    pango_attr_list_change(attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
 }
 
 void runes_display_reset_bold(RunesTerm *t)
 {
-    t->font_bold = 0;
-    runes_display_recalculate_font_metrics(t);
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(t->layout);
+    pango_attr_list_change(attrs, pango_attr_weight_new(PANGO_WEIGHT_NORMAL));
 }
 
 void runes_display_set_italic(RunesTerm *t)
 {
-    t->font_italic = 1;
-    runes_display_recalculate_font_metrics(t);
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(t->layout);
+    pango_attr_list_change(attrs, pango_attr_style_new(PANGO_STYLE_ITALIC));
 }
 
 void runes_display_reset_italic(RunesTerm *t)
 {
-    t->font_italic = 0;
-    runes_display_recalculate_font_metrics(t);
+    PangoAttrList *attrs;
+
+    attrs = pango_layout_get_attributes(t->layout);
+    pango_attr_list_change(attrs, pango_attr_style_new(PANGO_STYLE_NORMAL));
 }
 
 void runes_display_set_underline(RunesTerm *t)
 {
     t->font_underline = 1;
-    runes_display_recalculate_font_metrics(t);
 }
 
 void runes_display_reset_underline(RunesTerm *t)
 {
     t->font_underline = 0;
-    runes_display_recalculate_font_metrics(t);
 }
 
 void runes_display_set_fg_color(RunesTerm *t, cairo_pattern_t *color)
