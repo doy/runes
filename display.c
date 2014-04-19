@@ -182,22 +182,33 @@ void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
     pos = 0;
     for (i = 1; i < char_len + 1; ++i) {
         if (attrs[i].is_cursor_position) {
-            char *startpos;
+            char *startpos, *c;
             size_t cluster_len;
+            char width = 1;
 
             runes_display_paint_rectangle(
                 t, t->cr, t->bgcolor, t->col, t->row, 1, 1);
 
             startpos = g_utf8_offset_to_pointer(buf, pos);
             cluster_len = g_utf8_offset_to_pointer(buf, i) - startpos;
+
             pango_layout_set_text(t->layout, startpos, cluster_len);
             pango_cairo_update_layout(t->cr, t->layout);
             pango_cairo_show_layout(t->cr, t->layout);
-            if (t->col + 1 >= t->cols) {
+
+            for (c = startpos;
+                 (size_t)(c - startpos) < cluster_len;
+                 c = g_utf8_next_char(c)) {
+                if (g_unichar_iswide(g_utf8_get_char(c))) {
+                    width = 2;
+                }
+            }
+
+            if (t->col + width >= t->cols) {
                 runes_display_move_to(t, t->row + 1, 0);
             }
             else {
-                runes_display_move_to(t, t->row, t->col + 1);
+                runes_display_move_to(t, t->row, t->col + width);
             }
             pos = i;
         }
