@@ -148,6 +148,9 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 {ASCII}+ runes_parser_handle_ascii(yyextra, yytext, yyleng); return -1;
 {CHAR}+  runes_parser_handle_text(yyextra, yytext, yyleng); return -1;
 
+{LEAD2}                      |
+{LEAD3}{CONT}?               |
+{LEAD4}{CONT}?{CONT}?        |
 {CSI}[<=?]?{CSIPARAMS}[0-9;] |
 {CSI}                        |
 {OSC}                        |
