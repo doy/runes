@@ -273,6 +273,7 @@ void runes_display_reset_text_attributes(RunesTerm *t)
     runes_display_reset_bold(t);
     runes_display_reset_italic(t);
     runes_display_reset_underline(t);
+    runes_display_reset_inverse(t);
 }
 
 void runes_display_set_bold(RunesTerm *t)
@@ -329,6 +330,18 @@ void runes_display_reset_underline(RunesTerm *t)
         attrs, pango_attr_underline_new(PANGO_UNDERLINE_NONE));
 }
 
+void runes_display_set_inverse(RunesTerm *t)
+{
+    t->inverse = 1;
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
+}
+
+void runes_display_reset_inverse(RunesTerm *t)
+{
+    t->inverse = 0;
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
+}
+
 void runes_display_set_fg_color(RunesTerm *t, int color)
 {
     t->fgcolor = color;
@@ -343,6 +356,7 @@ void runes_display_reset_fg_color(RunesTerm *t)
 void runes_display_set_bg_color(RunesTerm *t, int color)
 {
     t->bgcolor = color;
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
 
 void runes_display_reset_bg_color(RunesTerm *t)
@@ -462,24 +476,34 @@ void runes_display_cleanup(RunesTerm *t)
 
 static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t)
 {
-    if (t->fgcolor == -1) {
-        return t->fgdefault;
+    int color = t->inverse ? t->bgcolor : t->fgcolor;
+
+    if (t->inverse && t->bgcolor == t->fgcolor) {
+        return t->bgdefault;
+    }
+    else if (color == -1) {
+        return t->inverse ? t->bgdefault : t->fgdefault;
     }
     else if (t->bold) {
-        return t->brightcolors[t->fgcolor];
+        return t->brightcolors[color];
     }
     else {
-        return t->colors[t->fgcolor];
+        return t->colors[color];
     }
 }
 
 static cairo_pattern_t *runes_display_get_bgcolor(RunesTerm *t)
 {
-    if (t->bgcolor == -1) {
-        return t->bgdefault;
+    int color = t->inverse ? t->fgcolor : t->bgcolor;
+
+    if (t->inverse && t->bgcolor == t->fgcolor) {
+        return t->fgdefault;
+    }
+    else if (color == -1) {
+        return t->inverse ? t->fgdefault : t->bgdefault;
     }
     else {
-        return t->colors[t->bgcolor];
+        return t->colors[color];
     }
 }
 

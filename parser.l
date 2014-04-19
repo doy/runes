@@ -506,6 +506,9 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
         case 4:
             runes_display_set_underline(t);
             break;
+        case 7:
+            runes_display_set_inverse(t);
+            break;
         case 22:
             runes_display_reset_bold(t);
             break;
@@ -514,6 +517,9 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             break;
         case 24:
             runes_display_reset_underline(t);
+            break;
+        case 27:
+            runes_display_reset_inverse(t);
             break;
         case 30: case 31: case 32: case 33:
         case 34: case 35: case 36: case 37:

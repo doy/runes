@@ -38,6 +38,7 @@ struct runes_term {
     PangoLayout *layout;
 
     char bold;
+    char inverse;
     char hide_cursor;
     char unfocused;
 

@@ -19,6 +19,8 @@ void runes_display_set_italic(RunesTerm *t);
 void runes_display_reset_italic(RunesTerm *t);
 void runes_display_set_underline(RunesTerm *t);
 void runes_display_reset_underline(RunesTerm *t);
+void runes_display_set_inverse(RunesTerm *t);
+void runes_display_reset_inverse(RunesTerm *t);
 void runes_display_set_fg_color(RunesTerm *t, int color);
 void runes_display_reset_fg_color(RunesTerm *t);
 void runes_display_set_bg_color(RunesTerm *t, int color);
