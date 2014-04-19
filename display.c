@@ -27,7 +27,7 @@ void runes_display_init(RunesTerm *t)
     t->colors[3] = cairo_pattern_create_rgb(0.804, 0.804, 0.0);
     t->colors[4] = cairo_pattern_create_rgb(0.0,   0.0,   0.804);
     t->colors[5] = cairo_pattern_create_rgb(0.804, 0.0,   0.804);
-    t->colors[6] = cairo_pattern_create_rgb(0.804, 0.804, 0.804);
+    t->colors[6] = cairo_pattern_create_rgb(0.0,   0.804, 0.804);
     t->colors[7] = cairo_pattern_create_rgb(0.898, 0.898, 0.898);
 
     t->brightcolors[0] = cairo_pattern_create_rgb(0.302, 0.302, 0.302);
@@ -36,7 +36,7 @@ void runes_display_init(RunesTerm *t)
     t->brightcolors[3] = cairo_pattern_create_rgb(1.0, 1.0, 0.0);
     t->brightcolors[4] = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
     t->brightcolors[5] = cairo_pattern_create_rgb(1.0, 0.0, 1.0);
-    t->brightcolors[6] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+    t->brightcolors[6] = cairo_pattern_create_rgb(0.0, 1.0, 1.0);
     t->brightcolors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
     t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
