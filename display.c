@@ -186,15 +186,8 @@ void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
             size_t cluster_len;
             char width = 1;
 
-            runes_display_paint_rectangle(
-                t, t->cr, t->bgcolor, t->col, t->row, 1, 1);
-
             startpos = g_utf8_offset_to_pointer(buf, pos);
             cluster_len = g_utf8_offset_to_pointer(buf, i) - startpos;
-
-            pango_layout_set_text(t->layout, startpos, cluster_len);
-            pango_cairo_update_layout(t->cr, t->layout);
-            pango_cairo_show_layout(t->cr, t->layout);
 
             for (c = startpos;
                  (size_t)(c - startpos) < cluster_len;
@@ -203,6 +196,13 @@ void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
                     width = 2;
                 }
             }
+
+            runes_display_paint_rectangle(
+                t, t->cr, t->bgcolor, t->col, t->row, width, 1);
+
+            pango_layout_set_text(t->layout, startpos, cluster_len);
+            pango_cairo_update_layout(t->cr, t->layout);
+            pango_cairo_show_layout(t->cr, t->layout);
 
             if (t->col + width >= t->cols) {
                 runes_display_move_to(t, t->row + 1, 0);
