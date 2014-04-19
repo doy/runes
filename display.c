@@ -4,6 +4,8 @@
 
 #include "runes.h"
 
+static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t);
+static cairo_pattern_t *runes_display_get_bgcolor(RunesTerm *t);
 static void runes_display_recalculate_font_metrics(RunesTerm *t);
 static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr);
 static void runes_display_paint_rectangle(
@@ -16,6 +18,9 @@ void runes_display_init(RunesTerm *t)
     t->font_name = "Fixed 10.5";
     runes_display_recalculate_font_metrics(t);
 
+    t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
+    t->bgdefault = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
+
     t->colors[0] = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
     t->colors[1] = cairo_pattern_create_rgb(0.804, 0.0,   0.0);
     t->colors[2] = cairo_pattern_create_rgb(0.0,   0.804, 0.0);
@@ -23,7 +28,8 @@ void runes_display_init(RunesTerm *t)
     t->colors[4] = cairo_pattern_create_rgb(0.0,   0.0,   0.804);
     t->colors[5] = cairo_pattern_create_rgb(0.804, 0.0,   0.804);
     t->colors[6] = cairo_pattern_create_rgb(0.804, 0.804, 0.804);
-    t->colors[7] = cairo_pattern_create_rgb(0.804, 0.804, 0.804);
+    t->colors[7] = cairo_pattern_create_rgb(0.898, 0.898, 0.898);
+
     t->brightcolors[0] = cairo_pattern_create_rgb(0.302, 0.302, 0.302);
     t->brightcolors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
     t->brightcolors[2] = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
@@ -35,8 +41,8 @@ void runes_display_init(RunesTerm *t)
 
     t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
 
-    t->fgcolor = 7;
-    t->bgcolor = 0;
+    t->fgcolor = -1;
+    t->bgcolor = -1;
 }
 
 void runes_display_set_window_size(RunesTerm *t)
@@ -68,8 +74,7 @@ void runes_display_set_window_size(RunesTerm *t)
         CAIRO_FORMAT_RGB24, t->xpixel, t->ypixel);
     t->cr = cairo_create(surface);
     cairo_surface_destroy(surface);
-    cairo_set_source(
-        t->cr, t->bold ? t->brightcolors[t->fgcolor] : t->colors[t->fgcolor]);
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
     if (t->layout) {
         pango_cairo_update_layout(t->cr, t->layout);
     }
@@ -94,7 +99,7 @@ void runes_display_set_window_size(RunesTerm *t)
         cairo_set_source_surface(t->cr, cairo_get_target(old_cr), 0.0, 0.0);
     }
     else {
-        cairo_set_source(t->cr, t->colors[t->bgcolor]);
+        cairo_set_source(t->cr, t->bgdefault);
     }
 
     cairo_paint(t->cr);
@@ -147,7 +152,8 @@ void runes_display_show_string_ascii(RunesTerm *t, char *buf, size_t len)
             int to_write = remaining > space_in_row ? space_in_row : remaining;
 
             runes_display_paint_rectangle(
-                t, t->cr, t->colors[t->bgcolor], t->col, t->row, to_write, 1);
+                t, t->cr, runes_display_get_bgcolor(t),
+                t->col, t->row, to_write, 1);
 
             pango_layout_set_text(t->layout, buf, to_write);
             pango_cairo_update_layout(t->cr, t->layout);
@@ -201,7 +207,8 @@ void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
             }
 
             runes_display_paint_rectangle(
-                t, t->cr, t->colors[t->bgcolor], t->col, t->row, width, 1);
+                t, t->cr, runes_display_get_bgcolor(t),
+                t->col, t->row, width, 1);
 
             pango_layout_set_text(t->layout, startpos, cluster_len);
             pango_cairo_update_layout(t->cr, t->layout);
@@ -223,20 +230,20 @@ void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 void runes_display_clear_screen(RunesTerm *t)
 {
     runes_display_paint_rectangle(
-        t, t->cr, t->colors[t->bgcolor], 0, 0, t->cols, t->rows);
+        t, t->cr, t->bgdefault, 0, 0, t->cols, t->rows);
 }
 
 void runes_display_clear_screen_forward(RunesTerm *t)
 {
     runes_display_kill_line_forward(t);
     runes_display_paint_rectangle(
-        t, t->cr, t->colors[t->bgcolor], 0, t->row, t->cols, t->rows - t->row);
+        t, t->cr, t->bgdefault, 0, t->row, t->cols, t->rows - t->row);
 }
 
 void runes_display_kill_line_forward(RunesTerm *t)
 {
     runes_display_paint_rectangle(
-        t, t->cr, t->colors[t->bgcolor], t->col, t->row, t->cols - t->col, 1);
+        t, t->cr, t->bgdefault, t->col, t->row, t->cols - t->col, 1);
 }
 
 void runes_display_delete_characters(RunesTerm *t, int count)
@@ -275,7 +282,7 @@ void runes_display_set_bold(RunesTerm *t)
     attrs = pango_layout_get_attributes(t->layout);
     pango_attr_list_change(attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
     t->bold = 1;
-    cairo_set_source(t->cr, t->brightcolors[t->fgcolor]);
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
 
 void runes_display_reset_bold(RunesTerm *t)
@@ -285,7 +292,7 @@ void runes_display_reset_bold(RunesTerm *t)
     attrs = pango_layout_get_attributes(t->layout);
     pango_attr_list_change(attrs, pango_attr_weight_new(PANGO_WEIGHT_NORMAL));
     t->bold = 0;
-    cairo_set_source(t->cr, t->colors[t->fgcolor]);
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
 
 void runes_display_set_italic(RunesTerm *t)
@@ -325,13 +332,12 @@ void runes_display_reset_underline(RunesTerm *t)
 void runes_display_set_fg_color(RunesTerm *t, int color)
 {
     t->fgcolor = color;
-    cairo_set_source(
-        t->cr, t->bold ? t->brightcolors[t->fgcolor] : t->colors[t->fgcolor]);
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
 
 void runes_display_reset_fg_color(RunesTerm *t)
 {
-    runes_display_set_fg_color(t, 7);
+    runes_display_set_fg_color(t, -1);
 }
 
 void runes_display_set_bg_color(RunesTerm *t, int color)
@@ -341,7 +347,7 @@ void runes_display_set_bg_color(RunesTerm *t, int color)
 
 void runes_display_reset_bg_color(RunesTerm *t)
 {
-    runes_display_set_bg_color(t, 0);
+    runes_display_set_bg_color(t, -1);
 }
 
 void runes_display_show_cursor(RunesTerm *t)
@@ -452,6 +458,29 @@ void runes_display_cleanup(RunesTerm *t)
     }
     cairo_pattern_destroy(t->cursorcolor);
     cairo_destroy(t->cr);
+}
+
+static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t)
+{
+    if (t->fgcolor == -1) {
+        return t->fgdefault;
+    }
+    else if (t->bold) {
+        return t->brightcolors[t->fgcolor];
+    }
+    else {
+        return t->colors[t->fgcolor];
+    }
+}
+
+static cairo_pattern_t *runes_display_get_bgcolor(RunesTerm *t)
+{
+    if (t->bgcolor == -1) {
+        return t->bgdefault;
+    }
+    else {
+        return t->colors[t->bgcolor];
+    }
 }
 
 static void runes_display_recalculate_font_metrics(RunesTerm *t)
