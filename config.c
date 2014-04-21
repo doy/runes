@@ -33,6 +33,24 @@ static void runes_config_set_defaults(RunesTerm *t)
     t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
     t->bgdefault = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
 
+    t->colors[0] = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
+    t->colors[1] = cairo_pattern_create_rgb(0.804, 0.0,   0.0);
+    t->colors[2] = cairo_pattern_create_rgb(0.0,   0.804, 0.0);
+    t->colors[3] = cairo_pattern_create_rgb(0.804, 0.804, 0.0);
+    t->colors[4] = cairo_pattern_create_rgb(0.0,   0.0,   0.804);
+    t->colors[5] = cairo_pattern_create_rgb(0.804, 0.0,   0.804);
+    t->colors[6] = cairo_pattern_create_rgb(0.0,   0.804, 0.804);
+    t->colors[7] = cairo_pattern_create_rgb(0.898, 0.898, 0.898);
+
+    t->brightcolors[0] = cairo_pattern_create_rgb(0.302, 0.302, 0.302);
+    t->brightcolors[1] = cairo_pattern_create_rgb(1.0, 0.0, 0.0);
+    t->brightcolors[2] = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
+    t->brightcolors[3] = cairo_pattern_create_rgb(1.0, 1.0, 0.0);
+    t->brightcolors[4] = cairo_pattern_create_rgb(0.0, 0.0, 1.0);
+    t->brightcolors[5] = cairo_pattern_create_rgb(1.0, 0.0, 1.0);
+    t->brightcolors[6] = cairo_pattern_create_rgb(0.0, 1.0, 1.0);
+    t->brightcolors[7] = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+
     t->default_rows = 24;
     t->default_cols = 80;
 }
@@ -146,6 +164,24 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
         if (newcolor) {
             cairo_pattern_destroy(t->fgdefault);
             t->fgdefault = newcolor;
+        }
+    }
+    else if (!strncmp(key, "color", 5)
+             && strlen(key) == 6 && key[5] >= '0' && key[5] <= '7') {
+        cairo_pattern_t *newcolor;
+        newcolor = runes_config_parse_color(val);
+        if (newcolor) {
+            cairo_pattern_destroy(t->colors[key[5] - '0']);
+            t->colors[key[5] - '0'] = newcolor;
+        }
+    }
+    else if (!strncmp(key, "brightcolor", 5)
+             && strlen(key) == 6 && key[5] >= '0' && key[5] <= '7') {
+        cairo_pattern_t *newcolor;
+        newcolor = runes_config_parse_color(val);
+        if (newcolor) {
+            cairo_pattern_destroy(t->brightcolors[key[5] - '0']);
+            t->brightcolors[key[5] - '0'] = newcolor;
         }
     }
     else if (!strcmp(key, "rows")) {
