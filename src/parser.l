@@ -467,8 +467,14 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
             case 1:
                 t->application_cursor = 1;
                 break;
+            case 9:
+                t->mouse_reporting_press = 1;
+                break;
             case 25:
                 runes_display_show_cursor(t);
+                break;
+            case 1000:
+                t->mouse_reporting_press_release = 1;
                 break;
             case 47:
             case 1049:
@@ -503,8 +509,14 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
             case 1:
                 t->application_cursor = 0;
                 break;
+            case 9:
+                t->mouse_reporting_press = 0;
+                break;
             case 25:
                 runes_display_hide_cursor(t);
+                break;
+            case 1000:
+                t->mouse_reporting_press_release = 0;
                 break;
             case 47:
             case 1049:

@@ -402,6 +402,65 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             free(buf);
             break;
         }
+        case ButtonPress:
+        case ButtonRelease:
+            if (t->mouse_reporting_press_release) {
+                char response[7];
+                char status = 0;
+
+                if (e->type == ButtonPress || e->xbutton.button <= 3) {
+                    if (e->type == ButtonRelease) {
+                        status = 3;
+                    }
+                    else {
+                        switch (e->xbutton.button) {
+                        case Button1:
+                            status = 0;
+                            break;
+                        case Button2:
+                            status = 1;
+                            break;
+                        case Button3:
+                            status = 2;
+                            break;
+                        case Button4:
+                            status = 64;
+                            break;
+                        case Button5:
+                            status = 65;
+                            break;
+                        }
+                    }
+
+                    if (e->xbutton.state & ShiftMask) {
+                        status |= 4;
+                    }
+                    if (e->xbutton.state & Mod1Mask) {
+                        status |= 8;
+                    }
+                    if (e->xbutton.state & ControlMask) {
+                        status |= 16;
+                    }
+
+                    sprintf(
+                        response, "\e[M%c%c%c",
+                        ' ' + (status),
+                        ' ' + (e->xbutton.x / t->fontx + 1),
+                        ' ' + (e->xbutton.y / t->fonty + 1));
+                    runes_pty_backend_write(t, response, 6);
+                }
+            }
+            else if (t->mouse_reporting_press && e->type == ButtonPress) {
+                char response[7];
+
+                sprintf(
+                    response, "\e[M%c%c%c",
+                    ' ' + (e->xbutton.button - 1),
+                    ' ' + (e->xbutton.x / t->fontx + 1),
+                    ' ' + (e->xbutton.y / t->fonty + 1));
+                runes_pty_backend_write(t, response, 6);
+            }
+            break;
         case Expose:
             runes_window_backend_flush(t);
             break;

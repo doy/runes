@@ -56,6 +56,8 @@ struct runes_term {
 
     char application_keypad;
     char application_cursor;
+    char mouse_reporting_press;
+    char mouse_reporting_press_release;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);
