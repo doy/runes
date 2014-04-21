@@ -7,6 +7,7 @@
 static void runes_config_set_defaults(RunesTerm *t);
 static FILE *runes_config_get_config_file();
 static void runes_config_process_config_file(RunesTerm *t, FILE *config_file);
+static void runes_config_process_args(RunesTerm *t, int argc, char *argv[]);
 static void runes_config_set(RunesTerm *t, char *key, char *value);
 static char runes_config_parse_bool(char *val);
 static int runes_config_parse_uint(char *val);
@@ -15,13 +16,11 @@ static cairo_pattern_t *runes_config_parse_color(char *val);
 
 void runes_config_init(RunesTerm *t, int argc, char *argv[])
 {
-    UNUSED(argc);
-    UNUSED(argv);
-
     memset((void *)t, 0, sizeof(*t));
 
     runes_config_set_defaults(t);
     runes_config_process_config_file(t, runes_config_get_config_file());
+    runes_config_process_args(t, argc, argv);
 }
 
 static void runes_config_set_defaults(RunesTerm *t)
@@ -141,6 +140,27 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
         *vend = '\0';
 
         runes_config_set(t, kbegin, vbegin);
+    }
+}
+
+static void runes_config_process_args(RunesTerm *t, int argc, char *argv[])
+{
+    int i;
+
+    for (i = 1; i < argc; ++i) {
+        if (!strncmp(argv[i], "--", 2)) {
+            if (i + 1 < argc) {
+                runes_config_set(t, &argv[i][2], argv[i + 1]);
+                i++;
+            }
+            else {
+                fprintf(
+                    stderr, "option found with no argument: '%s'\n", argv[i]);
+            }
+        }
+        else {
+            fprintf(stderr, "unknown argument: '%s'\n", argv[i]);
+        }
     }
 }
 
