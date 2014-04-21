@@ -30,6 +30,7 @@ LF  \012
 VT  \013
 FF  \014
 CR  \015
+SI  \017
 ESC \033
 
 DECKPAM {ESC}=
@@ -68,6 +69,11 @@ DECSEL {DECCSI}{CSIPARAM1}K
 OSC0 {OSC}0;{CHAR}*{ST}
 OSC1 {OSC}1;{CHAR}*{ST}
 OSC2 {OSC}2;{CHAR}*{ST}
+
+GZD4 {ESC}\([\040-\057]*[\060-\176]
+G1D4 {ESC}\)[\040-\057]*[\060-\176]
+G2D4 {ESC}\*[\040-\057]*[\060-\176]
+G3D4 {ESC}\+[\040-\057]*[\060-\176]
 
 %{
 static void runes_parser_handle_bel(RunesTerm *t);
@@ -116,6 +122,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 {VT}      |
 {FF}      runes_parser_handle_lf(yyextra);                     return -1;
 {CR}      runes_parser_handle_cr(yyextra);                     return -1;
+{SI}                                                           return -1;
 
 {DECKPAM} runes_parser_handle_deckpam(yyextra);                return -1;
 {DECKPNM} runes_parser_handle_deckpnm(yyextra);                return -1;
@@ -144,6 +151,11 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 {OSC0}    runes_parser_handle_osc0(yyextra, yytext, yyleng);   return -1;
 {OSC1}    runes_parser_handle_osc1(yyextra, yytext, yyleng);   return -1;
 {OSC2}    runes_parser_handle_osc2(yyextra, yytext, yyleng);   return -1;
+
+{GZD4}    |
+{G1D4}    |
+{G2D4}    |
+{G3D4}                                                         return -1;
 
 {ASCII}+  runes_parser_handle_ascii(yyextra, yytext, yyleng);  return -1;
 {CHAR}+   runes_parser_handle_text(yyextra, yytext, yyleng);   return -1;
