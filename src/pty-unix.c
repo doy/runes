@@ -58,7 +58,12 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         unsetenv("LINES");
         unsetenv("COLUMNS");
 
-        execlp(cmd, cmd, (char *)NULL);
+        if (strchr(cmd, ' ')) {
+            execlp("/bin/sh", "/bin/sh", "-c", cmd, (char *)NULL);
+        }
+        else {
+            execlp(cmd, cmd, (char *)NULL);
+        }
 
         fprintf(old_stderr, "Couldn't run %s: %s\n", cmd, strerror(errno));
         exit(1);
