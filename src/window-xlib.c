@@ -427,14 +427,11 @@ static void runes_window_backend_flush(RunesTerm *t)
 static void runes_window_backend_visual_bell(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
-    cairo_pattern_t *white;
     struct timespec tm = { 0, 20000000 };
 
     runes_window_backend_set_urgent(t);
-    white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
-    cairo_set_source(t->backend_cr, white);
+    cairo_set_source(t->backend_cr, t->fgdefault);
     cairo_paint(t->backend_cr);
-    cairo_pattern_destroy(white);
     cairo_surface_flush(cairo_get_target(t->backend_cr));
     XFlush(w->dpy);
     nanosleep(&tm, NULL);
