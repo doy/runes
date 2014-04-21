@@ -83,9 +83,19 @@ static void runes_window_backend_process_event(uv_work_t *req, int status);
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
+static void runes_window_backend_visual_bell(RunesTerm *t);
 static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
+static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
+static void runes_window_backend_handle_button_event(
+    RunesTerm *t, XButtonEvent *e);
+static void runes_window_backend_handle_expose_event(
+    RunesTerm *t, XExposeEvent *e);
+static void runes_window_backend_handle_configure_event(
+    RunesTerm *t, XConfigureEvent *e);
+static void runes_window_backend_handle_focus_event(
+    RunesTerm *t, XFocusChangeEvent *e);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
@@ -329,154 +339,23 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
 
     if (!XFilterEvent(e, None)) {
         switch (e->type) {
-        case KeyPress: {
-            char *buf = NULL;
-            size_t len = 8;
-            KeySym sym;
-            Status s;
-            size_t chars;
-
-            buf = malloc(len);
-
-            for (;;) {
-                chars = Xutf8LookupString(
-                    w->ic, &e->xkey, buf, len - 1, &sym, &s);
-                if (s == XBufferOverflow) {
-                    len = chars + 1;
-                    buf = realloc(buf, len);
-                    continue;
-                }
-                break;
-            }
-
-            switch (s) {
-            case XLookupChars:
-            case XLookupBoth:
-                runes_pty_backend_write(t, buf, chars);
-                break;
-            case XLookupKeySym: {
-                struct function_key *key;
-
-                if (t->application_keypad) {
-                    if (t->application_cursor) {
-                        key = &application_cursor_keys[0];
-                        while (key->sym != XK_VoidSymbol) {
-                            if (key->sym == sym) {
-                                break;
-                            }
-                            key++;
-                        }
-                        if (key->sym != XK_VoidSymbol) {
-                            runes_pty_backend_write(t, key->str, key->len);
-                            break;
-                        }
-                    }
-                    key = &application_keypad_keys[0];
-                    while (key->sym != XK_VoidSymbol) {
-                        if (key->sym == sym) {
-                            break;
-                        }
-                        key++;
-                    }
-                    if (key->sym != XK_VoidSymbol) {
-                        runes_pty_backend_write(t, key->str, key->len);
-                        break;
-                    }
-                }
-                key = &keys[0];
-                while (key->sym != XK_VoidSymbol) {
-                    if (key->sym == sym) {
-                        break;
-                    }
-                    key++;
-                }
-                if (key->sym != XK_VoidSymbol) {
-                    runes_pty_backend_write(t, key->str, key->len);
-                    break;
-                }
-                break;
-            }
-            default:
-                break;
-            }
-            free(buf);
+        case KeyPress:
+        case KeyRelease:
+            runes_window_backend_handle_key_event(t, &e->xkey);
             break;
-        }
         case ButtonPress:
         case ButtonRelease:
-            if (t->mouse_reporting_press_release) {
-                char response[7];
-                char status = 0;
-
-                if (e->type == ButtonPress || e->xbutton.button <= 3) {
-                    if (e->type == ButtonRelease) {
-                        status = 3;
-                    }
-                    else {
-                        switch (e->xbutton.button) {
-                        case Button1:
-                            status = 0;
-                            break;
-                        case Button2:
-                            status = 1;
-                            break;
-                        case Button3:
-                            status = 2;
-                            break;
-                        case Button4:
-                            status = 64;
-                            break;
-                        case Button5:
-                            status = 65;
-                            break;
-                        }
-                    }
-
-                    if (e->xbutton.state & ShiftMask) {
-                        status |= 4;
-                    }
-                    if (e->xbutton.state & Mod1Mask) {
-                        status |= 8;
-                    }
-                    if (e->xbutton.state & ControlMask) {
-                        status |= 16;
-                    }
-
-                    sprintf(
-                        response, "\e[M%c%c%c",
-                        ' ' + (status),
-                        ' ' + (e->xbutton.x / t->fontx + 1),
-                        ' ' + (e->xbutton.y / t->fonty + 1));
-                    runes_pty_backend_write(t, response, 6);
-                }
-            }
-            else if (t->mouse_reporting_press && e->type == ButtonPress) {
-                char response[7];
-
-                sprintf(
-                    response, "\e[M%c%c%c",
-                    ' ' + (e->xbutton.button - 1),
-                    ' ' + (e->xbutton.x / t->fontx + 1),
-                    ' ' + (e->xbutton.y / t->fonty + 1));
-                runes_pty_backend_write(t, response, 6);
-            }
+            runes_window_backend_handle_button_event(t, &e->xbutton);
             break;
         case Expose:
-            runes_window_backend_flush(t);
+            runes_window_backend_handle_expose_event(t, &e->xexpose);
             break;
         case ConfigureNotify:
-            while (XCheckTypedWindowEvent(w->dpy, w->w, ConfigureNotify, e));
-            runes_window_backend_resize_window(
-                t, e->xconfigure.width, e->xconfigure.height);
+            runes_window_backend_handle_configure_event(t, &e->xconfigure);
             break;
         case FocusIn:
-            runes_window_backend_clear_urgent(t);
-            runes_display_focus_in(t);
-            runes_window_backend_flush(t);
-            break;
         case FocusOut:
-            runes_display_focus_out(t);
-            runes_window_backend_flush(t);
+            runes_window_backend_handle_focus_event(t, &e->xfocus);
             break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
@@ -495,18 +374,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 runes_window_backend_flush(t);
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_VISUAL_BELL]) {
-                cairo_pattern_t *white;
-                struct timespec tm = { 0, 20000000 };
-
-                runes_window_backend_set_urgent(t);
-                white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
-                cairo_set_source(t->backend_cr, white);
-                cairo_paint(t->backend_cr);
-                cairo_pattern_destroy(white);
-                cairo_surface_flush(cairo_get_target(t->backend_cr));
-                XFlush(w->dpy);
-                nanosleep(&tm, NULL);
-                runes_window_backend_flush(t);
+                runes_window_backend_visual_bell(t);
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_AUDIBLE_BELL]) {
                 XBell(w->dpy, 0);
@@ -556,6 +424,23 @@ static void runes_window_backend_flush(RunesTerm *t)
     cairo_surface_flush(cairo_get_target(t->backend_cr));
 }
 
+static void runes_window_backend_visual_bell(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+    cairo_pattern_t *white;
+    struct timespec tm = { 0, 20000000 };
+
+    runes_window_backend_set_urgent(t);
+    white = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+    cairo_set_source(t->backend_cr, white);
+    cairo_paint(t->backend_cr);
+    cairo_pattern_destroy(white);
+    cairo_surface_flush(cairo_get_target(t->backend_cr));
+    XFlush(w->dpy);
+    nanosleep(&tm, NULL);
+    runes_window_backend_flush(t);
+}
+
 static void runes_window_backend_draw_cursor(RunesTerm *t)
 {
     if (!t->hide_cursor) {
@@ -598,4 +483,175 @@ static void runes_window_backend_clear_urgent(RunesTerm *t)
     hints->flags &= ~XUrgencyHint;
     XSetWMHints(t->w.dpy, t->w.w, hints);
     XFree(hints);
+}
+
+static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
+{
+    RunesWindowBackend *w = &t->w;
+    char *buf;
+    size_t len = 8;
+    KeySym sym;
+    Status s;
+    size_t chars;
+
+    if (e->type == KeyRelease) {
+        return;
+    }
+
+    buf = malloc(len);
+
+    for (;;) {
+        chars = Xutf8LookupString(w->ic, e, buf, len - 1, &sym, &s);
+        if (s == XBufferOverflow) {
+            len = chars + 1;
+            buf = realloc(buf, len);
+            continue;
+        }
+        break;
+    }
+
+    switch (s) {
+    case XLookupChars:
+    case XLookupBoth:
+        runes_pty_backend_write(t, buf, chars);
+        break;
+    case XLookupKeySym: {
+        struct function_key *key;
+
+        if (t->application_keypad) {
+            if (t->application_cursor) {
+                key = &application_cursor_keys[0];
+                while (key->sym != XK_VoidSymbol) {
+                    if (key->sym == sym) {
+                        break;
+                    }
+                    key++;
+                }
+                if (key->sym != XK_VoidSymbol) {
+                    runes_pty_backend_write(t, key->str, key->len);
+                    break;
+                }
+            }
+            key = &application_keypad_keys[0];
+            while (key->sym != XK_VoidSymbol) {
+                if (key->sym == sym) {
+                    break;
+                }
+                key++;
+            }
+            if (key->sym != XK_VoidSymbol) {
+                runes_pty_backend_write(t, key->str, key->len);
+                break;
+            }
+        }
+        key = &keys[0];
+        while (key->sym != XK_VoidSymbol) {
+            if (key->sym == sym) {
+                break;
+            }
+            key++;
+        }
+        if (key->sym != XK_VoidSymbol) {
+            runes_pty_backend_write(t, key->str, key->len);
+            break;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    free(buf);
+}
+
+static void runes_window_backend_handle_button_event(
+    RunesTerm *t, XButtonEvent *e)
+{
+    if (t->mouse_reporting_press_release) {
+        char response[7];
+        char status = 0;
+
+        if (e->type == ButtonRelease && e->button > 3) {
+            return;
+        }
+
+        if (e->type == ButtonRelease) {
+            status = 3;
+        }
+        else {
+            switch (e->button) {
+            case Button1:
+                status = 0;
+                break;
+            case Button2:
+                status = 1;
+                break;
+            case Button3:
+                status = 2;
+                break;
+            case Button4:
+                status = 64;
+                break;
+            case Button5:
+                status = 65;
+                break;
+            }
+        }
+
+        if (e->state & ShiftMask) {
+            status |= 4;
+        }
+        if (e->state & Mod1Mask) {
+            status |= 8;
+        }
+        if (e->state & ControlMask) {
+            status |= 16;
+        }
+
+        sprintf(
+            response, "\e[M%c%c%c",
+            ' ' + (status),
+            ' ' + (e->x / t->fontx + 1),
+            ' ' + (e->y / t->fonty + 1));
+        runes_pty_backend_write(t, response, 6);
+    }
+    else if (t->mouse_reporting_press && e->type == ButtonPress) {
+        char response[7];
+
+        sprintf(
+            response, "\e[M%c%c%c",
+            ' ' + (e->button - 1),
+            ' ' + (e->x / t->fontx + 1),
+            ' ' + (e->y / t->fonty + 1));
+        runes_pty_backend_write(t, response, 6);
+    }
+}
+
+static void runes_window_backend_handle_expose_event(
+    RunesTerm *t, XExposeEvent *e)
+{
+    UNUSED(e);
+
+    runes_window_backend_flush(t);
+}
+
+static void runes_window_backend_handle_configure_event(
+    RunesTerm *t, XConfigureEvent *e)
+{
+    RunesWindowBackend *w = &t->w;
+
+    while (XCheckTypedWindowEvent(w->dpy, w->w, ConfigureNotify, (XEvent *)e));
+    runes_window_backend_resize_window(t, e->width, e->height);
+}
+
+static void runes_window_backend_handle_focus_event(
+    RunesTerm *t, XFocusChangeEvent *e)
+{
+    runes_window_backend_clear_urgent(t);
+    if (e->type == FocusIn) {
+        runes_display_focus_in(t);
+    }
+    else {
+        runes_display_focus_out(t);
+    }
+    runes_window_backend_flush(t);
 }
