@@ -15,7 +15,6 @@ static void runes_display_scroll_down(RunesTerm *t, int rows);
 
 void runes_display_init(RunesTerm *t)
 {
-    t->font_name = "Fixed 10.5";
     runes_display_recalculate_font_metrics(t);
 
     t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);

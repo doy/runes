@@ -28,6 +28,7 @@ struct runes_loop_data {
 #include "term.h"
 #include "display.h"
 #include "parser.h"
+#include "config.h"
 
 #define UNUSED(x) ((void)x)
 

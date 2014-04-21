@@ -1,11 +1,8 @@
-#include <stdlib.h>
-#include <string.h>
-
 #include "runes.h"
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[])
 {
-    memset((void *)t, 0, sizeof(*t));
+    runes_config_init(t, argc, argv);
 
     /* doing most of the pty initialization right at the beginning, because
      * libuv will set up a bunch of state (including potentially things like
