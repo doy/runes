@@ -51,7 +51,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         unsetenv("LINES");
         unsetenv("COLUMNS");
 
-        execl(cmd, cmd, (char *)NULL);
+        execlp(cmd, cmd, (char *)NULL);
     }
 }
 
