@@ -10,6 +10,7 @@ struct runes_term {
     cairo_t *alternate_cr;
     uv_loop_t *loop;
 
+    cairo_pattern_t *mousecursorcolor;
     cairo_pattern_t *cursorcolor;
 
     cairo_pattern_t *fgdefault;

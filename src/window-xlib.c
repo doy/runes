@@ -97,6 +97,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     unsigned long white;
     XIM im;
     Cursor cursor;
+    double mouse_r, mouse_g, mouse_b;
     XColor cursor_fg, cursor_bg;
     Visual *vis;
     cairo_surface_t *surface;
@@ -153,8 +154,17 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     runes_window_backend_set_window_title(t, "runes", 5);
 
     cursor = XCreateFontCursor(w->dpy, XC_xterm);
-    cursor_fg.red = cursor_fg.green = cursor_fg.blue = 65535;
-    cursor_bg.red = cursor_bg.green = cursor_bg.blue = 0;
+    cairo_pattern_get_rgba(
+        t->mousecursorcolor, &mouse_r, &mouse_g, &mouse_b, NULL);
+    cursor_fg.red   = (unsigned short)(mouse_r * 65535);
+    cursor_fg.green = (unsigned short)(mouse_g * 65535);
+    cursor_fg.blue  = (unsigned short)(mouse_b * 65535);
+    if ((mouse_r + mouse_g + mouse_b) / 3.0 > 0.5) {
+        cursor_bg.red = cursor_bg.green = cursor_bg.blue = 0;
+    }
+    else {
+        cursor_bg.red = cursor_bg.green = cursor_bg.blue = 65535;
+    }
     XRecolorCursor(w->dpy, cursor, &cursor_fg, &cursor_bg);
     XDefineCursor(w->dpy, w->w, cursor);
 

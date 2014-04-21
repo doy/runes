@@ -30,6 +30,8 @@ static void runes_config_set_defaults(RunesTerm *t)
     t->bold_is_bold   = 1;
     t->audible_bell   = 1;
 
+    t->mousecursorcolor = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
+
     t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
     t->bgdefault = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
 
@@ -193,6 +195,14 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
         if (newcolor) {
             cairo_pattern_destroy(t->fgdefault);
             t->fgdefault = newcolor;
+        }
+    }
+    else if (!strcmp(key, "mousecursorcolor")) {
+        cairo_pattern_t *newcolor;
+        newcolor = runes_config_parse_color(val);
+        if (newcolor) {
+            cairo_pattern_destroy(t->mousecursorcolor);
+            t->mousecursorcolor = newcolor;
         }
     }
     else if (!strncmp(key, "color", 5)
