@@ -26,7 +26,7 @@ void runes_config_init(RunesTerm *t, int argc, char *argv[])
 
 static void runes_config_set_defaults(RunesTerm *t)
 {
-    t->font_name      = "monospace 10";
+    t->font_name      = strdup("monospace 10");
     t->bold_is_bright = 1;
     t->bold_is_bold   = 1;
     t->audible_bell   = 1;
@@ -147,6 +147,7 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
 static void runes_config_set(RunesTerm *t, char *key, char *val)
 {
     if (!strcmp(key, "font")) {
+        free(t->font_name);
         t->font_name = runes_config_parse_string(val);
     }
     else if (!strcmp(key, "bold_is_bright")) {
