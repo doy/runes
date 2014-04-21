@@ -122,6 +122,10 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
             len--;
         }
 
+        if (!len || line[strspn(line, " \t")] == '#') {
+            continue;
+        }
+
         kbegin = line + strspn(line, " \t");
         kend = kbegin + strcspn(kbegin, " \t=");
         vbegin = kend + strspn(kend, " \t");
