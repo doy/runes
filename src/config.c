@@ -16,8 +16,6 @@ static cairo_pattern_t *runes_config_parse_color(char *val);
 
 void runes_config_init(RunesTerm *t, int argc, char *argv[])
 {
-    memset((void *)t, 0, sizeof(*t));
-
     runes_config_set_defaults(t);
     runes_config_process_config_file(t, runes_config_get_config_file());
     runes_config_process_args(t, argc, argv);
@@ -25,6 +23,8 @@ void runes_config_init(RunesTerm *t, int argc, char *argv[])
 
 static void runes_config_set_defaults(RunesTerm *t)
 {
+    memset((void *)t, 0, sizeof(*t));
+
     t->font_name      = strdup("monospace 10");
     t->bold_is_bright = 1;
     t->bold_is_bold   = 1;
