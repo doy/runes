@@ -457,6 +457,7 @@ void runes_display_cleanup(RunesTerm *t)
     cairo_pattern_destroy(t->fgdefault);
     cairo_pattern_destroy(t->bgdefault);
     cairo_pattern_destroy(t->cursorcolor);
+    cairo_pattern_destroy(t->mousecursorcolor);
     cairo_destroy(t->cr);
 }
 
