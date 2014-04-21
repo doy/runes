@@ -24,7 +24,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         pty->slave = -1;
     }
     else {
-        char *shell;
+        char *cmd;
 
         setsid();
         ioctl(pty->slave, TIOCSCTTY, NULL);
@@ -37,9 +37,12 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 
         close(pty->slave);
 
-        shell = getenv("SHELL");
-        if (!shell) {
-            shell = "/bin/sh";
+        cmd = t->cmd;
+        if (!cmd) {
+            cmd = getenv("SHELL");
+        }
+        if (!cmd) {
+            cmd = "/bin/sh";
         }
 
         /* XXX should use a different TERM value eventually, but for right now
@@ -48,7 +51,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         unsetenv("LINES");
         unsetenv("COLUMNS");
 
-        execl(shell, shell, (char *)NULL);
+        execl(cmd, cmd, (char *)NULL);
     }
 }
 

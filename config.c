@@ -194,6 +194,9 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
     else if (!strcmp(key, "cols")) {
         t->default_cols = runes_config_parse_uint(val);
     }
+    else if (!strcmp(key, "command")) {
+        t->cmd = runes_config_parse_string(val);
+    }
     else {
         fprintf(stderr, "unknown option: '%s'\n", key);
     }
