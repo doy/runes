@@ -462,7 +462,7 @@ void runes_display_scroll_up(RunesTerm *t, int rows)
     cairo_pop_group_to_source(t->cr);
     cairo_paint(t->cr);
     runes_display_paint_rectangle(
-        t, t->cr, t->colors[0], 0, t->scroll_top, t->cols, rows);
+        t, t->cr, t->bgdefault, 0, t->scroll_top, t->cols, rows);
     cairo_restore(t->cr);
 }
 
@@ -579,6 +579,6 @@ static void runes_display_scroll_down(RunesTerm *t, int rows)
     cairo_pop_group_to_source(t->cr);
     cairo_paint(t->cr);
     runes_display_paint_rectangle(
-        t, t->cr, t->colors[0], 0, t->scroll_bottom + 1 - rows, t->cols, rows);
+        t, t->cr, t->bgdefault, 0, t->scroll_bottom + 1 - rows, t->cols, rows);
     cairo_restore(t->cr);
 }
