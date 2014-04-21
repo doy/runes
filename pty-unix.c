@@ -1,6 +1,7 @@
 #define _XOPEN_SOURCE 600
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -25,6 +26,12 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
     }
     else {
         char *cmd;
+        int old_stderr_fd;
+        FILE *old_stderr;
+
+        old_stderr_fd = dup(2);
+        fcntl(old_stderr_fd, F_SETFD, FD_CLOEXEC);
+        old_stderr = fdopen(old_stderr_fd, "w");
 
         setsid();
         ioctl(pty->slave, TIOCSCTTY, NULL);
@@ -52,6 +59,9 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         unsetenv("COLUMNS");
 
         execlp(cmd, cmd, (char *)NULL);
+
+        fprintf(old_stderr, "Couldn't run %s: %s\n", cmd, strerror(errno));
+        exit(1);
     }
 }
 
