@@ -17,9 +17,6 @@ void runes_display_init(RunesTerm *t)
 {
     runes_display_recalculate_font_metrics(t);
 
-    t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
-    t->bgdefault = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
-
     t->colors[0] = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
     t->colors[1] = cairo_pattern_create_rgb(0.804, 0.0,   0.0);
     t->colors[2] = cairo_pattern_create_rgb(0.0,   0.804, 0.0);

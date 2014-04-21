@@ -10,6 +10,7 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file);
 static void runes_config_set(RunesTerm *t, char *key, char *value);
 static char runes_config_parse_bool(char *val);
 static char *runes_config_parse_string(char *val);
+static cairo_pattern_t *runes_config_parse_color(char *val);
 
 void runes_config_init(RunesTerm *t, int argc, char *argv[])
 {
@@ -27,6 +28,9 @@ static void runes_config_set_defaults(RunesTerm *t)
     t->font_name      = "monospace 10";
     t->bold_is_bright = 1;
     t->bold_is_bold   = 1;
+
+    t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
+    t->bgdefault = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
 }
 
 static FILE *runes_config_get_config_file()
@@ -124,6 +128,22 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
     else if (!strcmp(key, "bold_is_bold")) {
         t->bold_is_bold = runes_config_parse_bool(val);
     }
+    else if (!strcmp(key, "bgcolor")) {
+        cairo_pattern_t *newcolor;
+        newcolor = runes_config_parse_color(val);
+        if (newcolor) {
+            cairo_pattern_destroy(t->bgdefault);
+            t->bgdefault = newcolor;
+        }
+    }
+    else if (!strcmp(key, "fgcolor")) {
+        cairo_pattern_t *newcolor;
+        newcolor = runes_config_parse_color(val);
+        if (newcolor) {
+            cairo_pattern_destroy(t->fgdefault);
+            t->fgdefault = newcolor;
+        }
+    }
     else {
         fprintf(stderr, "unknown option: '%s'\n", key);
     }
@@ -146,4 +166,17 @@ static char runes_config_parse_bool(char *val)
 static char *runes_config_parse_string(char *val)
 {
     return strdup(val);
+}
+
+static cairo_pattern_t *runes_config_parse_color(char *val)
+{
+    int r, g, b;
+
+    if (strlen(val) != 7 || sscanf(val, "#%2x%2x%2x", &r, &g, &b) != 3) {
+        fprintf(stderr, "unknown color value: '%s'\n", val);
+        return NULL;
+    }
+
+    return cairo_pattern_create_rgb(
+        (double)r / 255.0, (double)g / 255.0, (double)b / 255.0);
 }
