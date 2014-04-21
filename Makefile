@@ -1,5 +1,13 @@
 OUT      = runes
-OBJ      = runes.o display.o term.o parser.o config.o window-xlib.o pty-unix.o
+BUILD    = build/
+SRC      = src/
+OBJ      = $(BUILD)runes.o \
+	   $(BUILD)display.o \
+	   $(BUILD)term.o \
+	   $(BUILD)parser.o \
+	   $(BUILD)config.o \
+	   $(BUILD)window-xlib.o \
+	   $(BUILD)pty-unix.o
 LIBS     = cairo cairo-xlib libuv pangocairo
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
@@ -7,23 +15,25 @@ LDFLAGS ?= -g -Wall -Wextra -Werror
 ALLCFLAGS  = $(shell pkg-config --cflags $(LIBS)) $(CFLAGS)
 ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
 
-MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:%.o=.%.d)'
+MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
 build: $(OUT)
 
 $(OUT): $(OBJ)
 	$(CC) $(ALLLDFLAGS) -o $@ $^
 
-%.o: %.c
-	@$(MAKEDEPEND) -o $(<:%.c=.%.d) $<
+$(BUILD)%.o: $(SRC)%.c
+	@mkdir -p $(BUILD)
+	@$(MAKEDEPEND) -o $(<:$(SRC)%.c=$(BUILD).%.d) $<
 	$(CC) $(ALLCFLAGS) -c -o $@ $<
 
-%.c: %.l
+$(SRC)%.c: $(SRC)%.l
 	$(LEX) -o $@ $<
 
 clean:
-	rm -f $(OUT) $(OBJ) $(OBJ:%.o=.%.d)
+	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
+	@rmdir -p $(BUILD) > /dev/null 2>&1
 
--include $(OBJ:%.o=.%.d)
+-include $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
 
 .PHONY: build clean

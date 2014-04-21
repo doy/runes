@@ -1,6 +1,6 @@
-#line 2 "parser.c"
+#line 2 "src/parser.c"
 
-#line 4 "parser.c"
+#line 4 "src/parser.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -597,8 +597,8 @@ static yyconst flex_int16_t yy_chk[555] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "parser.l"
-#line 2 "parser.l"
+#line 1 "src/parser.l"
+#line 2 "src/parser.l"
 #include <string.h>
 
 #include "runes.h"
@@ -607,7 +607,7 @@ static yyconst flex_int16_t yy_chk[555] =
 
 #define YY_EXIT_FAILURE (UNUSED(yyscanner), 2)
 #define YY_NO_INPUT 1
-#line 73 "parser.l"
+#line 73 "src/parser.l"
 static void runes_parser_handle_bel(RunesTerm *t);
 static void runes_parser_handle_bs(RunesTerm *t);
 static void runes_parser_handle_tab(RunesTerm *t);
@@ -643,7 +643,7 @@ static void runes_parser_handle_osc1(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_osc2(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_ascii(RunesTerm *t, char *text, size_t len);
 static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
-#line 647 "parser.c"
+#line 647 "src/parser.c"
 
 #define INITIAL 0
 
@@ -891,10 +891,10 @@ YY_DECL
 		}
 
 	{
-#line 110 "parser.l"
+#line 110 "src/parser.l"
 
 
-#line 898 "parser.c"
+#line 898 "src/parser.c"
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
@@ -949,191 +949,191 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 112 "parser.l"
+#line 112 "src/parser.l"
 runes_parser_handle_bel(yyextra);                    return -1;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 113 "parser.l"
+#line 113 "src/parser.l"
 runes_parser_handle_bs(yyextra);                     return -1;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 114 "parser.l"
+#line 114 "src/parser.l"
 runes_parser_handle_tab(yyextra);                    return -1;
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
-#line 116 "parser.l"
+#line 116 "src/parser.l"
 case 5:
 /* rule 5 can match eol */
-#line 117 "parser.l"
+#line 117 "src/parser.l"
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 117 "parser.l"
+#line 117 "src/parser.l"
 runes_parser_handle_lf(yyextra);                     return -1;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 118 "parser.l"
+#line 118 "src/parser.l"
 runes_parser_handle_cr(yyextra);                     return -1;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 120 "parser.l"
+#line 120 "src/parser.l"
 runes_parser_handle_deckpam(yyextra);                return -1;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 121 "parser.l"
+#line 121 "src/parser.l"
 runes_parser_handle_deckpnm(yyextra);                return -1;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 122 "parser.l"
+#line 122 "src/parser.l"
 runes_parser_handle_ri(yyextra);                     return -1;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 123 "parser.l"
+#line 123 "src/parser.l"
 runes_parser_handle_vb(yyextra);                     return -1;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 124 "parser.l"
+#line 124 "src/parser.l"
 runes_parser_handle_decsc(yyextra);                  return -1;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 125 "parser.l"
+#line 125 "src/parser.l"
 runes_parser_handle_decrc(yyextra);                  return -1;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 127 "parser.l"
+#line 127 "src/parser.l"
 runes_parser_handle_cuu(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 128 "parser.l"
+#line 128 "src/parser.l"
 runes_parser_handle_cud(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 129 "parser.l"
+#line 129 "src/parser.l"
 runes_parser_handle_cuf(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 130 "parser.l"
+#line 130 "src/parser.l"
 runes_parser_handle_cub(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 131 "parser.l"
+#line 131 "src/parser.l"
 runes_parser_handle_cup(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 132 "parser.l"
+#line 132 "src/parser.l"
 runes_parser_handle_ed(yyextra, yytext, yyleng);     return -1;
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 133 "parser.l"
+#line 133 "src/parser.l"
 runes_parser_handle_el(yyextra, yytext, yyleng);     return -1;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 134 "parser.l"
+#line 134 "src/parser.l"
 runes_parser_handle_il(yyextra, yytext, yyleng);     return -1;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 135 "parser.l"
+#line 135 "src/parser.l"
 runes_parser_handle_dch(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 136 "parser.l"
+#line 136 "src/parser.l"
 runes_parser_handle_sm(yyextra, yytext, yyleng);     return -1;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 137 "parser.l"
+#line 137 "src/parser.l"
 runes_parser_handle_rm(yyextra, yytext, yyleng);     return -1;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 138 "parser.l"
+#line 138 "src/parser.l"
 runes_parser_handle_sgr(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 139 "parser.l"
+#line 139 "src/parser.l"
 runes_parser_handle_csr(yyextra, yytext, yyleng);    return -1;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 141 "parser.l"
+#line 141 "src/parser.l"
 runes_parser_handle_decsed(yyextra, yytext, yyleng); return -1;
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 142 "parser.l"
+#line 142 "src/parser.l"
 runes_parser_handle_decsel(yyextra, yytext, yyleng); return -1;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 144 "parser.l"
+#line 144 "src/parser.l"
 runes_parser_handle_osc0(yyextra, yytext, yyleng);   return -1;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 145 "parser.l"
+#line 145 "src/parser.l"
 runes_parser_handle_osc1(yyextra, yytext, yyleng);   return -1;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 146 "parser.l"
+#line 146 "src/parser.l"
 runes_parser_handle_osc2(yyextra, yytext, yyleng);   return -1;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 148 "parser.l"
+#line 148 "src/parser.l"
 runes_parser_handle_ascii(yyextra, yytext, yyleng);  return -1;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 149 "parser.l"
+#line 149 "src/parser.l"
 runes_parser_handle_text(yyextra, yytext, yyleng);   return -1;
 	YY_BREAK
 case 34:
-#line 152 "parser.l"
+#line 152 "src/parser.l"
 case 35:
-#line 153 "parser.l"
+#line 153 "src/parser.l"
 case 36:
-#line 154 "parser.l"
+#line 154 "src/parser.l"
 case 37:
-#line 155 "parser.l"
+#line 155 "src/parser.l"
 case 38:
-#line 156 "parser.l"
+#line 156 "src/parser.l"
 case 39:
-#line 157 "parser.l"
+#line 157 "src/parser.l"
 case 40:
 YY_RULE_SETUP
-#line 157 "parser.l"
+#line 157 "src/parser.l"
 return yyleng;
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
-#line 159 "parser.l"
+#line 159 "src/parser.l"
 return 0;
 	YY_BREAK
 case 41:
 /* rule 41 can match eol */
 YY_RULE_SETUP
-#line 161 "parser.l"
+#line 161 "src/parser.l"
 {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\\%hho\n",
@@ -1143,7 +1143,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 168 "parser.l"
+#line 168 "src/parser.l"
 {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\n",
@@ -1154,7 +1154,7 @@ YY_RULE_SETUP
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 175 "parser.l"
+#line 175 "src/parser.l"
 {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\\%hho\n",
@@ -1164,7 +1164,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 182 "parser.l"
+#line 182 "src/parser.l"
 {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\n",
@@ -1175,7 +1175,7 @@ YY_RULE_SETUP
 case 45:
 /* rule 45 can match eol */
 YY_RULE_SETUP
-#line 189 "parser.l"
+#line 189 "src/parser.l"
 {
     fprintf(stderr, "unhandled escape sequence: \\%hho\n", yytext[1]);
     return -1;
@@ -1183,7 +1183,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 194 "parser.l"
+#line 194 "src/parser.l"
 {
     fprintf(
         stderr, "unhandled escape sequence: %*s\n",
@@ -1194,7 +1194,7 @@ YY_RULE_SETUP
 case 47:
 /* rule 47 can match eol */
 YY_RULE_SETUP
-#line 201 "parser.l"
+#line 201 "src/parser.l"
 {
     fprintf(stderr, "unhandled control character: \\%hho\n", yytext[0]);
     return -1;
@@ -1202,7 +1202,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 206 "parser.l"
+#line 206 "src/parser.l"
 {
     fprintf(stderr, "invalid utf8 byte: \\%hho\n", yytext[0]);
     return -1;
@@ -1210,10 +1210,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 211 "parser.l"
+#line 211 "src/parser.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 1217 "parser.c"
+#line 1217 "src/parser.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2305,7 +2305,7 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 
 #define YYTABLES_NAME "yytables"
 
-#line 211 "parser.l"
+#line 211 "src/parser.l"
 
 
 
