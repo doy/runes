@@ -38,6 +38,7 @@ DECKPNM {ESC}>
 CSI     {ESC}\[
 OSC     {ESC}\]
 RI      {ESC}M
+RIS     {ESC}c
 VB      {ESC}g
 DECSC   {ESC}7
 DECRC   {ESC}8
@@ -84,6 +85,7 @@ static void runes_parser_handle_cr(RunesTerm *t);
 static void runes_parser_handle_deckpam(RunesTerm *t);
 static void runes_parser_handle_deckpnm(RunesTerm *t);
 static void runes_parser_handle_ri(RunesTerm *t);
+static void runes_parser_handle_ris(RunesTerm *t);
 static void runes_parser_handle_vb(RunesTerm *t);
 static void runes_parser_handle_decsc(RunesTerm *t);
 static void runes_parser_handle_decrc(RunesTerm *t);
@@ -127,6 +129,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 {DECKPAM} runes_parser_handle_deckpam(yyextra);                return -1;
 {DECKPNM} runes_parser_handle_deckpnm(yyextra);                return -1;
 {RI}      runes_parser_handle_ri(yyextra);                     return -1;
+{RIS}     runes_parser_handle_ris(yyextra);                    return -1;
 {VB}      runes_parser_handle_vb(yyextra);                     return -1;
 {DECSC}   runes_parser_handle_decsc(yyextra);                  return -1;
 {DECRC}   runes_parser_handle_decrc(yyextra);                  return -1;
@@ -285,6 +288,21 @@ static void runes_parser_handle_deckpnm(RunesTerm *t)
 static void runes_parser_handle_ri(RunesTerm *t)
 {
     runes_display_move_to(t, t->row - 1, t->col);
+}
+
+static void runes_parser_handle_ris(RunesTerm *t)
+{
+    runes_display_use_normal_buffer(t);
+    runes_display_set_scroll_region(t, 1, t->rows, 1, t->cols);
+    runes_display_clear_screen(t);
+    runes_display_save_cursor(t);
+    runes_display_reset_text_attributes(t);
+    runes_display_show_cursor(t);
+
+    t->application_keypad            = 0;
+    t->application_cursor            = 0;
+    t->mouse_reporting_press         = 0;
+    t->mouse_reporting_press_release = 0;
 }
 
 static void runes_parser_handle_vb(RunesTerm *t)
