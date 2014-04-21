@@ -280,7 +280,10 @@ void runes_display_set_bold(RunesTerm *t)
     PangoAttrList *attrs;
 
     attrs = pango_layout_get_attributes(t->layout);
-    pango_attr_list_change(attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
+    if (t->bold_is_bold) {
+        pango_attr_list_change(
+            attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
+    }
     t->bold = 1;
     cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
@@ -290,7 +293,10 @@ void runes_display_reset_bold(RunesTerm *t)
     PangoAttrList *attrs;
 
     attrs = pango_layout_get_attributes(t->layout);
-    pango_attr_list_change(attrs, pango_attr_weight_new(PANGO_WEIGHT_NORMAL));
+    if (t->bold_is_bold) {
+        pango_attr_list_change(
+            attrs, pango_attr_weight_new(PANGO_WEIGHT_NORMAL));
+    }
     t->bold = 0;
     cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
@@ -483,7 +489,7 @@ static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t)
     else if (color == -1) {
         return t->inverse ? t->bgdefault : t->fgdefault;
     }
-    else if (t->bold) {
+    else if (t->bold_is_bright && t->bold) {
         return t->brightcolors[color];
     }
     else {

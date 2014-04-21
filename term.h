@@ -41,6 +41,8 @@ struct runes_term {
     int readlen;
     int remaininglen;
 
+    char bold_is_bright;
+    char bold_is_bold;
     char bold;
     char inverse;
     char hide_cursor;
