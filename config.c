@@ -9,6 +9,7 @@ static FILE *runes_config_get_config_file();
 static void runes_config_process_config_file(RunesTerm *t, FILE *config_file);
 static void runes_config_set(RunesTerm *t, char *key, char *value);
 static char runes_config_parse_bool(char *val);
+static int runes_config_parse_uint(char *val);
 static char *runes_config_parse_string(char *val);
 static cairo_pattern_t *runes_config_parse_color(char *val);
 
@@ -31,6 +32,9 @@ static void runes_config_set_defaults(RunesTerm *t)
 
     t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
     t->bgdefault = cairo_pattern_create_rgb(0.0,   0.0,   0.0);
+
+    t->default_rows = 24;
+    t->default_cols = 80;
 }
 
 static FILE *runes_config_get_config_file()
@@ -144,6 +148,12 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
             t->fgdefault = newcolor;
         }
     }
+    else if (!strcmp(key, "rows")) {
+        t->default_rows = runes_config_parse_uint(val);
+    }
+    else if (!strcmp(key, "cols")) {
+        t->default_cols = runes_config_parse_uint(val);
+    }
     else {
         fprintf(stderr, "unknown option: '%s'\n", key);
     }
@@ -161,6 +171,15 @@ static char runes_config_parse_bool(char *val)
         fprintf(stderr, "unknown boolean value: '%s'\n", val);
         return 0;
     }
+}
+
+static int runes_config_parse_uint(char *val)
+{
+    if (strspn(val, "0123456789") != strlen(val)) {
+        fprintf(stderr, "unknown unsigned integer value: '%s'\n", val);
+    }
+
+    return atoi(val);
 }
 
 static char *runes_config_parse_string(char *val)

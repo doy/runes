@@ -33,6 +33,8 @@ struct runes_term {
     int ypixel;
     int fontx;
     int fonty;
+    int default_rows;
+    int default_cols;
 
     char *font_name;
     PangoLayout *layout;

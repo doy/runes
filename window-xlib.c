@@ -110,8 +110,8 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     normal_hints.min_height  = t->fonty;
     normal_hints.width_inc   = t->fontx;
     normal_hints.height_inc  = t->fonty;
-    normal_hints.base_width  = t->fontx * 80;
-    normal_hints.base_height = t->fonty * 24;
+    normal_hints.base_width  = t->fontx * t->default_cols;
+    normal_hints.base_height = t->fonty * t->default_rows;
 
     XInitThreads();
 
