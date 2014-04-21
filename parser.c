@@ -2331,7 +2331,12 @@ void runes_parser_process_string(RunesTerm *t, char *buf, size_t len)
 
 static void runes_parser_handle_bel(RunesTerm *t)
 {
-    runes_window_backend_request_visual_bell(t);
+    if (t->audible_bell) {
+        runes_window_backend_request_audible_bell(t);
+    }
+    else {
+        runes_window_backend_request_visual_bell(t);
+    }
 }
 
 static void runes_parser_handle_bs(RunesTerm *t)

@@ -14,6 +14,7 @@ enum runes_atoms {
     RUNES_ATOM_WM_PROTOCOLS,
     RUNES_ATOM_RUNES_FLUSH,
     RUNES_ATOM_RUNES_VISUAL_BELL,
+    RUNES_ATOM_RUNES_AUDIBLE_BELL,
     RUNES_NUM_ATOMS
 };
 
@@ -34,6 +35,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[]);
 void runes_window_backend_start_loop(RunesTerm *t);
 void runes_window_backend_request_flush(RunesTerm *t);
 void runes_window_backend_request_visual_bell(RunesTerm *t);
+void runes_window_backend_request_audible_bell(RunesTerm *t);
 void runes_window_backend_request_close(RunesTerm *t);
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel);
 void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len);
