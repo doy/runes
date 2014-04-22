@@ -238,7 +238,7 @@ void runes_display_delete_characters(RunesTerm *t, int count)
     cairo_pop_group_to_source(t->cr);
     cairo_paint(t->cr);
     runes_display_paint_rectangle(
-        t, t->cr, t->colors[0], t->cols - count, t->row, count, 1);
+        t, t->cr, t->bgdefault, t->cols - count, t->row, count, 1);
     cairo_restore(t->cr);
 }
 
