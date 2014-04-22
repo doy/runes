@@ -104,17 +104,15 @@ void runes_display_focus_out(RunesTerm *t)
 
 void runes_display_move_to(RunesTerm *t, int row, int col)
 {
-    int height = t->scroll_bottom - t->scroll_top;
-
-    t->row = row + t->scroll_top;
+    t->row = row;
     t->col = col;
 
-    if (row > height) {
-        runes_display_scroll_down(t, row - height);
+    if (row > t->scroll_bottom) {
+        runes_display_scroll_down(t, row - t->scroll_bottom);
         t->row = t->scroll_bottom;
     }
-    else if (row < 0) {
-        runes_display_scroll_up(t, -row);
+    else if (row < t->scroll_top) {
+        runes_display_scroll_up(t, t->scroll_top - row);
         t->row = t->scroll_top;
     }
 
@@ -442,7 +440,7 @@ void runes_display_set_scroll_region(
 
     t->scroll_top    = top;
     t->scroll_bottom = bottom;
-    runes_display_move_to(t, 0, 0);
+    runes_display_move_to(t, t->scroll_top, 0);
 }
 
 void runes_display_scroll_up(RunesTerm *t, int rows)
