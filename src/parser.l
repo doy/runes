@@ -480,6 +480,18 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
     runes_parser_extract_sm_params(buf + 2, len - 3, modes, params, &nparams);
     for (i = 0; i < nparams; ++i) {
         switch (modes[i]) {
+        case 0:
+            switch (params[i]) {
+                case 34:
+                    /* do nothing, no idea what this is even for */
+                    break;
+                default:
+                    fprintf(
+                        stderr, "unknown SM parameter: %d\n",
+                        params[i]);
+                    break;
+            }
+            break;
         case '?':
             switch (params[i]) {
             case 1:
@@ -522,6 +534,18 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
     runes_parser_extract_sm_params(buf + 2, len - 3, modes, params, &nparams);
     for (i = 0; i < nparams; ++i) {
         switch (modes[i]) {
+        case 0:
+            switch (params[i]) {
+                case 34:
+                    /* do nothing, no idea what this is even for */
+                    break;
+                default:
+                    fprintf(
+                        stderr, "unknown RM parameter: %d\n",
+                        params[i]);
+                    break;
+            }
+            break;
         case '?':
             switch (params[i]) {
             case 1:
