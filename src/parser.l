@@ -345,7 +345,7 @@ static void runes_parser_extract_sm_params(
         }
 
         if (modes && (size_t)(pos - buf) < len) {
-            if (strstr(pos, "0123456789")) {
+            if (strspn(pos, "0123456789")) {
                 modes[*nparams] = '\0';
             }
             else {
