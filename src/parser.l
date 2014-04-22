@@ -58,6 +58,7 @@ CUP {CSI}{CSIPARAM2}H
 ED  {CSI}{CSIPARAM1}J
 EL  {CSI}{CSIPARAM1}K
 IL  {CSI}{CSIPARAM1}L
+DL  {CSI}{CSIPARAM1}M
 DCH {CSI}{CSIPARAM1}P
 SM  {CSI}{SMPARAMS}h
 RM  {CSI}{SMPARAMS}l
@@ -101,6 +102,7 @@ static void runes_parser_handle_cup(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_ed(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_il(RunesTerm *t, char *buf, size_t len);
+static void runes_parser_handle_dl(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_dch(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len);
@@ -142,6 +144,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 {ED}      runes_parser_handle_ed(yyextra, yytext, yyleng);     return -1;
 {EL}      runes_parser_handle_el(yyextra, yytext, yyleng);     return -1;
 {IL}      runes_parser_handle_il(yyextra, yytext, yyleng);     return -1;
+{DL}      runes_parser_handle_dl(yyextra, yytext, yyleng);     return -1;
 {DCH}     runes_parser_handle_dch(yyextra, yytext, yyleng);    return -1;
 {SM}      runes_parser_handle_sm(yyextra, yytext, yyleng);     return -1;
 {RM}      runes_parser_handle_rm(yyextra, yytext, yyleng);     return -1;
@@ -463,6 +466,15 @@ static void runes_parser_handle_il(RunesTerm *t, char *buf, size_t len)
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     /* XXX this is wrong - it only works if the cursor is on the top line */
     runes_display_scroll_up(t, params[0]);
+}
+
+static void runes_parser_handle_dl(RunesTerm *t, char *buf, size_t len)
+{
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
+
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_display_delete_lines(t, params[0]);
+    runes_display_move_to(t, t->row, 0);
 }
 
 static void runes_parser_handle_dch(RunesTerm *t, char *buf, size_t len)

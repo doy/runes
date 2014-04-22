@@ -222,6 +222,26 @@ void runes_display_kill_line_forward(RunesTerm *t)
         t, t->cr, t->bgdefault, t->col, t->row, t->cols - t->col, 1);
 }
 
+void runes_display_delete_lines(RunesTerm *t, int count)
+{
+    cairo_pattern_t *pattern;
+    cairo_matrix_t matrix;
+
+    cairo_save(t->cr);
+    cairo_push_group(t->cr);
+    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
+    cairo_matrix_init_translate(&matrix, 0.0, count * t->fonty);
+    cairo_pattern_set_matrix(pattern, &matrix);
+    runes_display_paint_rectangle(
+        t, t->cr, pattern, 0, t->row, t->cols, t->rows - t->row - count);
+    cairo_pattern_destroy(pattern);
+    cairo_pop_group_to_source(t->cr);
+    cairo_paint(t->cr);
+    runes_display_paint_rectangle(
+        t, t->cr, t->bgdefault, 0, t->rows - count, t->cols, count);
+    cairo_restore(t->cr);
+}
+
 void runes_display_delete_characters(RunesTerm *t, int count)
 {
     cairo_pattern_t *pattern;
