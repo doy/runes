@@ -510,6 +510,9 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
     switch (s) {
     case XLookupChars:
     case XLookupBoth:
+        if (e->state & Mod1Mask) {
+            runes_pty_backend_write(t, "\e", 1);
+        }
         runes_pty_backend_write(t, buf, chars);
         break;
     case XLookupKeySym: {
