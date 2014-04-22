@@ -222,6 +222,12 @@ void runes_display_kill_line_forward(RunesTerm *t)
         t, t->cr, t->bgdefault, t->col, t->row, t->cols - t->col, 1);
 }
 
+void runes_display_kill_line_backward(RunesTerm *t)
+{
+    runes_display_paint_rectangle(
+        t, t->cr, t->bgdefault, 0, t->row, t->col, 1);
+}
+
 void runes_display_delete_lines(RunesTerm *t, int count)
 {
     cairo_pattern_t *pattern;

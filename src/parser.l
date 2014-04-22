@@ -446,12 +446,11 @@ static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len)
         runes_display_kill_line_forward(t);
         break;
     case 1:
-        /* XXX */
-        fprintf(stderr, "unhandled EL parameter 1\n");
+        runes_display_kill_line_backward(t);
         break;
     case 2:
-        /* XXX */
-        fprintf(stderr, "unhandled EL parameter 2\n");
+        runes_display_kill_line_forward(t);
+        runes_display_kill_line_backward(t);
         break;
     default:
         fprintf(stderr, "unknown EL parameter %d\n", params[0]);
