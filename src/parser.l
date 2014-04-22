@@ -474,8 +474,8 @@ static void runes_parser_handle_il(RunesTerm *t, char *buf, size_t len)
     int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    /* XXX this is wrong - it only works if the cursor is on the top line */
-    runes_display_scroll_up(t, params[0]);
+    runes_display_insert_lines(t, params[0]);
+    runes_display_move_to(t, t->row, 0);
 }
 
 static void runes_parser_handle_dl(RunesTerm *t, char *buf, size_t len)

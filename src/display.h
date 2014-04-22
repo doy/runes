@@ -12,6 +12,7 @@ void runes_display_clear_screen(RunesTerm *t);
 void runes_display_clear_screen_forward(RunesTerm *t);
 void runes_display_kill_line_forward(RunesTerm *t);
 void runes_display_kill_line_backward(RunesTerm *t);
+void runes_display_insert_lines(RunesTerm *t, int count);
 void runes_display_insert_characters(RunesTerm *t, int count);
 void runes_display_delete_lines(RunesTerm *t, int count);
 void runes_display_delete_characters(RunesTerm *t, int count);
@@ -38,7 +39,6 @@ void runes_display_use_alternate_buffer(RunesTerm *t);
 void runes_display_use_normal_buffer(RunesTerm *t);
 void runes_display_set_scroll_region(
     RunesTerm *t, int top, int bottom, int left, int right);
-void runes_display_scroll_up(RunesTerm *t, int rows);
 void runes_display_cleanup(RunesTerm *t);
 
 #endif

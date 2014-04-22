@@ -11,6 +11,7 @@ static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int x, int y, int width, int height);
+static void runes_display_scroll_up(RunesTerm *t, int rows);
 static void runes_display_scroll_down(RunesTerm *t, int rows);
 
 void runes_display_init(RunesTerm *t)
@@ -226,6 +227,27 @@ void runes_display_kill_line_backward(RunesTerm *t)
 {
     runes_display_paint_rectangle(
         t, t->cr, t->bgdefault, 0, t->row, t->col, 1);
+}
+
+void runes_display_insert_lines(RunesTerm *t, int count)
+{
+    cairo_pattern_t *pattern;
+    cairo_matrix_t matrix;
+
+    cairo_save(t->cr);
+    cairo_push_group(t->cr);
+    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
+    cairo_matrix_init_translate(&matrix, 0.0, -count * t->fonty);
+    cairo_pattern_set_matrix(pattern, &matrix);
+    runes_display_paint_rectangle(
+        t, t->cr, pattern,
+        0, t->row + count, t->cols, t->rows - t->row - count);
+    cairo_pattern_destroy(pattern);
+    cairo_pop_group_to_source(t->cr);
+    cairo_paint(t->cr);
+    runes_display_paint_rectangle(
+        t, t->cr, t->bgdefault, 0, t->row, t->cols, count);
+    cairo_restore(t->cr);
 }
 
 void runes_display_insert_characters(RunesTerm *t, int count)
@@ -490,28 +512,6 @@ void runes_display_set_scroll_region(
     runes_display_move_to(t, t->scroll_top, 0);
 }
 
-void runes_display_scroll_up(RunesTerm *t, int rows)
-{
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, 0.0, -rows * t->fonty);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern,
-        0, t->scroll_top + rows,
-        t->cols, t->scroll_bottom - t->scroll_top + 1 - rows);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, t->scroll_top, t->cols, rows);
-    cairo_restore(t->cr);
-}
-
 void runes_display_cleanup(RunesTerm *t)
 {
     int i;
@@ -620,6 +620,28 @@ static void runes_display_paint_rectangle(
     cairo_fill(cr);
     cairo_restore(cr);
     runes_display_position_cursor(t, t->cr);
+}
+
+static void runes_display_scroll_up(RunesTerm *t, int rows)
+{
+    cairo_pattern_t *pattern;
+    cairo_matrix_t matrix;
+
+    cairo_save(t->cr);
+    cairo_push_group(t->cr);
+    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
+    cairo_matrix_init_translate(&matrix, 0.0, -rows * t->fonty);
+    cairo_pattern_set_matrix(pattern, &matrix);
+    runes_display_paint_rectangle(
+        t, t->cr, pattern,
+        0, t->scroll_top + rows,
+        t->cols, t->scroll_bottom - t->scroll_top + 1 - rows);
+    cairo_pattern_destroy(pattern);
+    cairo_pop_group_to_source(t->cr);
+    cairo_paint(t->cr);
+    runes_display_paint_rectangle(
+        t, t->cr, t->bgdefault, 0, t->scroll_top, t->cols, rows);
+    cairo_restore(t->cr);
 }
 
 static void runes_display_scroll_down(RunesTerm *t, int rows)
