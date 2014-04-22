@@ -12,6 +12,7 @@ void runes_display_clear_screen(RunesTerm *t);
 void runes_display_clear_screen_forward(RunesTerm *t);
 void runes_display_kill_line_forward(RunesTerm *t);
 void runes_display_kill_line_backward(RunesTerm *t);
+void runes_display_insert_characters(RunesTerm *t, int count);
 void runes_display_delete_lines(RunesTerm *t, int count);
 void runes_display_delete_characters(RunesTerm *t, int count);
 void runes_display_reset_text_attributes(RunesTerm *t);

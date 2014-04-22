@@ -50,6 +50,7 @@ CSIPARAM24 ([0-9]+(;[0-9]+){1,3})?
 CSIPARAMS  ([0-9]+(;[0-9]+)*)?
 SMPARAMS   ([<=?]?[0-9]+(;[<=?]?[0-9]+)*)?
 
+ICH {CSI}{CSIPARAM1}@
 CUU {CSI}{CSIPARAM1}A
 CUD {CSI}{CSIPARAM1}B
 CUF {CSI}{CSIPARAM1}C
@@ -94,6 +95,7 @@ static void runes_parser_extract_csi_params(
     char *buf, size_t len, int *params, int *nparams);
 static void runes_parser_extract_sm_params(
     char *buf, size_t len, char *modes, int *params, int *nparams);
+static void runes_parser_handle_ich(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_cuu(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_cud(RunesTerm *t, char *buf, size_t len);
 static void runes_parser_handle_cuf(RunesTerm *t, char *buf, size_t len);
@@ -136,6 +138,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 {DECSC}   runes_parser_handle_decsc(yyextra);                  return -1;
 {DECRC}   runes_parser_handle_decrc(yyextra);                  return -1;
 
+{ICH}     runes_parser_handle_ich(yyextra, yytext, yyleng);    return -1;
 {CUU}     runes_parser_handle_cuu(yyextra, yytext, yyleng);    return -1;
 {CUD}     runes_parser_handle_cud(yyextra, yytext, yyleng);    return -1;
 {CUF}     runes_parser_handle_cuf(yyextra, yytext, yyleng);    return -1;
@@ -366,6 +369,14 @@ static void runes_parser_extract_sm_params(
             break;
         }
     }
+}
+
+static void runes_parser_handle_ich(RunesTerm *t, char *buf, size_t len)
+{
+    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
+
+    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
+    runes_display_insert_characters(t, params[0]);
 }
 
 static void runes_parser_handle_cuu(RunesTerm *t, char *buf, size_t len)
