@@ -15,8 +15,9 @@ struct runes_term {
 
     cairo_pattern_t *fgdefault;
     cairo_pattern_t *bgdefault;
-    cairo_pattern_t *colors[8];
-    cairo_pattern_t *brightcolors[8];
+    cairo_pattern_t *colors[256];
+    cairo_pattern_t *fgcustom;
+    cairo_pattern_t *bgcustom;
 
     int fgcolor;
     int bgcolor;

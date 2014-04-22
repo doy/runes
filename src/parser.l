@@ -597,6 +597,48 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
         case 34: case 35: case 36: case 37:
             runes_display_set_fg_color(t, params[i] - 30);
             break;
+        case 38: {
+            i++;
+            if (i >= nparams) {
+                fprintf(
+                    stderr, "unknown SGR parameter: %d (too few parameters)\n",
+                    params[i - 1]);
+                break;
+            }
+
+            switch (params[i]) {
+            case 2:
+                i += 3;
+                if (i >= nparams) {
+                    fprintf(
+                        stderr,
+                        "unknown SGR parameter: %d;%d (too few parameters)\n",
+                        params[i - 4], params[i - 3]);
+                    break;
+                }
+                runes_display_set_fg_color_rgb(
+                    t, params[i - 2], params[i - 1], params[i]);
+                break;
+            case 5:
+                i++;
+                if (i >= nparams) {
+                    fprintf(
+                        stderr,
+                        "unknown SGR parameter: %d;%d (too few parameters)\n",
+                        params[i - 2], params[i - 1]);
+                    break;
+                }
+                runes_display_set_fg_color(t, params[i]);
+                break;
+            default:
+                i++;
+                fprintf(
+                    stderr, "unknown SGR parameter: %d;%d\n",
+                    params[i - 2], params[i - 1]);
+                break;
+            }
+            break;
+        }
         case 39:
             runes_display_reset_fg_color(t);
             break;
@@ -604,8 +646,58 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
         case 44: case 45: case 46: case 47:
             runes_display_set_bg_color(t, params[i] - 40);
             break;
+        case 48: {
+            i++;
+            if (i >= nparams) {
+                fprintf(
+                    stderr, "unknown SGR parameter: %d (too few parameters)\n",
+                    params[i - 1]);
+                break;
+            }
+
+            switch (params[i]) {
+            case 2:
+                i += 3;
+                if (i >= nparams) {
+                    fprintf(
+                        stderr,
+                        "unknown SGR parameter: %d;%d (too few parameters)\n",
+                        params[i - 4], params[i - 3]);
+                    break;
+                }
+                runes_display_set_bg_color_rgb(
+                    t, params[i - 2], params[i - 1], params[i]);
+                break;
+            case 5:
+                i++;
+                if (i >= nparams) {
+                    fprintf(
+                        stderr,
+                        "unknown SGR parameter: %d;%d (too few parameters)\n",
+                        params[i - 2], params[i - 1]);
+                    break;
+                }
+                runes_display_set_bg_color(t, params[i]);
+                break;
+            default:
+                i++;
+                fprintf(
+                    stderr, "unknown SGR parameter: %d;%d\n",
+                    params[i - 2], params[i - 1]);
+                break;
+            }
+            break;
+        }
         case 49:
             runes_display_reset_bg_color(t);
+            break;
+        case 90: case 91: case 92: case 93:
+        case 94: case 95: case 96: case 97:
+            runes_display_set_fg_color(t, params[i] - 82);
+            break;
+        case 100: case 101: case 102: case 103:
+        case 104: case 105: case 106: case 107:
+            runes_display_set_bg_color(t, params[i] - 92);
             break;
         default:
             fprintf(stderr, "unknown SGR parameter: %d\n", params[i]);

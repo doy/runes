@@ -332,6 +332,17 @@ void runes_display_set_fg_color(RunesTerm *t, int color)
     cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
 
+void runes_display_set_fg_color_rgb(RunesTerm *t, int r, int g, int b)
+{
+    t->fgcolor = -2;
+    if (t->fgcustom) {
+        cairo_pattern_destroy(t->fgcustom);
+    }
+    t->fgcustom = cairo_pattern_create_rgb(
+        (double)r / 255.0, (double)g / 255.0, (double)b / 255.0);
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
+}
+
 void runes_display_reset_fg_color(RunesTerm *t)
 {
     runes_display_set_fg_color(t, -1);
@@ -340,6 +351,17 @@ void runes_display_reset_fg_color(RunesTerm *t)
 void runes_display_set_bg_color(RunesTerm *t, int color)
 {
     t->bgcolor = color;
+    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
+}
+
+void runes_display_set_bg_color_rgb(RunesTerm *t, int r, int g, int b)
+{
+    t->bgcolor = -2;
+    if (t->bgcustom) {
+        cairo_pattern_destroy(t->bgcustom);
+    }
+    t->bgcustom = cairo_pattern_create_rgb(
+        (double)r / 255.0, (double)g / 255.0, (double)b / 255.0);
     cairo_set_source(t->cr, runes_display_get_fgcolor(t));
 }
 
@@ -450,12 +472,17 @@ void runes_display_cleanup(RunesTerm *t)
     int i;
 
     g_object_unref(t->layout);
-    for (i = 0; i < 8; ++i) {
+    for (i = 0; i < 256; ++i) {
         cairo_pattern_destroy(t->colors[i]);
-        cairo_pattern_destroy(t->brightcolors[i]);
     }
     cairo_pattern_destroy(t->fgdefault);
     cairo_pattern_destroy(t->bgdefault);
+    if (t->fgcustom) {
+        cairo_pattern_destroy(t->fgcustom);
+    }
+    if (t->bgcustom) {
+        cairo_pattern_destroy(t->bgcustom);
+    }
     cairo_pattern_destroy(t->cursorcolor);
     cairo_pattern_destroy(t->mousecursorcolor);
     cairo_destroy(t->cr);
@@ -468,11 +495,14 @@ static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t)
     if (t->inverse && t->bgcolor == t->fgcolor) {
         return t->bgdefault;
     }
+    else if (color == -2) {
+        return t->inverse ? t->bgcustom : t->fgcustom;
+    }
     else if (color == -1) {
         return t->inverse ? t->bgdefault : t->fgdefault;
     }
-    else if (t->bold_is_bright && t->bold) {
-        return t->brightcolors[color];
+    else if (t->bold_is_bright && t->bold && color < 8) {
+        return t->colors[color + 8];
     }
     else {
         return t->colors[color];
@@ -485,6 +515,9 @@ static cairo_pattern_t *runes_display_get_bgcolor(RunesTerm *t)
 
     if (t->inverse && t->bgcolor == t->fgcolor) {
         return t->fgdefault;
+    }
+    else if (color == -2) {
+        return t->inverse ? t->bgcustom : t->fgcustom;
     }
     else if (color == -1) {
         return t->inverse ? t->fgdefault : t->bgdefault;
