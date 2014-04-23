@@ -42,6 +42,9 @@ void runes_display_set_window_size(RunesTerm *t)
     t->rows = t->ypixel / t->fonty;
     t->cols = t->xpixel / t->fontx;
 
+    t->scroll_top = 0;
+    t->scroll_bottom = t->rows - 1;
+
     old_cr = t->cr;
 
     /* XXX this should really use cairo_surface_create_similar_image, but when
