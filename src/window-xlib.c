@@ -430,7 +430,9 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
     RunesWindowBackend *w = &t->w;
     struct timespec tm = { 0, 20000000 };
 
-    runes_window_backend_set_urgent(t);
+    if (t->bell_is_urgent) {
+        runes_window_backend_set_urgent(t);
+    }
     cairo_set_source(t->backend_cr, t->fgdefault);
     cairo_paint(t->backend_cr);
     cairo_surface_flush(cairo_get_target(t->backend_cr));
@@ -443,7 +445,9 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
 
-    runes_window_backend_set_urgent(t);
+    if (t->bell_is_urgent) {
+        runes_window_backend_set_urgent(t);
+    }
     XBell(w->dpy, 0);
 }
 

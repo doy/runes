@@ -29,6 +29,7 @@ static void runes_config_set_defaults(RunesTerm *t)
     t->bold_is_bright = 1;
     t->bold_is_bold   = 1;
     t->audible_bell   = 1;
+    t->bell_is_urgent = 1;
 
     t->mousecursorcolor = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
@@ -419,6 +420,9 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
     }
     else if (!strcmp(key, "audible_bell")) {
         t->audible_bell = runes_config_parse_bool(val);
+    }
+    else if (!strcmp(key, "bell_is_urgent")) {
+        t->bell_is_urgent = runes_config_parse_bool(val);
     }
     else if (!strcmp(key, "bgcolor")) {
         cairo_pattern_t *newcolor;
