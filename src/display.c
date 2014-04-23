@@ -497,10 +497,10 @@ void runes_display_use_normal_buffer(RunesTerm *t)
 void runes_display_set_scroll_region(
     RunesTerm *t, int top, int bottom, int left, int right)
 {
-    top    = (top    < 1       ? 1       : top)    - 1;
-    bottom = (bottom > t->rows ? t->rows : bottom) - 1;
-    left   = (left   < 1       ? 1       : left)   - 1;
-    right  = (right  > t->cols ? t->cols : right)  - 1;
+    top    = top    < 0           ? 0           : top;
+    bottom = bottom > t->rows - 1 ? t->rows - 1 : bottom;
+    left   = left   < 0           ? 0           : left;
+    right  = right  > t->cols - 1 ? t->cols - 1 : right;
 
     if (left != 0 || right != t->cols - 1) {
         fprintf(stderr, "vertical scroll regions not yet supported\n");

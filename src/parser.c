@@ -2429,7 +2429,7 @@ static void runes_parser_handle_ri(RunesTerm *t)
 static void runes_parser_handle_ris(RunesTerm *t)
 {
     runes_display_use_normal_buffer(t);
-    runes_display_set_scroll_region(t, 1, t->rows, 1, t->cols);
+    runes_display_set_scroll_region(t, 0, t->rows - 1, 0, t->cols - 1);
     runes_display_clear_screen(t);
     runes_display_save_cursor(t);
     runes_display_reset_text_attributes(t);
@@ -2891,7 +2891,7 @@ static void runes_parser_handle_csr(RunesTerm *t, char *buf, size_t len)
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
 
     runes_display_set_scroll_region(
-        t, params[0], params[1], params[2], params[3]);
+        t, params[0] - 1, params[1] - 1, params[2] - 1, params[3] - 1);
 }
 
 static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len)
