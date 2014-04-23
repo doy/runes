@@ -581,12 +581,13 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     PangoFontMetrics *metrics;
     int ascent, descent;
 
-    desc = pango_font_description_from_string(t->font_name);
-
     if (t->layout) {
+        desc = (PangoFontDescription *)pango_layout_get_font_description(
+            t->layout);
         context = pango_layout_get_context(t->layout);
     }
     else {
+        desc = pango_font_description_from_string(t->font_name);
         context = pango_font_map_create_context(
             pango_cairo_font_map_get_default());
     }
@@ -600,8 +601,8 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     t->fonty = PANGO_PIXELS(ascent + descent);
 
     pango_font_metrics_unref(metrics);
-    pango_font_description_free(desc);
     if (!t->layout) {
+        pango_font_description_free(desc);
         g_object_unref(context);
     }
 }
