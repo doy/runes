@@ -55,6 +55,7 @@ struct runes_term {
     char hide_cursor;
     char unfocused;
     char audible_bell;
+    char visual_bell_is_ringing;
 
     char application_keypad;
     char application_cursor;

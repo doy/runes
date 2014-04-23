@@ -84,6 +84,7 @@ static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
 static void runes_window_backend_visual_bell(RunesTerm *t);
+static void runes_window_backend_reset_visual_bell(uv_timer_t *handle);
 static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
@@ -419,6 +420,10 @@ static void runes_window_backend_resize_window(
 
 static void runes_window_backend_flush(RunesTerm *t)
 {
+    if (t->visual_bell_is_ringing) {
+        return;
+    }
+
     cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
     cairo_paint(t->backend_cr);
     runes_window_backend_draw_cursor(t);
@@ -427,18 +432,35 @@ static void runes_window_backend_flush(RunesTerm *t)
 
 static void runes_window_backend_visual_bell(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
-    struct timespec tm = { 0, 20000000 };
-
     if (t->bell_is_urgent) {
         runes_window_backend_set_urgent(t);
     }
-    cairo_set_source(t->backend_cr, t->fgdefault);
-    cairo_paint(t->backend_cr);
-    cairo_surface_flush(cairo_get_target(t->backend_cr));
-    XFlush(w->dpy);
-    nanosleep(&tm, NULL);
-    runes_window_backend_flush(t);
+
+    if (!t->visual_bell_is_ringing) {
+        RunesWindowBackend *w = &t->w;
+        uv_timer_t *timer_req;
+
+        t->visual_bell_is_ringing = 1;
+        cairo_set_source(t->backend_cr, t->fgdefault);
+        cairo_paint(t->backend_cr);
+        cairo_surface_flush(cairo_get_target(t->backend_cr));
+        XFlush(w->dpy);
+
+        timer_req = malloc(sizeof(uv_timer_t));
+        uv_timer_init(t->loop, timer_req);
+        timer_req->data = (void *)t;
+        uv_timer_start(
+            timer_req, runes_window_backend_reset_visual_bell, 20, 0);
+    }
+}
+
+static void runes_window_backend_reset_visual_bell(uv_timer_t *handle)
+{
+    RunesTerm *t = handle->data;
+
+    runes_window_backend_request_flush(t);
+    t->visual_bell_is_ringing = 0;
+    free(handle);
 }
 
 static void runes_window_backend_audible_bell(RunesTerm *t)
