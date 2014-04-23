@@ -268,6 +268,9 @@ void runes_window_backend_request_close(RunesTerm *t)
     e.xclient.data.l[1] = CurrentTime;
 
     XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
+    XLockDisplay(t->w.dpy);
+    XFlush(t->w.dpy);
+    XUnlockDisplay(t->w.dpy);
 }
 
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
