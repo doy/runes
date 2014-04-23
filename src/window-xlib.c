@@ -84,6 +84,7 @@ static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
 static void runes_window_backend_visual_bell(RunesTerm *t);
+static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
@@ -377,7 +378,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 runes_window_backend_visual_bell(t);
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_AUDIBLE_BELL]) {
-                XBell(w->dpy, 0);
+                runes_window_backend_audible_bell(t);
             }
             break;
         }
@@ -436,6 +437,14 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
     XFlush(w->dpy);
     nanosleep(&tm, NULL);
     runes_window_backend_flush(t);
+}
+
+static void runes_window_backend_audible_bell(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+
+    runes_window_backend_set_urgent(t);
+    XBell(w->dpy, 0);
 }
 
 static void runes_window_backend_draw_cursor(RunesTerm *t)
