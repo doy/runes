@@ -90,6 +90,8 @@ static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
+static struct function_key *runes_window_backend_find_key_sequence(
+    RunesTerm *t, KeySym sym);
 static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e);
 static void runes_window_backend_handle_expose_event(
@@ -563,42 +565,9 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
     case XLookupKeySym: {
         struct function_key *key;
 
-        if (t->application_keypad) {
-            if (t->application_cursor) {
-                key = &application_cursor_keys[0];
-                while (key->sym != XK_VoidSymbol) {
-                    if (key->sym == sym) {
-                        break;
-                    }
-                    key++;
-                }
-                if (key->sym != XK_VoidSymbol) {
-                    runes_pty_backend_write(t, key->str, key->len);
-                    break;
-                }
-            }
-            key = &application_keypad_keys[0];
-            while (key->sym != XK_VoidSymbol) {
-                if (key->sym == sym) {
-                    break;
-                }
-                key++;
-            }
-            if (key->sym != XK_VoidSymbol) {
-                runes_pty_backend_write(t, key->str, key->len);
-                break;
-            }
-        }
-        key = &keys[0];
-        while (key->sym != XK_VoidSymbol) {
-            if (key->sym == sym) {
-                break;
-            }
-            key++;
-        }
+        key = runes_window_backend_find_key_sequence(t, sym);
         if (key->sym != XK_VoidSymbol) {
             runes_pty_backend_write(t, key->str, key->len);
-            break;
         }
         break;
     }
@@ -606,6 +575,40 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
         break;
     }
     free(buf);
+}
+
+static struct function_key *runes_window_backend_find_key_sequence(
+    RunesTerm *t, KeySym sym)
+{
+    struct function_key *key;
+
+    if (t->application_keypad) {
+        if (t->application_cursor) {
+            key = &application_cursor_keys[0];
+            while (key->sym != XK_VoidSymbol) {
+                if (key->sym == sym) {
+                    return key;
+                }
+                key++;
+            }
+        }
+        key = &application_keypad_keys[0];
+        while (key->sym != XK_VoidSymbol) {
+            if (key->sym == sym) {
+                return key;
+            }
+            key++;
+        }
+    }
+    key = &keys[0];
+    while (key->sym != XK_VoidSymbol) {
+        if (key->sym == sym) {
+            return key;
+        }
+        key++;
+    }
+
+    return key;
 }
 
 static void runes_window_backend_handle_button_event(
