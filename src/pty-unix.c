@@ -60,6 +60,9 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
          * can tell, it's not actually useful these days, given that terminfo
          * databases are much more reliable than they were 10 years ago */
         unsetenv("COLORTERM");
+        /* less sure about this one being useless, but leaving it unset for now
+         * until someone complains */
+        unsetenv("COLORFGBG");
 
         /* this is used by, for instance, w3m */
         sprintf(window_id, "%lu", runes_window_backend_get_window_id(t));
