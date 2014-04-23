@@ -25,7 +25,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         pty->slave = -1;
     }
     else {
-        char *cmd;
+        char *cmd, window_id[32];
         int old_stderr_fd;
         FILE *old_stderr;
 
@@ -60,6 +60,10 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
          * can tell, it's not actually useful these days, given that terminfo
          * databases are much more reliable than they were 10 years ago */
         unsetenv("COLORTERM");
+
+        /* this is used by, for instance, w3m */
+        sprintf(window_id, "%lu", runes_window_backend_get_window_id(t));
+        setenv("WINDOWID", window_id, 1);
 
         unsetenv("LINES");
         unsetenv("COLUMNS");

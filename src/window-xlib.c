@@ -273,6 +273,13 @@ void runes_window_backend_request_close(RunesTerm *t)
     XUnlockDisplay(t->w.dpy);
 }
 
+unsigned long runes_window_backend_get_window_id(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+
+    return (unsigned long)w->w;
+}
+
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
 {
     cairo_surface_t *surface;
