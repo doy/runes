@@ -519,14 +519,7 @@ void runes_display_set_scroll_region(
 
 void runes_display_cleanup(RunesTerm *t)
 {
-    int i;
-
     g_object_unref(t->layout);
-    for (i = 0; i < 256; ++i) {
-        cairo_pattern_destroy(t->colors[i]);
-    }
-    cairo_pattern_destroy(t->fgdefault);
-    cairo_pattern_destroy(t->bgdefault);
     if (t->fgcustom) {
         cairo_pattern_destroy(t->fgcustom);
     }
@@ -534,7 +527,6 @@ void runes_display_cleanup(RunesTerm *t)
         cairo_pattern_destroy(t->bgcustom);
     }
     cairo_pattern_destroy(t->cursorcolor);
-    cairo_pattern_destroy(t->mousecursorcolor);
     cairo_destroy(t->cr);
 }
 

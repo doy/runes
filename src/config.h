@@ -2,5 +2,6 @@
 #define _RUNES_CONFIG_H
 
 void runes_config_init(RunesTerm *t, int argc, char *argv[]);
+void runes_config_cleanup(RunesTerm *t);
 
 #endif

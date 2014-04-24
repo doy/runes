@@ -21,6 +21,19 @@ void runes_config_init(RunesTerm *t, int argc, char *argv[])
     runes_config_process_args(t, argc, argv);
 }
 
+void runes_config_cleanup(RunesTerm *t)
+{
+    int i;
+
+    free(t->font_name);
+    cairo_pattern_destroy(t->mousecursorcolor);
+    cairo_pattern_destroy(t->fgdefault);
+    cairo_pattern_destroy(t->bgdefault);
+    for (i = 0; i < 256; ++i) {
+        cairo_pattern_destroy(t->colors[i]);
+    }
+}
+
 static void runes_config_set_defaults(RunesTerm *t)
 {
     memset((void *)t, 0, sizeof(*t));

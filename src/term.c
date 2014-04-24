@@ -19,8 +19,8 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
 
 void runes_term_cleanup(RunesTerm *t)
 {
+    runes_config_cleanup(t);
     runes_display_cleanup(t);
     runes_window_backend_cleanup(t);
     runes_pty_backend_cleanup(t);
-    free(t->font_name);
 }
