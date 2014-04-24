@@ -20,7 +20,8 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "WM_PROTOCOLS",
     "RUNES_FLUSH",
     "RUNES_VISUAL_BELL",
-    "RUNES_AUDIBLE_BELL"
+    "RUNES_AUDIBLE_BELL",
+    "RUNES_SELECTION"
 };
 
 struct function_key {
@@ -89,7 +90,10 @@ static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
+static void runes_window_backend_paste(RunesTerm *t, Time time);
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
+static int runes_window_backend_handle_builtin_keypress(
+    RunesTerm *t, KeySym sym, XKeyEvent *e);
 static struct function_key *runes_window_backend_find_key_sequence(
     RunesTerm *t, KeySym sym);
 static void runes_window_backend_handle_button_event(
@@ -100,6 +104,8 @@ static void runes_window_backend_handle_configure_event(
     RunesTerm *t, XConfigureEvent *e);
 static void runes_window_backend_handle_focus_event(
     RunesTerm *t, XFocusChangeEvent *e);
+static void runes_window_backend_handle_selection_notify_event(
+    RunesTerm *t, XSelectionEvent *e);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
@@ -371,6 +377,10 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
         case FocusOut:
             runes_window_backend_handle_focus_event(t, &e->xfocus);
             break;
+        case SelectionNotify:
+            runes_window_backend_handle_selection_notify_event(
+                t, &e->xselection);
+            break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
             if (a == w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
@@ -529,6 +539,15 @@ static void runes_window_backend_clear_urgent(RunesTerm *t)
     XFree(hints);
 }
 
+static void runes_window_backend_paste(RunesTerm *t, Time time)
+{
+    RunesWindowBackend *w = &t->w;
+
+    XConvertSelection(
+        w->dpy, XA_PRIMARY, w->atoms[RUNES_ATOM_UTF8_STRING],
+        w->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, time);
+}
+
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
 {
     RunesWindowBackend *w = &t->w;
@@ -562,19 +581,37 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
         }
         runes_pty_backend_write(t, buf, chars);
         break;
-    case XLookupKeySym: {
-        struct function_key *key;
+    case XLookupKeySym:
+        if (!runes_window_backend_handle_builtin_keypress(t, sym, e)) {
+            struct function_key *key;
 
-        key = runes_window_backend_find_key_sequence(t, sym);
-        if (key->sym != XK_VoidSymbol) {
-            runes_pty_backend_write(t, key->str, key->len);
+            key = runes_window_backend_find_key_sequence(t, sym);
+            if (key->sym != XK_VoidSymbol) {
+                runes_pty_backend_write(t, key->str, key->len);
+            }
         }
         break;
-    }
     default:
         break;
     }
     free(buf);
+}
+
+static int runes_window_backend_handle_builtin_keypress(
+    RunesTerm *t, KeySym sym, XKeyEvent *e)
+{
+    switch (sym) {
+    case XK_Insert:
+        if (e->state & ShiftMask) {
+            runes_window_backend_paste(t, e->time);
+            return 1;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return 0;
 }
 
 static struct function_key *runes_window_backend_find_key_sequence(
@@ -702,4 +739,30 @@ static void runes_window_backend_handle_focus_event(
         runes_display_focus_out(t);
     }
     runes_window_backend_flush(t);
+}
+
+static void runes_window_backend_handle_selection_notify_event(
+    RunesTerm *t, XSelectionEvent *e)
+{
+    RunesWindowBackend *w = &t->w;
+
+    if (e->property == None) {
+        if (e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
+            XConvertSelection(
+                w->dpy, XA_PRIMARY, XA_STRING,
+                w->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, e->time);
+        }
+    }
+    else {
+        Atom type;
+        int format;
+        unsigned long nitems, left;
+        unsigned char *buf;
+
+        XGetWindowProperty(
+            w->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
+            AnyPropertyType, &type, &format, &nitems, &left, &buf);
+        runes_pty_backend_write(t, (char *)buf, nitems);
+        XFree(buf);
+    }
 }
