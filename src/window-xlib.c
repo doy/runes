@@ -98,6 +98,8 @@ static struct function_key *runes_window_backend_find_key_sequence(
     RunesTerm *t, KeySym sym);
 static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e);
+static int runes_window_backend_handle_builtin_button_press(
+    RunesTerm *t, XButtonEvent *e);
 static void runes_window_backend_handle_expose_event(
     RunesTerm *t, XExposeEvent *e);
 static void runes_window_backend_handle_configure_event(
@@ -651,6 +653,12 @@ static struct function_key *runes_window_backend_find_key_sequence(
 static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e)
 {
+    if (e->state & ShiftMask) {
+        if (runes_window_backend_handle_builtin_button_press(t, e)) {
+            return;
+        }
+    }
+
     if (t->mouse_reporting_press_release) {
         char response[7];
         char status = 0;
@@ -709,6 +717,28 @@ static void runes_window_backend_handle_button_event(
             ' ' + (e->y / t->fonty + 1));
         runes_pty_backend_write(t, response, 6);
     }
+    else {
+        runes_window_backend_handle_builtin_button_press(t, e);
+    }
+}
+
+static int runes_window_backend_handle_builtin_button_press(
+    RunesTerm *t, XButtonEvent *e)
+{
+    if (e->type == ButtonRelease) {
+        return 0;
+    }
+
+    switch (e->button) {
+    case Button2:
+        runes_window_backend_paste(t, e->time);
+        return 1;
+        break;
+    default:
+        break;
+    }
+
+    return 0;
 }
 
 static void runes_window_backend_handle_expose_event(
