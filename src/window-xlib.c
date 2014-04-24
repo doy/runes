@@ -1,7 +1,6 @@
 #include <cairo-xlib.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 #include <X11/cursorfont.h>
 #include <X11/Xlib.h>

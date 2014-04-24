@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "runes.h"
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[])

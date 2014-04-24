@@ -1,5 +1,4 @@
 #include <locale.h>
-#include <stdio.h>
 
 #include "runes.h"
 
