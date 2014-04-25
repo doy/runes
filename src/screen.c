@@ -61,9 +61,9 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         }
         cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
 
+        cell->len = 1;
         cell->contents[0] = buf[i];
         cell->contents[1] = '\0';
-        cell->len = 1;
 
         scr->cur.col++;
     }
@@ -71,10 +71,29 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
 
 void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 {
-    UNUSED(t);
-    UNUSED(buf);
-    UNUSED(len);
-    fprintf(stderr, "show_string_utf8 nyi\n");
+    RunesScreen *scr = &t->scr;
+    char *c = buf, *next;
+
+    /* XXX need to detect combining characters and append them to the previous
+     * cell */
+    while ((next = g_utf8_next_char(c))) {
+        struct runes_cell *cell;
+
+        if (scr->cur.col >= scr->max.col) {
+            scr->cur.col = 0;
+            scr->cur.row++;
+        }
+        cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
+
+        cell->len = next - c;
+        strncpy(cell->contents, c, cell->len);
+
+        scr->cur.col++;
+        c = next;
+        if ((size_t)(c - buf) >= len) {
+            break;
+        }
+    }
 }
 
 void runes_screen_move_to(RunesTerm *t, int row, int col)
