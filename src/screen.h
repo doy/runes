@@ -107,10 +107,12 @@ void runes_screen_set_scroll_region(
     RunesTerm *t, int top, int bottom, int left, int right);
 void runes_screen_reset_text_attributes(RunesTerm *t);
 void runes_screen_set_fg_color(RunesTerm *t, int idx);
-void runes_screen_set_fg_color_rgb(RunesTerm *t, int r, int g, int b);
+void runes_screen_set_fg_color_rgb(
+    RunesTerm *t, unsigned char r, unsigned char g, unsigned char b);
 void runes_screen_reset_fg_color(RunesTerm *t);
 void runes_screen_set_bg_color(RunesTerm *t, int idx);
-void runes_screen_set_bg_color_rgb(RunesTerm *t, int r, int g, int b);
+void runes_screen_set_bg_color_rgb(
+    RunesTerm *t, unsigned char r, unsigned char g, unsigned char b);
 void runes_screen_reset_bg_color(RunesTerm *t);
 void runes_screen_set_bold(RunesTerm *t);
 void runes_screen_set_italic(RunesTerm *t);

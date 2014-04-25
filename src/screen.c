@@ -251,13 +251,15 @@ void runes_screen_set_fg_color(RunesTerm *t, int idx)
     scr->attrs.fgcolor.idx = idx;
 }
 
-void runes_screen_set_fg_color_rgb(RunesTerm *t, int r, int g, int b)
+void runes_screen_set_fg_color_rgb(
+    RunesTerm *t, unsigned char r, unsigned char g, unsigned char b)
 {
-    UNUSED(t);
-    UNUSED(r);
-    UNUSED(g);
-    UNUSED(b);
-    fprintf(stderr, "set_fg_color_rgb nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.fgcolor.type = RUNES_COLOR_RGB;
+    scr->attrs.fgcolor.r = r;
+    scr->attrs.fgcolor.g = g;
+    scr->attrs.fgcolor.b = b;
 }
 
 void runes_screen_reset_fg_color(RunesTerm *t)
@@ -275,13 +277,15 @@ void runes_screen_set_bg_color(RunesTerm *t, int idx)
     scr->attrs.bgcolor.idx = idx;
 }
 
-void runes_screen_set_bg_color_rgb(RunesTerm *t, int r, int g, int b)
+void runes_screen_set_bg_color_rgb(
+    RunesTerm *t, unsigned char r, unsigned char g, unsigned char b)
 {
-    UNUSED(t);
-    UNUSED(r);
-    UNUSED(g);
-    UNUSED(b);
-    fprintf(stderr, "set_bg_color_rgb nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.bgcolor.type = RUNES_COLOR_RGB;
+    scr->attrs.bgcolor.r = r;
+    scr->attrs.bgcolor.g = g;
+    scr->attrs.bgcolor.b = b;
 }
 
 void runes_screen_reset_bg_color(RunesTerm *t)

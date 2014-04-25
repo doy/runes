@@ -152,6 +152,7 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
     struct runes_cell *cell = &t->scr.rows[row].cells[col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
+    int bg_is_custom = 0, fg_is_custom = 0;
 
     switch (cell->attrs.bgcolor.type) {
     case RUNES_COLOR_DEFAULT:
@@ -161,8 +162,11 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
         bg = t->colors[cell->attrs.bgcolor.idx];
         break;
     case RUNES_COLOR_RGB:
-        /* XXX */
-        fprintf(stderr, "rgb colors nyi\n");
+        bg = cairo_pattern_create_rgb(
+            cell->attrs.bgcolor.r / 255.0,
+            cell->attrs.bgcolor.g / 255.0,
+            cell->attrs.bgcolor.b / 255.0);
+        bg_is_custom = 1;
         break;
     }
 
@@ -180,8 +184,11 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
         break;
     }
     case RUNES_COLOR_RGB:
-        /* XXX */
-        fprintf(stderr, "rgb colors nyi\n");
+        fg = cairo_pattern_create_rgb(
+            cell->attrs.fgcolor.r / 255.0,
+            cell->attrs.fgcolor.g / 255.0,
+            cell->attrs.fgcolor.b / 255.0);
+        fg_is_custom = 1;
         break;
     }
 
@@ -197,13 +204,19 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
         }
     }
 
-    if (bg) {
-        runes_display_paint_rectangle(t, t->cr, bg, row, col, 1, 1);
-    }
+    runes_display_paint_rectangle(t, t->cr, bg, row, col, 1, 1);
 
     if (cell->len) {
         runes_display_draw_glyph(
             t, t->cr, fg, cell->attrs, cell->contents, cell->len, row, col);
+    }
+
+    if (bg_is_custom) {
+        cairo_pattern_destroy(bg);
+    }
+
+    if (fg_is_custom) {
+        cairo_pattern_destroy(fg);
     }
 }
 
