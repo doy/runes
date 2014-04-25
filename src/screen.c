@@ -56,8 +56,7 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         struct runes_cell *cell;
 
         if (scr->cur.col >= scr->max.col) {
-            scr->cur.col = 0;
-            scr->cur.row++;
+            runes_screen_move_to(t, scr->cur.row + 1, 0);
         }
         cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
 
@@ -66,7 +65,7 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         cell->contents[1] = '\0';
         cell->attrs = scr->attrs;
 
-        scr->cur.col++;
+        runes_screen_move_to(t, scr->cur.row, scr->cur.col + 1);
     }
 }
 
@@ -81,8 +80,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
         struct runes_cell *cell;
 
         if (scr->cur.col >= scr->max.col) {
-            scr->cur.col = 0;
-            scr->cur.row++;
+            runes_screen_move_to(t, scr->cur.row + 1, 0);
         }
         cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
 
@@ -90,7 +88,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
         strncpy(cell->contents, c, cell->len);
         cell->attrs = scr->attrs;
 
-        scr->cur.col++;
+        runes_screen_move_to(t, scr->cur.row, scr->cur.col + 1);
         c = next;
         if ((size_t)(c - buf) >= len) {
             break;
@@ -101,6 +99,26 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 void runes_screen_move_to(RunesTerm *t, int row, int col)
 {
     RunesScreen *scr = &t->scr;
+
+    /* XXX should be able to do this all in one operation */
+    while (row >= scr->max.row) {
+        free(scr->rows[0].cells);
+        memmove(
+            &scr->rows[0], &scr->rows[1],
+            (scr->max.row - 1) * sizeof(struct runes_row));
+        scr->rows[scr->max.row - 1].cells = calloc(
+            t->scr.max.col, sizeof(struct runes_cell));
+        row--;
+    }
+    while (row < 0) {
+        free(scr->rows[scr->max.row - 1].cells);
+        memmove(
+            &scr->rows[1], &scr->rows[0],
+            (scr->max.row - 1) * sizeof(struct runes_row));
+        scr->rows[0].cells = calloc(
+            t->scr.max.col, sizeof(struct runes_cell));
+        row++;
+    }
 
     scr->cur.row = row;
     scr->cur.col = col;
