@@ -39,14 +39,12 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
 
 void runes_screen_audible_bell(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "audible_bell nyi\n");
+    t->scr.audible_bell = 1;
 }
 
 void runes_screen_visual_bell(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "visual_bell nyi\n");
+    t->scr.visual_bell = 1;
 }
 
 void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)

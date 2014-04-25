@@ -443,6 +443,16 @@ static void runes_window_backend_resize_window(
 
 static void runes_window_backend_flush(RunesTerm *t)
 {
+    if (t->scr.audible_bell) {
+        runes_window_backend_audible_bell(t);
+        t->scr.audible_bell = 0;
+    }
+
+    if (t->scr.visual_bell) {
+        runes_window_backend_visual_bell(t);
+        t->scr.visual_bell = 0;
+    }
+
     if (t->visual_bell_is_ringing) {
         return;
     }
