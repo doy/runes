@@ -58,7 +58,9 @@ struct runes_screen {
     int scroll_bottom;
 
     char *title;
+    size_t title_len;
     char *icon_name;
+    size_t icon_name_len;
 
     struct runes_row *rows;
     struct runes_row *alternate;

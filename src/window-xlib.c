@@ -453,6 +453,18 @@ static void runes_window_backend_flush(RunesTerm *t)
         t->scr.visual_bell = 0;
     }
 
+    if (t->scr.update_title) {
+        runes_window_backend_set_window_title(
+            t, t->scr.title, t->scr.title_len);
+        t->scr.update_title = 0;
+    }
+
+    if (t->scr.update_icon_name) {
+        runes_window_backend_set_icon_name(
+            t, t->scr.icon_name, t->scr.icon_name_len);
+        t->scr.update_icon_name = 0;
+    }
+
     if (t->visual_bell_is_ringing) {
         return;
     }

@@ -462,18 +462,24 @@ void runes_screen_reset_mouse_reporting_press_release(RunesTerm *t)
 
 void runes_screen_set_window_title(RunesTerm *t, char *buf, size_t len)
 {
-    UNUSED(t);
-    UNUSED(buf);
-    UNUSED(len);
-    fprintf(stderr, "set_window_title nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    free(scr->title);
+    scr->title_len = len;
+    scr->title = malloc(scr->title_len);
+    memcpy(scr->title, buf, scr->title_len);
+    scr->update_title = 1;
 }
 
 void runes_screen_set_icon_name(RunesTerm *t, char *buf, size_t len)
 {
-    UNUSED(t);
-    UNUSED(buf);
-    UNUSED(len);
-    fprintf(stderr, "set_icon_name nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    free(scr->icon_name);
+    scr->icon_name_len = len;
+    scr->icon_name = malloc(scr->icon_name_len);
+    memcpy(scr->icon_name, buf, scr->icon_name_len);
+    scr->update_icon_name = 1;
 }
 
 void runes_screen_cleanup(RunesTerm *t)
