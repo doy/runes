@@ -64,8 +64,7 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         cell->len = 1;
         cell->contents[0] = buf[i];
         cell->contents[1] = '\0';
-        cell->fgcolor = scr->fgcolor;
-        cell->bgcolor = scr->bgcolor;
+        cell->attrs = scr->attrs;
 
         scr->cur.col++;
     }
@@ -89,8 +88,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 
         cell->len = next - c;
         strncpy(cell->contents, c, cell->len);
-        cell->fgcolor = scr->fgcolor;
-        cell->bgcolor = scr->bgcolor;
+        cell->attrs = scr->attrs;
 
         scr->cur.col++;
         c = next;
@@ -215,16 +213,15 @@ void runes_screen_set_scroll_region(
 
 void runes_screen_reset_text_attributes(RunesTerm *t)
 {
-    runes_screen_reset_fg_color(t);
-    runes_screen_reset_bg_color(t);
+    memset(&t->scr.attrs, 0, sizeof(struct runes_cell_attrs));
 }
 
 void runes_screen_set_fg_color(RunesTerm *t, int idx)
 {
     RunesScreen *scr = &t->scr;
 
-    scr->fgcolor.type = RUNES_COLOR_IDX;
-    scr->fgcolor.idx = idx;
+    scr->attrs.fgcolor.type = RUNES_COLOR_IDX;
+    scr->attrs.fgcolor.idx = idx;
 }
 
 void runes_screen_set_fg_color_rgb(RunesTerm *t, int r, int g, int b)
@@ -240,15 +237,15 @@ void runes_screen_reset_fg_color(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
 
-    scr->fgcolor.type = RUNES_COLOR_DEFAULT;
+    scr->attrs.fgcolor.type = RUNES_COLOR_DEFAULT;
 }
 
 void runes_screen_set_bg_color(RunesTerm *t, int idx)
 {
     RunesScreen *scr = &t->scr;
 
-    scr->bgcolor.type = RUNES_COLOR_IDX;
-    scr->bgcolor.idx = idx;
+    scr->attrs.bgcolor.type = RUNES_COLOR_IDX;
+    scr->attrs.bgcolor.idx = idx;
 }
 
 void runes_screen_set_bg_color_rgb(RunesTerm *t, int r, int g, int b)
@@ -264,7 +261,7 @@ void runes_screen_reset_bg_color(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
 
-    scr->bgcolor.type = RUNES_COLOR_DEFAULT;
+    scr->attrs.bgcolor.type = RUNES_COLOR_DEFAULT;
 }
 
 void runes_screen_set_bold(RunesTerm *t)

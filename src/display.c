@@ -153,12 +153,12 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
     struct runes_cell *cell = &t->scr.rows[row].cells[col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
 
-    switch (cell->bgcolor.type) {
+    switch (cell->attrs.bgcolor.type) {
     case RUNES_COLOR_DEFAULT:
         bg = t->bgdefault;
         break;
     case RUNES_COLOR_IDX:
-        bg = t->colors[cell->bgcolor.idx];
+        bg = t->colors[cell->attrs.bgcolor.idx];
         break;
     case RUNES_COLOR_RGB:
         /* XXX */
@@ -166,12 +166,12 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
         break;
     }
 
-    switch (cell->fgcolor.type) {
+    switch (cell->attrs.fgcolor.type) {
     case RUNES_COLOR_DEFAULT:
         fg = t->fgdefault;
         break;
     case RUNES_COLOR_IDX:
-        fg = t->colors[cell->fgcolor.idx];
+        fg = t->colors[cell->attrs.fgcolor.idx];
         break;
     case RUNES_COLOR_RGB:
         /* XXX */

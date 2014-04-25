@@ -24,15 +24,24 @@ struct runes_color {
     unsigned char type;
 };
 
+struct runes_cell_attrs {
+    struct runes_color fgcolor;
+    struct runes_color bgcolor;
+    union {
+        struct {
+            unsigned char bold: 1;
+            unsigned char italic: 1;
+            unsigned char underline: 1;
+            unsigned char inverse: 1;
+        };
+        unsigned char attrs;
+    };
+};
+
 struct runes_cell {
     char contents[8];
     size_t len;
-    struct runes_color fgcolor;
-    struct runes_color bgcolor;
-    unsigned char bold: 1;
-    unsigned char italic: 1;
-    unsigned char underline: 1;
-    unsigned char inverse: 1;
+    struct runes_cell_attrs attrs;
 };
 
 struct runes_row {
@@ -53,13 +62,7 @@ struct runes_screen {
 
     struct runes_row *rows;
 
-    struct runes_color fgcolor;
-    struct runes_color bgcolor;
-
-    unsigned char bold: 1;
-    unsigned char italic: 1;
-    unsigned char underline: 1;
-    unsigned char inverse: 1;
+    struct runes_cell_attrs attrs;
 
     unsigned char hide_cursor: 1;
     unsigned char application_keypad: 1;
