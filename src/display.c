@@ -9,8 +9,8 @@ static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height);
 static void runes_display_draw_glyph(
-    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern, char *buf, size_t len,
-    int row, int col);
+    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
+    struct runes_cell_attrs attrs, char *buf, size_t len, int row, int col);
 
 void runes_display_init(RunesTerm *t)
 {
@@ -185,7 +185,7 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     if (cell->len) {
         runes_display_draw_glyph(
-            t, t->cr, fg, cell->contents, cell->len, row, col);
+            t, t->cr, fg, cell->attrs, cell->contents, cell->len, row, col);
     }
 }
 
@@ -203,9 +203,24 @@ static void runes_display_paint_rectangle(
 }
 
 static void runes_display_draw_glyph(
-    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern, char *buf, size_t len,
-    int row, int col)
+    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
+    struct runes_cell_attrs attrs, char *buf, size_t len, int row, int col)
 {
+    PangoAttrList *pango_attrs;
+
+    pango_attrs = pango_layout_get_attributes(t->layout);
+    if (t->bold_is_bold) {
+        pango_attr_list_change(
+            pango_attrs, pango_attr_weight_new(
+                attrs.bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL));
+    }
+    pango_attr_list_change(
+        pango_attrs, pango_attr_style_new(
+            attrs.italic ? PANGO_STYLE_ITALIC : PANGO_STYLE_NORMAL));
+    pango_attr_list_change(
+        pango_attrs, pango_attr_underline_new(
+            attrs.underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE));
+
     cairo_save(cr);
     cairo_move_to(cr, col * t->fontx, row * t->fonty);
     cairo_set_source(cr, pattern);

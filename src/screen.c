@@ -266,20 +266,23 @@ void runes_screen_reset_bg_color(RunesTerm *t)
 
 void runes_screen_set_bold(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_bold nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.bold = 1;
 }
 
 void runes_screen_set_italic(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_italic nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.italic = 1;
 }
 
 void runes_screen_set_underline(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_underline nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.underline = 1;
 }
 
 void runes_screen_set_inverse(RunesTerm *t)
@@ -290,20 +293,23 @@ void runes_screen_set_inverse(RunesTerm *t)
 
 void runes_screen_reset_bold(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_bold nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.bold = 0;
 }
 
 void runes_screen_reset_italic(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_italic nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.italic = 0;
 }
 
 void runes_screen_reset_underline(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_underline nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.underline = 0;
 }
 
 void runes_screen_reset_inverse(RunesTerm *t)
