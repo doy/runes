@@ -170,9 +170,15 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
     case RUNES_COLOR_DEFAULT:
         fg = t->fgdefault;
         break;
-    case RUNES_COLOR_IDX:
-        fg = t->colors[cell->attrs.fgcolor.idx];
+    case RUNES_COLOR_IDX: {
+        unsigned char idx = cell->attrs.fgcolor.idx;
+
+        if (t->bold_is_bright && cell->attrs.bold && idx < 8) {
+            idx += 8;
+        }
+        fg = t->colors[idx];
         break;
+    }
     case RUNES_COLOR_RGB:
         /* XXX */
         fprintf(stderr, "rgb colors nyi\n");
