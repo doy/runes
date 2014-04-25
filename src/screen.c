@@ -99,23 +99,24 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 void runes_screen_move_to(RunesTerm *t, int row, int col)
 {
     RunesScreen *scr = &t->scr;
+    int top = scr->scroll_top, bottom = scr->scroll_bottom;
 
     /* XXX should be able to do this all in one operation */
-    while (row >= scr->max.row) {
-        free(scr->rows[0].cells);
+    while (row > bottom) {
+        free(scr->rows[top].cells);
         memmove(
-            &scr->rows[0], &scr->rows[1],
-            (scr->max.row - 1) * sizeof(struct runes_row));
-        scr->rows[scr->max.row - 1].cells = calloc(
+            &scr->rows[top], &scr->rows[top + 1],
+            (bottom - top) * sizeof(struct runes_row));
+        scr->rows[bottom].cells = calloc(
             t->scr.max.col, sizeof(struct runes_cell));
         row--;
     }
-    while (row < 0) {
-        free(scr->rows[scr->max.row - 1].cells);
+    while (row < top) {
+        free(scr->rows[bottom].cells);
         memmove(
-            &scr->rows[1], &scr->rows[0],
-            (scr->max.row - 1) * sizeof(struct runes_row));
-        scr->rows[0].cells = calloc(
+            &scr->rows[top + 1], &scr->rows[top],
+            (bottom - top) * sizeof(struct runes_row));
+        scr->rows[top].cells = calloc(
             t->scr.max.col, sizeof(struct runes_cell));
         row++;
     }
@@ -221,12 +222,20 @@ void runes_screen_delete_lines(RunesTerm *t, int count)
 void runes_screen_set_scroll_region(
     RunesTerm *t, int top, int bottom, int left, int right)
 {
-    UNUSED(t);
-    UNUSED(top);
-    UNUSED(bottom);
-    UNUSED(left);
-    UNUSED(right);
-    fprintf(stderr, "set_scroll_region nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    if (left > 0 || right < scr->max.col - 1) {
+        fprintf(stderr, "vertical scroll regions not yet implemented\n");
+    }
+
+    if (top > bottom) {
+        return;
+    }
+
+    scr->scroll_top    = top    <  0            ? 0                : top;
+    scr->scroll_bottom = bottom >= scr->max.row ? scr->max.row - 1 : bottom;
+
+    runes_screen_move_to(t, scr->scroll_top, 0);
 }
 
 void runes_screen_reset_text_attributes(RunesTerm *t)
