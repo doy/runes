@@ -129,6 +129,6 @@ void runes_screen_set_mouse_reporting_press_release(RunesTerm *t);
 void runes_screen_reset_mouse_reporting_press_release(RunesTerm *t);
 void runes_screen_set_window_title(RunesTerm *t, char *buf, size_t len);
 void runes_screen_set_icon_name(RunesTerm *t, char *buf, size_t len);
-void runes_screen_destroy(RunesTerm *t);
+void runes_screen_cleanup(RunesTerm *t);
 
 #endif

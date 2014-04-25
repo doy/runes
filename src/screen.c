@@ -490,4 +490,7 @@ void runes_screen_cleanup(RunesTerm *t)
         free(t->scr.rows[i].cells);
     }
     free(t->scr.rows);
+
+    free(t->scr.title);
+    free(t->scr.icon_name);
 }
