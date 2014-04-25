@@ -87,38 +87,68 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
 
 void runes_screen_clear_screen(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "clear_screen nyi\n");
+    RunesScreen *scr = &t->scr;
+    int r;
+
+    for (r = 0; r < scr->max.row; ++r) {
+        memset(
+            scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
+    }
 }
 
 void runes_screen_clear_screen_forward(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "clear_screen_forward nyi\n");
+    RunesScreen *scr = &t->scr;
+    int r;
+
+    memset(
+        &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
+        (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
+    for (r = scr->cur.row + 1; r < scr->max.row; ++r) {
+        memset(
+            scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
+    }
 }
 
 void runes_screen_clear_screen_backward(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "clear_screen_backward nyi\n");
+    RunesScreen *scr = &t->scr;
+    int r;
+
+    for (r = 0; r < scr->cur.row - 1; ++r) {
+        memset(
+            scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
+    }
+    memset(
+        scr->rows[scr->cur.row].cells, 0,
+        scr->cur.col * sizeof(struct runes_cell));
 }
 
 void runes_screen_kill_line(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "kill_line nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    memset(
+        scr->rows[scr->cur.row].cells, 0,
+        scr->max.col * sizeof(struct runes_cell));
 }
 
 void runes_screen_kill_line_forward(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "kill_line_forward nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    memset(
+        &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
+        (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
 }
 
 void runes_screen_kill_line_backward(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "kill_line_backward nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    memset(
+        scr->rows[scr->cur.row].cells, 0,
+        scr->cur.col * sizeof(struct runes_cell));
 }
 
 void runes_screen_insert_characters(RunesTerm *t, int count)
