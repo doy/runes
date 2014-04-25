@@ -5,6 +5,7 @@ OBJ      = $(BUILD)runes.o \
 	   $(BUILD)display.o \
 	   $(BUILD)term.o \
 	   $(BUILD)parser.o \
+	   $(BUILD)screen.o \
 	   $(BUILD)config.o \
 	   $(BUILD)window-xlib.o \
 	   $(BUILD)pty-unix.o
@@ -27,8 +28,13 @@ $(BUILD)%.o: $(SRC)%.c
 	@$(MAKEDEPEND) -o $(<:$(SRC)%.c=$(BUILD).%.d) $<
 	$(CC) $(ALLCFLAGS) -c -o $@ $<
 
+$(SRC)screen.c: $(SRC)parser.h
+
 $(SRC)%.c: $(SRC)%.l
 	$(LEX) -o $@ $<
+
+$(SRC)%.h: $(SRC)%.l
+	$(LEX) --header-file=$(<:.l=.h) -o /dev/null $<
 
 clean:
 	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d)

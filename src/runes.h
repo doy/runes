@@ -10,11 +10,13 @@
 struct runes_term;
 struct runes_window;
 struct runes_pty;
+struct runes_screen;
 struct runes_loop_data;
 
 typedef struct runes_term RunesTerm;
 typedef struct runes_window RunesWindowBackend;
 typedef struct runes_pty RunesPtyBackend;
+typedef struct runes_screen RunesScreen;
 typedef struct runes_loop_data RunesLoopData;
 
 struct runes_loop_data {
@@ -25,9 +27,9 @@ struct runes_loop_data {
 #include "window-xlib.h"
 #include "pty-unix.h"
 
+#include "screen.h"
 #include "term.h"
 #include "display.h"
-#include "parser.h"
 #include "config.h"
 
 #define UNUSED(x) ((void)x)

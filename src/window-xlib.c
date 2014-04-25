@@ -498,21 +498,22 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
 
 static void runes_window_backend_draw_cursor(RunesTerm *t)
 {
-    if (!t->hide_cursor) {
+    if (!t->scr.hide_cursor) {
         cairo_save(t->backend_cr);
         cairo_set_source(t->backend_cr, t->cursorcolor);
         if (t->unfocused) {
             cairo_set_line_width(t->backend_cr, 1);
             cairo_rectangle(
                 t->backend_cr,
-                t->col * t->fontx + 0.5, t->row * t->fonty + 0.5,
+                t->scr.cur.col * t->fontx + 0.5,
+                t->scr.cur.row * t->fonty + 0.5,
                 t->fontx, t->fonty);
             cairo_stroke(t->backend_cr);
         }
         else {
             cairo_rectangle(
                 t->backend_cr,
-                t->col * t->fontx, t->row * t->fonty,
+                t->scr.cur.col * t->fontx, t->scr.cur.row * t->fonty,
                 t->fontx, t->fonty);
             cairo_fill(t->backend_cr);
         }
@@ -620,8 +621,8 @@ static struct function_key *runes_window_backend_find_key_sequence(
 {
     struct function_key *key;
 
-    if (t->application_keypad) {
-        if (t->application_cursor) {
+    if (t->scr.application_keypad) {
+        if (t->scr.application_cursor) {
             key = &application_cursor_keys[0];
             while (key->sym != XK_VoidSymbol) {
                 if (key->sym == sym) {
@@ -658,7 +659,7 @@ static void runes_window_backend_handle_button_event(
         }
     }
 
-    if (t->mouse_reporting_press_release) {
+    if (t->scr.mouse_reporting_press_release) {
         char response[7];
         char status = 0;
 
@@ -706,7 +707,7 @@ static void runes_window_backend_handle_button_event(
             ' ' + (e->y / t->fonty + 1));
         runes_pty_backend_write(t, response, 6);
     }
-    else if (t->mouse_reporting_press && e->type == ButtonPress) {
+    else if (t->scr.mouse_reporting_press && e->type == ButtonPress) {
         char response[7];
 
         sprintf(
@@ -762,10 +763,10 @@ static void runes_window_backend_handle_focus_event(
 {
     runes_window_backend_clear_urgent(t);
     if (e->type == FocusIn) {
-        runes_display_focus_in(t);
+        t->unfocused = 0;
     }
     else {
-        runes_display_focus_out(t);
+        t->unfocused = 1;
     }
     runes_window_backend_flush(t);
 }

@@ -3,24 +3,20 @@
 
 #include "runes.h"
 
-static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t);
-static cairo_pattern_t *runes_display_get_bgcolor(RunesTerm *t);
 static void runes_display_recalculate_font_metrics(RunesTerm *t);
-static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr);
+static void runes_display_draw_cell(RunesTerm *t, int row, int col);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
-    int x, int y, int width, int height);
-static void runes_display_scroll_up(RunesTerm *t, int rows);
-static void runes_display_scroll_down(RunesTerm *t, int rows);
+    int row, int col, int width, int height);
+static void runes_display_draw_glyph(
+    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern, char *buf, size_t len,
+    int row, int col);
 
 void runes_display_init(RunesTerm *t)
 {
     runes_display_recalculate_font_metrics(t);
 
     t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
-
-    t->fgcolor = -1;
-    t->bgcolor = -1;
 }
 
 void runes_display_set_window_size(RunesTerm *t)
@@ -38,11 +34,11 @@ void runes_display_set_window_size(RunesTerm *t)
     t->xpixel = width;
     t->ypixel = height;
 
-    t->rows = t->ypixel / t->fonty;
-    t->cols = t->xpixel / t->fontx;
+    t->scr.max.row = t->ypixel / t->fonty;
+    t->scr.max.col = t->xpixel / t->fontx;
 
-    t->scroll_top = 0;
-    t->scroll_bottom = t->rows - 1;
+    t->scr.scroll_top    = 0;
+    t->scr.scroll_bottom = t->scr.max.row - 1;
 
     old_cr = t->cr;
 
@@ -55,7 +51,6 @@ void runes_display_set_window_size(RunesTerm *t)
         CAIRO_FORMAT_RGB24, t->xpixel, t->ypixel);
     t->cr = cairo_create(surface);
     cairo_surface_destroy(surface);
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
     if (t->layout) {
         pango_cairo_update_layout(t->cr, t->layout);
     }
@@ -92,428 +87,19 @@ void runes_display_set_window_size(RunesTerm *t)
     }
 
     runes_pty_backend_set_window_size(t);
-    runes_display_position_cursor(t, t->cr);
 }
 
-void runes_display_focus_in(RunesTerm *t)
+void runes_display_draw_screen(RunesTerm *t)
 {
-    t->unfocused = 0;
-}
+    int r, c;
 
-void runes_display_focus_out(RunesTerm *t)
-{
-    t->unfocused = 1;
-}
-
-void runes_display_move_to(RunesTerm *t, int row, int col)
-{
-    t->row = row;
-    t->col = col;
-
-    if (row > t->scroll_bottom) {
-        runes_display_scroll_down(t, row - t->scroll_bottom);
-        t->row = t->scroll_bottom;
-    }
-    else if (row < t->scroll_top) {
-        runes_display_scroll_up(t, t->scroll_top - row);
-        t->row = t->scroll_top;
-    }
-
-    runes_display_position_cursor(t, t->cr);
-}
-
-void runes_display_show_string_ascii(RunesTerm *t, char *buf, size_t len)
-{
-    if (len) {
-        int remaining = len, space_in_row = t->cols - t->col;
-
-        do {
-            int to_write = remaining > space_in_row ? space_in_row : remaining;
-
-            runes_display_paint_rectangle(
-                t, t->cr, runes_display_get_bgcolor(t),
-                t->col, t->row, to_write, 1);
-
-            pango_layout_set_text(t->layout, buf, to_write);
-            pango_cairo_update_layout(t->cr, t->layout);
-            pango_cairo_show_layout(t->cr, t->layout);
-
-            buf += to_write;
-            remaining -= to_write;
-            space_in_row = t->cols;
-            if (remaining) {
-                runes_display_move_to(t, t->row + 1, 0);
-            }
-            else {
-                t->col += len;
-                runes_display_position_cursor(t, t->cr);
-            }
-        } while (remaining > 0);
-    }
-}
-
-/* XXX this is gross and kind of slow, but i can't find a better way to do it.
- * i need to be able to convert the string into clusters before laying it out,
- * since i'm not going to be using the full layout anyway, but the only way i
- * can see to do that is with pango_get_log_attrs, which only returns character
- * (not byte) offsets, so i have to reparse the utf8 myself once i get the
- * results. not ideal. */
-void runes_display_show_string_utf8(RunesTerm *t, char *buf, size_t len)
-{
-    size_t i, pos, char_len;
-    PangoLogAttr *attrs;
-
-    char_len = g_utf8_strlen(buf, len);
-    attrs = malloc(sizeof(PangoLogAttr) * (char_len + 1));
-    pango_get_log_attrs(buf, len, -1, NULL, attrs, char_len + 1);
-
-    pos = 0;
-    for (i = 1; i < char_len + 1; ++i) {
-        if (attrs[i].is_cursor_position) {
-            char *startpos, *c;
-            size_t cluster_len;
-            char width = 1;
-
-            startpos = g_utf8_offset_to_pointer(buf, pos);
-            cluster_len = g_utf8_offset_to_pointer(buf, i) - startpos;
-
-            for (c = startpos;
-                 (size_t)(c - startpos) < cluster_len;
-                 c = g_utf8_next_char(c)) {
-                if (g_unichar_iswide(g_utf8_get_char(c))) {
-                    width = 2;
-                }
-            }
-
-            runes_display_paint_rectangle(
-                t, t->cr, runes_display_get_bgcolor(t),
-                t->col, t->row, width, 1);
-
-            pango_layout_set_text(t->layout, startpos, cluster_len);
-            pango_cairo_update_layout(t->cr, t->layout);
-            pango_cairo_show_layout(t->cr, t->layout);
-
-            if (t->col + width >= t->cols) {
-                runes_display_move_to(t, t->row + 1, 0);
-            }
-            else {
-                runes_display_move_to(t, t->row, t->col + width);
-            }
-            pos = i;
+    /* XXX quite inefficient */
+    for (r = 0; r < t->scr.max.row; ++r) {
+        for (c = 0; c < t->scr.max.col; ++c) {
+            runes_display_draw_cell(t, r, c);
         }
     }
-
-    free(attrs);
-}
-
-void runes_display_clear_screen(RunesTerm *t)
-{
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, 0, t->cols, t->rows);
-}
-
-void runes_display_clear_screen_forward(RunesTerm *t)
-{
-    runes_display_kill_line_forward(t);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, t->row, t->cols, t->rows - t->row);
-}
-
-void runes_display_kill_line_forward(RunesTerm *t)
-{
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, t->col, t->row, t->cols - t->col, 1);
-}
-
-void runes_display_kill_line_backward(RunesTerm *t)
-{
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, t->row, t->col, 1);
-}
-
-void runes_display_insert_lines(RunesTerm *t, int count)
-{
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, 0.0, -count * t->fonty);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern,
-        0, t->row + count, t->cols, t->scroll_bottom + 1 - t->row - count);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, t->row, t->cols, count);
-    cairo_restore(t->cr);
-}
-
-void runes_display_insert_characters(RunesTerm *t, int count)
-{
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, -count * t->fontx, 0.0);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern,
-        t->col + count, t->row, t->cols - t->col - count, 1);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, t->col, t->row, count, 1);
-    cairo_restore(t->cr);
-}
-
-void runes_display_delete_lines(RunesTerm *t, int count)
-{
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, 0.0, count * t->fonty);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern,
-        0, t->row, t->cols, t->scroll_bottom + 1 - t->row - count);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault,
-        0, t->scroll_bottom + 1 - count, t->cols, count);
-    cairo_restore(t->cr);
-}
-
-void runes_display_delete_characters(RunesTerm *t, int count)
-{
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, count * t->fontx, 0.0);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern, t->col, t->row, t->cols - t->col - count, 1);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, t->cols - count, t->row, count, 1);
-    cairo_restore(t->cr);
-}
-
-void runes_display_reset_text_attributes(RunesTerm *t)
-{
-    runes_display_reset_fg_color(t);
-    runes_display_reset_bg_color(t);
-    runes_display_reset_bold(t);
-    runes_display_reset_italic(t);
-    runes_display_reset_underline(t);
-    runes_display_reset_inverse(t);
-}
-
-void runes_display_set_bold(RunesTerm *t)
-{
-    PangoAttrList *attrs;
-
-    attrs = pango_layout_get_attributes(t->layout);
-    if (t->bold_is_bold) {
-        pango_attr_list_change(
-            attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
-    }
-    t->bold = 1;
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_reset_bold(RunesTerm *t)
-{
-    PangoAttrList *attrs;
-
-    attrs = pango_layout_get_attributes(t->layout);
-    if (t->bold_is_bold) {
-        pango_attr_list_change(
-            attrs, pango_attr_weight_new(PANGO_WEIGHT_NORMAL));
-    }
-    t->bold = 0;
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_set_italic(RunesTerm *t)
-{
-    PangoAttrList *attrs;
-
-    attrs = pango_layout_get_attributes(t->layout);
-    pango_attr_list_change(attrs, pango_attr_style_new(PANGO_STYLE_ITALIC));
-}
-
-void runes_display_reset_italic(RunesTerm *t)
-{
-    PangoAttrList *attrs;
-
-    attrs = pango_layout_get_attributes(t->layout);
-    pango_attr_list_change(attrs, pango_attr_style_new(PANGO_STYLE_NORMAL));
-}
-
-void runes_display_set_underline(RunesTerm *t)
-{
-    PangoAttrList *attrs;
-
-    attrs = pango_layout_get_attributes(t->layout);
-    pango_attr_list_change(
-        attrs, pango_attr_underline_new(PANGO_UNDERLINE_SINGLE));
-}
-
-void runes_display_reset_underline(RunesTerm *t)
-{
-    PangoAttrList *attrs;
-
-    attrs = pango_layout_get_attributes(t->layout);
-    pango_attr_list_change(
-        attrs, pango_attr_underline_new(PANGO_UNDERLINE_NONE));
-}
-
-void runes_display_set_inverse(RunesTerm *t)
-{
-    t->inverse = 1;
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_reset_inverse(RunesTerm *t)
-{
-    t->inverse = 0;
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_set_fg_color(RunesTerm *t, int color)
-{
-    t->fgcolor = color;
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_set_fg_color_rgb(RunesTerm *t, int r, int g, int b)
-{
-    t->fgcolor = -2;
-    if (t->fgcustom) {
-        cairo_pattern_destroy(t->fgcustom);
-    }
-    t->fgcustom = cairo_pattern_create_rgb(
-        (double)r / 255.0, (double)g / 255.0, (double)b / 255.0);
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_reset_fg_color(RunesTerm *t)
-{
-    runes_display_set_fg_color(t, -1);
-}
-
-void runes_display_set_bg_color(RunesTerm *t, int color)
-{
-    t->bgcolor = color;
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_set_bg_color_rgb(RunesTerm *t, int r, int g, int b)
-{
-    t->bgcolor = -2;
-    if (t->bgcustom) {
-        cairo_pattern_destroy(t->bgcustom);
-    }
-    t->bgcustom = cairo_pattern_create_rgb(
-        (double)r / 255.0, (double)g / 255.0, (double)b / 255.0);
-    cairo_set_source(t->cr, runes_display_get_fgcolor(t));
-}
-
-void runes_display_reset_bg_color(RunesTerm *t)
-{
-    runes_display_set_bg_color(t, -1);
-}
-
-void runes_display_show_cursor(RunesTerm *t)
-{
-    t->hide_cursor = 0;
-}
-
-void runes_display_hide_cursor(RunesTerm *t)
-{
-    t->hide_cursor = 1;
-}
-
-void runes_display_save_cursor(RunesTerm *t)
-{
-    t->saved_row = t->row;
-    t->saved_col = t->col;
-    /* XXX do other stuff here? */
-}
-
-void runes_display_restore_cursor(RunesTerm *t)
-{
-    t->row = t->saved_row;
-    t->col = t->saved_col;
-}
-
-void runes_display_use_alternate_buffer(RunesTerm *t)
-{
-    if (t->alternate_cr) {
-        return;
-    }
-
-    runes_display_save_cursor(t);
-    t->alternate_cr = t->cr;
-    t->cr = NULL;
-    t->xpixel = -1;
-    t->ypixel = -1;
-    runes_display_set_window_size(t);
-}
-
-void runes_display_use_normal_buffer(RunesTerm *t)
-{
-    if (!t->alternate_cr) {
-        return;
-    }
-
-    runes_display_restore_cursor(t);
-    cairo_destroy(t->cr);
-    t->cr = t->alternate_cr;
-    t->alternate_cr = NULL;
-    t->xpixel = -1;
-    t->ypixel = -1;
-    runes_display_set_window_size(t);
-}
-
-void runes_display_set_scroll_region(
-    RunesTerm *t, int top, int bottom, int left, int right)
-{
-    top    = top    < 0           ? 0           : top;
-    bottom = bottom > t->rows - 1 ? t->rows - 1 : bottom;
-    left   = left   < 0           ? 0           : left;
-    right  = right  > t->cols - 1 ? t->cols - 1 : right;
-
-    if (left != 0 || right != t->cols - 1) {
-        fprintf(stderr, "vertical scroll regions not yet supported\n");
-    }
-
-    if (top >= bottom || left >= right) {
-        t->scroll_top = 0;
-        t->scroll_bottom = t->rows - 1;
-        return;
-    }
-
-    t->scroll_top    = top;
-    t->scroll_bottom = bottom;
-    runes_display_move_to(t, t->scroll_top, 0);
+    runes_window_backend_request_flush(t);
 }
 
 void runes_display_cleanup(RunesTerm *t)
@@ -527,45 +113,6 @@ void runes_display_cleanup(RunesTerm *t)
     }
     cairo_pattern_destroy(t->cursorcolor);
     cairo_destroy(t->cr);
-}
-
-static cairo_pattern_t *runes_display_get_fgcolor(RunesTerm *t)
-{
-    int color = t->inverse ? t->bgcolor : t->fgcolor;
-
-    if (t->inverse && t->bgcolor == t->fgcolor) {
-        return t->bgdefault;
-    }
-    else if (color == -2) {
-        return t->inverse ? t->bgcustom : t->fgcustom;
-    }
-    else if (color == -1) {
-        return t->inverse ? t->bgdefault : t->fgdefault;
-    }
-    else if (t->bold_is_bright && t->bold && color < 8) {
-        return t->colors[color + 8];
-    }
-    else {
-        return t->colors[color];
-    }
-}
-
-static cairo_pattern_t *runes_display_get_bgcolor(RunesTerm *t)
-{
-    int color = t->inverse ? t->fgcolor : t->bgcolor;
-
-    if (t->inverse && t->bgcolor == t->fgcolor) {
-        return t->fgdefault;
-    }
-    else if (color == -2) {
-        return t->inverse ? t->bgcustom : t->fgcustom;
-    }
-    else if (color == -1) {
-        return t->inverse ? t->fgdefault : t->bgdefault;
-    }
-    else {
-        return t->colors[color];
-    }
 }
 
 static void runes_display_recalculate_font_metrics(RunesTerm *t)
@@ -601,63 +148,69 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     }
 }
 
-static void runes_display_position_cursor(RunesTerm *t, cairo_t *cr)
+static void runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
-    cairo_move_to(cr, t->col * t->fontx, t->row * t->fonty);
+    struct runes_cell *cell = &t->scr.rows[row].cells[col];
+    cairo_pattern_t *bg = NULL, *fg = NULL;
+
+    switch (cell->bgcolor.type) {
+    case RUNES_COLOR_DEFAULT:
+        bg = t->bgdefault;
+        break;
+    case RUNES_COLOR_IDX:
+        bg = t->colors[cell->bgcolor.idx];
+        break;
+    case RUNES_COLOR_RGB:
+        /* XXX */
+        fprintf(stderr, "rgb colors nyi\n");
+        break;
+    }
+
+    switch (cell->fgcolor.type) {
+    case RUNES_COLOR_DEFAULT:
+        fg = t->fgdefault;
+        break;
+    case RUNES_COLOR_IDX:
+        fg = t->colors[cell->fgcolor.idx];
+        break;
+    case RUNES_COLOR_RGB:
+        /* XXX */
+        fprintf(stderr, "rgb colors nyi\n");
+        break;
+    }
+
+    if (bg) {
+        runes_display_paint_rectangle(t, t->cr, bg, row, col, 1, 1);
+    }
+
+    if (cell->len) {
+        runes_display_draw_glyph(
+            t, t->cr, fg, cell->contents, cell->len, row, col);
+    }
 }
 
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
-    int x, int y, int width, int height)
+    int row, int col, int width, int height)
 {
     cairo_save(cr);
     cairo_set_source(cr, pattern);
     cairo_rectangle(
-        cr, x * t->fontx, y * t->fonty, width * t->fontx, height * t->fonty);
+        cr, col * t->fontx, row * t->fonty,
+        width * t->fontx, height * t->fonty);
     cairo_fill(cr);
     cairo_restore(cr);
-    runes_display_position_cursor(t, t->cr);
 }
 
-static void runes_display_scroll_up(RunesTerm *t, int rows)
+static void runes_display_draw_glyph(
+    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern, char *buf, size_t len,
+    int row, int col)
 {
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, 0.0, -rows * t->fonty);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern,
-        0, t->scroll_top + rows,
-        t->cols, t->scroll_bottom - t->scroll_top + 1 - rows);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, t->scroll_top, t->cols, rows);
-    cairo_restore(t->cr);
-}
-
-static void runes_display_scroll_down(RunesTerm *t, int rows)
-{
-    cairo_pattern_t *pattern;
-    cairo_matrix_t matrix;
-
-    cairo_save(t->cr);
-    cairo_push_group(t->cr);
-    pattern = cairo_pattern_create_for_surface(cairo_get_target(t->cr));
-    cairo_matrix_init_translate(&matrix, 0.0, rows * t->fonty);
-    cairo_pattern_set_matrix(pattern, &matrix);
-    runes_display_paint_rectangle(
-        t, t->cr, pattern,
-        0, t->scroll_top, t->cols, t->scroll_bottom - t->scroll_top);
-    cairo_pattern_destroy(pattern);
-    cairo_pop_group_to_source(t->cr);
-    cairo_paint(t->cr);
-    runes_display_paint_rectangle(
-        t, t->cr, t->bgdefault, 0, t->scroll_bottom + 1 - rows, t->cols, rows);
-    cairo_restore(t->cr);
+    cairo_save(cr);
+    cairo_move_to(cr, col * t->fontx, row * t->fonty);
+    cairo_set_source(cr, pattern);
+    pango_layout_set_text(t->layout, buf, len);
+    pango_cairo_update_layout(t->cr, t->layout);
+    pango_cairo_show_layout(t->cr, t->layout);
+    cairo_restore(cr);
 }

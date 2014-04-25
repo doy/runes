@@ -9,6 +9,7 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     runes_pty_backend_spawn_subprocess(t);
 
     runes_display_set_window_size(t);
+    runes_screen_init(t);
 
     t->loop = uv_default_loop();
     runes_window_backend_start_loop(t);

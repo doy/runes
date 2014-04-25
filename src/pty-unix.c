@@ -99,8 +99,8 @@ void runes_pty_backend_set_window_size(RunesTerm *t)
 {
     struct winsize size;
 
-    size.ws_row = t->rows;
-    size.ws_col = t->cols;
+    size.ws_row = t->scr.max.row;
+    size.ws_col = t->scr.max.col;
     size.ws_xpixel = t->xpixel;
     size.ws_ypixel = t->ypixel;
     ioctl(t->pty.master, TIOCSWINSZ, &size);
@@ -144,7 +144,7 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
     UNUSED(status);
 
     if (t->readlen > 0) {
-        runes_parser_process_string(
+        runes_screen_process_string(
             t, t->readbuf, t->readlen + t->remaininglen);
         uv_queue_work(
             t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
