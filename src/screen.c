@@ -53,17 +53,19 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
     size_t i;
 
     for (i = 0; i < len; ++i) {
-        struct runes_cell *cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
+        struct runes_cell *cell;
+
+        if (scr->cur.col >= scr->max.col) {
+            scr->cur.col = 0;
+            scr->cur.row++;
+        }
+        cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
 
         cell->contents[0] = buf[i];
         cell->contents[1] = '\0';
         cell->len = 1;
 
         scr->cur.col++;
-        if (scr->cur.col >= scr->max.col) {
-            scr->cur.col = 0;
-            scr->cur.row++;
-        }
     }
 }
 
