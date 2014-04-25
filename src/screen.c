@@ -314,8 +314,9 @@ void runes_screen_set_underline(RunesTerm *t)
 
 void runes_screen_set_inverse(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_inverse nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.inverse = 1;
 }
 
 void runes_screen_reset_bold(RunesTerm *t)
@@ -341,8 +342,9 @@ void runes_screen_reset_underline(RunesTerm *t)
 
 void runes_screen_reset_inverse(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_inverse nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->attrs.inverse = 0;
 }
 
 void runes_screen_use_alternate_buffer(RunesTerm *t)

@@ -185,6 +185,18 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
         break;
     }
 
+    if (cell->attrs.inverse) {
+        if (cell->attrs.fgcolor.id == cell->attrs.bgcolor.id) {
+            fg = t->bgdefault;
+            bg = t->fgdefault;
+        }
+        else {
+            cairo_pattern_t *tmp = fg;
+            fg = bg;
+            bg = tmp;
+        }
+    }
+
     if (bg) {
         runes_display_paint_rectangle(t, t->cr, bg, row, col, 1, 1);
     }

@@ -1,6 +1,8 @@
 #ifndef _RUNES_SCREEN_H
 #define _RUNES_SCREEN_H
 
+#include <stdint.h>
+
 enum RunesColorType {
     RUNES_COLOR_DEFAULT,
     RUNES_COLOR_IDX,
@@ -15,13 +17,18 @@ struct runes_loc {
 struct runes_color {
     union {
         struct {
-            unsigned char r;
-            unsigned char g;
-            unsigned char b;
+            union {
+                struct {
+                    unsigned char r;
+                    unsigned char g;
+                    unsigned char b;
+                };
+                unsigned char idx;
+            };
+            unsigned char type;
         };
-        unsigned char idx;
+        uint32_t id;
     };
-    unsigned char type;
 };
 
 struct runes_cell_attrs {
