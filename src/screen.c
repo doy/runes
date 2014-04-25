@@ -392,62 +392,72 @@ void runes_screen_restore_cursor(RunesTerm *t)
 
 void runes_screen_show_cursor(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "show_cursor nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->hide_cursor = 0;
 }
 
 void runes_screen_hide_cursor(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "hide_cursor nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->hide_cursor = 1;
 }
 
 void runes_screen_set_application_keypad(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_application_keypad nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->application_keypad = 1;
 }
 
 void runes_screen_reset_application_keypad(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_application_keypad nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->application_keypad = 0;
 }
 
 void runes_screen_set_application_cursor(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_application_cursor nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->application_cursor = 1;
 }
 
 void runes_screen_reset_application_cursor(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_application_cursor nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->application_cursor = 0;
 }
 
 void runes_screen_set_mouse_reporting_press(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_mouse_reporting_press nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->mouse_reporting_press = 1;
 }
 
 void runes_screen_reset_mouse_reporting_press(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_mouse_reporting_press nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->mouse_reporting_press = 0;
 }
 
 void runes_screen_set_mouse_reporting_press_release(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "set_mouse_reporting_press_release nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->mouse_reporting_press_release = 1;
 }
 
 void runes_screen_reset_mouse_reporting_press_release(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "reset_mouse_reporting_press_release nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->mouse_reporting_press_release = 0;
 }
 
 void runes_screen_set_window_title(RunesTerm *t, char *buf, size_t len)
