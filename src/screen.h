@@ -61,6 +61,7 @@ struct runes_screen {
     char *icon_name;
 
     struct runes_row *rows;
+    struct runes_row *alternate;
 
     struct runes_cell_attrs attrs;
 

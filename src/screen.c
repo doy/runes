@@ -338,26 +338,56 @@ void runes_screen_reset_inverse(RunesTerm *t)
 
 void runes_screen_use_alternate_buffer(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "use_alternate_buffer nyi\n");
+    RunesScreen *scr = &t->scr;
+    int i;
+
+    if (scr->alternate) {
+        return;
+    }
+
+    runes_screen_save_cursor(t);
+
+    scr->alternate = scr->rows;
+
+    scr->rows = calloc(scr->max.row, sizeof(struct runes_row));
+    for (i = 0; i < scr->max.row; ++i) {
+        scr->rows[i].cells = calloc(
+            scr->max.col, sizeof(struct runes_cell));
+    }
 }
 
 void runes_screen_use_normal_buffer(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "use_normal_buffer nyi\n");
+    RunesScreen *scr = &t->scr;
+    int i;
+
+    if (!scr->alternate) {
+        return;
+    }
+
+    for (i = 0; i < scr->max.row; ++i) {
+        free(scr->rows[i].cells);
+    }
+    free(scr->rows);
+
+    scr->rows = scr->alternate;
+    scr->alternate = NULL;
+
+    runes_screen_restore_cursor(t);
 }
 
 void runes_screen_save_cursor(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "save_cursor nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->saved = scr->cur;
 }
 
 void runes_screen_restore_cursor(RunesTerm *t)
 {
-    UNUSED(t);
-    fprintf(stderr, "restore_cursor nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    scr->cur = scr->saved;
 }
 
 void runes_screen_show_cursor(RunesTerm *t)
