@@ -224,9 +224,29 @@ void runes_screen_insert_characters(RunesTerm *t, int count)
 
 void runes_screen_insert_lines(RunesTerm *t, int count)
 {
-    UNUSED(t);
-    UNUSED(count);
-    fprintf(stderr, "insert_lines nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    if (count >= scr->max.row - scr->cur.row) {
+        runes_screen_clear_screen_forward(t);
+        runes_screen_kill_line(t);
+    }
+    else {
+        int i;
+
+        for (i = scr->max.row - count; i < scr->max.row; ++i) {
+            free(scr->rows[i].cells);
+        }
+        memmove(
+            &scr->rows[scr->cur.row + count], &scr->rows[scr->cur.row],
+            (scr->max.row - scr->cur.row - count) * sizeof(struct runes_row));
+        memset(
+            &scr->rows[scr->cur.row], 0,
+            count * sizeof(struct runes_row));
+        for (i = scr->cur.row; i < scr->cur.row + count; ++i) {
+            scr->rows[i].cells = calloc(
+                scr->max.col, sizeof(struct runes_cell));
+        }
+    }
 }
 
 void runes_screen_delete_characters(RunesTerm *t, int count)
@@ -249,9 +269,29 @@ void runes_screen_delete_characters(RunesTerm *t, int count)
 
 void runes_screen_delete_lines(RunesTerm *t, int count)
 {
-    UNUSED(t);
-    UNUSED(count);
-    fprintf(stderr, "delete_lines nyi\n");
+    RunesScreen *scr = &t->scr;
+
+    if (count >= scr->max.row - scr->cur.row) {
+        runes_screen_clear_screen_forward(t);
+        runes_screen_kill_line(t);
+    }
+    else {
+        int i;
+
+        for (i = scr->cur.row; i < scr->cur.row + count; ++i) {
+            free(scr->rows[i].cells);
+        }
+        memmove(
+            &scr->rows[scr->cur.row], &scr->rows[scr->cur.row + count],
+            (scr->max.row - scr->cur.row - count) * sizeof(struct runes_row));
+        memset(
+            &scr->rows[scr->max.row - count], 0,
+            count * sizeof(struct runes_row));
+        for (i = scr->max.row - count; i < scr->max.row; ++i) {
+            scr->rows[i].cells = calloc(
+                scr->max.col, sizeof(struct runes_cell));
+        }
+    }
 }
 
 void runes_screen_set_scroll_region(
