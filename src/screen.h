@@ -54,7 +54,6 @@ struct runes_cell {
 
 struct runes_row {
     struct runes_cell *cells;
-    unsigned char dirty: 1;
     unsigned char wrapped: 1;
 };
 
