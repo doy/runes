@@ -95,10 +95,14 @@ void runes_display_draw_screen(RunesTerm *t)
 
     /* XXX quite inefficient */
     for (r = 0; r < t->scr.max.row; ++r) {
-        int c = 0;
+        if (t->scr.rows[r].dirty) {
+            int c = 0;
 
-        while (c < t->scr.max.col) {
-            c += runes_display_draw_cell(t, r, c);
+            while (c < t->scr.max.col) {
+                c += runes_display_draw_cell(t, r, c);
+            }
+
+            t->scr.rows[r].dirty = 0;
         }
     }
     runes_window_backend_request_flush(t);
