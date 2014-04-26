@@ -121,6 +121,14 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
         row++;
     }
 
+    if (col < 0) {
+        col = 0;
+    }
+
+    if (col > t->scr.max.col) {
+        col = t->scr.max.col;
+    }
+
     scr->cur.row = row;
     scr->cur.col = col;
 }
