@@ -528,21 +528,26 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
 static void runes_window_backend_draw_cursor(RunesTerm *t)
 {
     if (!t->scr.hide_cursor) {
+        int row = t->scr.cur.row, col = t->scr.cur.col;
+
+        if (col >= t->scr.max.col) {
+            col = t->scr.max.col - 1;
+        }
+
         cairo_save(t->backend_cr);
         cairo_set_source(t->backend_cr, t->cursorcolor);
         if (t->unfocused) {
             cairo_set_line_width(t->backend_cr, 1);
             cairo_rectangle(
                 t->backend_cr,
-                t->scr.cur.col * t->fontx + 0.5,
-                t->scr.cur.row * t->fonty + 0.5,
+                col * t->fontx + 0.5, row * t->fonty + 0.5,
                 t->fontx, t->fonty);
             cairo_stroke(t->backend_cr);
         }
         else {
             cairo_rectangle(
                 t->backend_cr,
-                t->scr.cur.col * t->fontx, t->scr.cur.row * t->fonty,
+                col * t->fontx, row * t->fonty,
                 t->fontx, t->fonty);
             cairo_fill(t->backend_cr);
         }
