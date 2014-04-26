@@ -67,7 +67,6 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
 
         cell->len = 1;
         cell->contents[0] = buf[i];
-        cell->contents[1] = '\0';
         cell->attrs = scr->attrs;
         cell->is_wide = 0;
 
