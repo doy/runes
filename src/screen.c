@@ -61,6 +61,7 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         struct runes_cell *cell;
 
         if (scr->cur.col >= scr->max.col) {
+            scr->rows[scr->cur.row].wrapped = 1;
             runes_screen_move_to(t, scr->cur.row + 1, 0);
         }
         cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
@@ -89,6 +90,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
         is_wide = g_unichar_iswide(g_utf8_get_char(c));
 
         if (scr->cur.col + (is_wide ? 2 : 1) > scr->max.col) {
+            scr->rows[scr->cur.row].wrapped = 1;
             runes_screen_move_to(t, scr->cur.row + 1, 0);
         }
         cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
@@ -120,6 +122,7 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
             (bottom - top) * sizeof(struct runes_row));
         scr->rows[bottom].cells = calloc(
             scr->max.col, sizeof(struct runes_cell));
+        scr->rows[bottom].wrapped = 0;
         row--;
     }
     while (row < top) {
@@ -129,6 +132,7 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
             (bottom - top) * sizeof(struct runes_row));
         scr->rows[top].cells = calloc(
             scr->max.col, sizeof(struct runes_cell));
+        scr->rows[top].wrapped = 0;
         row++;
     }
 
@@ -152,6 +156,7 @@ void runes_screen_clear_screen(RunesTerm *t)
     for (r = 0; r < scr->max.row; ++r) {
         memset(
             scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
+        scr->rows[r].wrapped = 0;
     }
 }
 
@@ -163,9 +168,11 @@ void runes_screen_clear_screen_forward(RunesTerm *t)
     memset(
         &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
         (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
+    scr->rows[scr->cur.row].wrapped = 0;
     for (r = scr->cur.row + 1; r < scr->max.row; ++r) {
         memset(
             scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
+        scr->rows[r].wrapped = 0;
     }
 }
 
@@ -177,6 +184,7 @@ void runes_screen_clear_screen_backward(RunesTerm *t)
     for (r = 0; r < scr->cur.row - 1; ++r) {
         memset(
             scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
+        scr->rows[r].wrapped = 0;
     }
     memset(
         scr->rows[scr->cur.row].cells, 0,
@@ -190,6 +198,7 @@ void runes_screen_kill_line(RunesTerm *t)
     memset(
         scr->rows[scr->cur.row].cells, 0,
         scr->max.col * sizeof(struct runes_cell));
+    scr->rows[scr->cur.row].wrapped = 0;
 }
 
 void runes_screen_kill_line_forward(RunesTerm *t)
@@ -199,6 +208,7 @@ void runes_screen_kill_line_forward(RunesTerm *t)
     memset(
         &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
         (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
+    scr->rows[scr->cur.row].wrapped = 0;
 }
 
 void runes_screen_kill_line_backward(RunesTerm *t)
@@ -208,6 +218,9 @@ void runes_screen_kill_line_backward(RunesTerm *t)
     memset(
         scr->rows[scr->cur.row].cells, 0,
         scr->cur.col * sizeof(struct runes_cell));
+    if (scr->cur.row > 0) {
+        scr->rows[scr->cur.row - 1].wrapped = 0;
+    }
 }
 
 void runes_screen_insert_characters(RunesTerm *t, int count)
@@ -225,6 +238,7 @@ void runes_screen_insert_characters(RunesTerm *t, int count)
         memset(
             &row->cells[scr->cur.col], 0,
             count * sizeof(struct runes_cell));
+        scr->rows[scr->cur.row].wrapped = 0;
     }
 }
 
@@ -251,6 +265,7 @@ void runes_screen_insert_lines(RunesTerm *t, int count)
         for (i = scr->cur.row; i < scr->cur.row + count; ++i) {
             scr->rows[i].cells = calloc(
                 scr->max.col, sizeof(struct runes_cell));
+            scr->rows[i].wrapped = 0;
         }
     }
 }
@@ -270,6 +285,7 @@ void runes_screen_delete_characters(RunesTerm *t, int count)
         memset(
             &row->cells[scr->max.col - count], 0,
             count * sizeof(struct runes_cell));
+        scr->rows[scr->cur.row].wrapped = 0;
     }
 }
 
@@ -296,6 +312,7 @@ void runes_screen_delete_lines(RunesTerm *t, int count)
         for (i = scr->max.row - count; i < scr->max.row; ++i) {
             scr->rows[i].cells = calloc(
                 scr->max.col, sizeof(struct runes_cell));
+            scr->rows[i].wrapped = 0;
         }
     }
 }
