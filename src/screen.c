@@ -69,6 +69,7 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         cell->contents[0] = buf[i];
         cell->contents[1] = '\0';
         cell->attrs = scr->attrs;
+        cell->is_wide = 0;
 
         runes_screen_move_to(t, scr->cur.row, scr->cur.col + 1);
     }
@@ -83,17 +84,23 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
      * cell */
     while ((next = g_utf8_next_char(c))) {
         struct runes_cell *cell;
+        int is_wide;
 
-        if (scr->cur.col >= scr->max.col) {
+        /* XXX handle zero width characters */
+        is_wide = g_unichar_iswide(g_utf8_get_char(c));
+
+        if (scr->cur.col + (is_wide ? 2 : 1) > scr->max.col) {
             runes_screen_move_to(t, scr->cur.row + 1, 0);
         }
         cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
+        cell->is_wide = is_wide;
 
         cell->len = next - c;
         strncpy(cell->contents, c, cell->len);
         cell->attrs = scr->attrs;
 
-        runes_screen_move_to(t, scr->cur.row, scr->cur.col + 1);
+        runes_screen_move_to(
+            t, scr->cur.row, scr->cur.col + (is_wide ? 2 : 1));
         c = next;
         if ((size_t)(c - buf) >= len) {
             break;

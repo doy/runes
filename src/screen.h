@@ -49,6 +49,7 @@ struct runes_cell {
     char contents[8];
     size_t len;
     struct runes_cell_attrs attrs;
+    unsigned char is_wide: 1;
 };
 
 struct runes_row {

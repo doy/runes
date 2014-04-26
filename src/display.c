@@ -4,7 +4,7 @@
 #include "runes.h"
 
 static void runes_display_recalculate_font_metrics(RunesTerm *t);
-static void runes_display_draw_cell(RunesTerm *t, int row, int col);
+static int runes_display_draw_cell(RunesTerm *t, int row, int col);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height);
@@ -91,12 +91,14 @@ void runes_display_set_window_size(RunesTerm *t)
 
 void runes_display_draw_screen(RunesTerm *t)
 {
-    int r, c;
+    int r;
 
     /* XXX quite inefficient */
     for (r = 0; r < t->scr.max.row; ++r) {
-        for (c = 0; c < t->scr.max.col; ++c) {
-            runes_display_draw_cell(t, r, c);
+        int c = 0;
+
+        while (c < t->scr.max.col) {
+            c += runes_display_draw_cell(t, r, c);
         }
     }
     runes_window_backend_request_flush(t);
@@ -148,7 +150,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
     }
 }
 
-static void runes_display_draw_cell(RunesTerm *t, int row, int col)
+static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
     struct runes_cell *cell = &t->scr.rows[row].cells[col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
@@ -204,7 +206,8 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
         }
     }
 
-    runes_display_paint_rectangle(t, t->cr, bg, row, col, 1, 1);
+    runes_display_paint_rectangle(
+        t, t->cr, bg, row, col, cell->is_wide ? 2 : 1, 1);
 
     if (cell->len) {
         runes_display_draw_glyph(
@@ -218,6 +221,8 @@ static void runes_display_draw_cell(RunesTerm *t, int row, int col)
     if (fg_is_custom) {
         cairo_pattern_destroy(fg);
     }
+
+    return cell->is_wide ? 2 : 1;
 }
 
 static void runes_display_paint_rectangle(
