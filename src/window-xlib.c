@@ -85,6 +85,7 @@ static void runes_window_backend_resize_window(
 static void runes_window_backend_flush(RunesTerm *t);
 static void runes_window_backend_visual_bell(RunesTerm *t);
 static void runes_window_backend_reset_visual_bell(uv_timer_t *handle);
+static void runes_window_backend_visual_bell_free_handle(uv_handle_t *handle);
 static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
@@ -505,6 +506,12 @@ static void runes_window_backend_reset_visual_bell(uv_timer_t *handle)
 
     runes_window_backend_request_flush(t);
     t->visual_bell_is_ringing = 0;
+    uv_close(
+        (uv_handle_t *)handle, runes_window_backend_visual_bell_free_handle);
+}
+
+static void runes_window_backend_visual_bell_free_handle(uv_handle_t *handle)
+{
     free(handle);
 }
 
