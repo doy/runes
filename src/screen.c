@@ -6,12 +6,13 @@
 
 void runes_screen_init(RunesTerm *t)
 {
+    RunesScreen *scr = &t->scr;
     int i;
 
-    t->scr.rows = calloc(t->scr.max.row, sizeof(struct runes_row));
-    for (i = 0; i < t->scr.max.row; ++i) {
-        t->scr.rows[i].cells = calloc(
-            t->scr.max.col, sizeof(struct runes_cell));
+    scr->rows = calloc(scr->max.row, sizeof(struct runes_row));
+    for (i = 0; i < scr->max.row; ++i) {
+        scr->rows[i].cells = calloc(
+            scr->max.col, sizeof(struct runes_cell));
     }
 }
 
@@ -39,12 +40,16 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
 
 void runes_screen_audible_bell(RunesTerm *t)
 {
-    t->scr.audible_bell = 1;
+    RunesScreen *scr = &t->scr;
+
+    scr->audible_bell = 1;
 }
 
 void runes_screen_visual_bell(RunesTerm *t)
 {
-    t->scr.visual_bell = 1;
+    RunesScreen *scr = &t->scr;
+
+    scr->visual_bell = 1;
 }
 
 void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
@@ -108,7 +113,7 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
             &scr->rows[top], &scr->rows[top + 1],
             (bottom - top) * sizeof(struct runes_row));
         scr->rows[bottom].cells = calloc(
-            t->scr.max.col, sizeof(struct runes_cell));
+            scr->max.col, sizeof(struct runes_cell));
         row--;
     }
     while (row < top) {
@@ -117,7 +122,7 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
             &scr->rows[top + 1], &scr->rows[top],
             (bottom - top) * sizeof(struct runes_row));
         scr->rows[top].cells = calloc(
-            t->scr.max.col, sizeof(struct runes_cell));
+            scr->max.col, sizeof(struct runes_cell));
         row++;
     }
 
@@ -125,8 +130,8 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
         col = 0;
     }
 
-    if (col > t->scr.max.col) {
-        col = t->scr.max.col;
+    if (col > scr->max.col) {
+        col = scr->max.col;
     }
 
     scr->cur.row = row;
@@ -260,7 +265,9 @@ void runes_screen_set_scroll_region(
 
 void runes_screen_reset_text_attributes(RunesTerm *t)
 {
-    memset(&t->scr.attrs, 0, sizeof(struct runes_cell_attrs));
+    RunesScreen *scr = &t->scr;
+
+    memset(&scr->attrs, 0, sizeof(struct runes_cell_attrs));
 }
 
 void runes_screen_set_fg_color(RunesTerm *t, int idx)
@@ -519,13 +526,14 @@ void runes_screen_set_icon_name(RunesTerm *t, char *buf, size_t len)
 
 void runes_screen_cleanup(RunesTerm *t)
 {
+    RunesScreen *scr = &t->scr;
     int i;
 
-    for (i = 0; i < t->scr.max.row; ++i) {
-        free(t->scr.rows[i].cells);
+    for (i = 0; i < scr->max.row; ++i) {
+        free(scr->rows[i].cells);
     }
-    free(t->scr.rows);
+    free(scr->rows);
 
-    free(t->scr.title);
-    free(t->scr.icon_name);
+    free(scr->title);
+    free(scr->icon_name);
 }
