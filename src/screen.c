@@ -201,9 +201,15 @@ void runes_screen_kill_line_backward(RunesTerm *t)
 
 void runes_screen_insert_characters(RunesTerm *t, int count)
 {
-    UNUSED(t);
-    UNUSED(count);
-    fprintf(stderr, "insert_characters nyi\n");
+    RunesScreen *scr = &t->scr;
+    struct runes_row *row = &scr->rows[scr->cur.row];
+
+    memmove(
+        &row->cells[scr->cur.col + count], &row->cells[scr->cur.col],
+        (scr->max.col - scr->cur.col - count) * sizeof(struct runes_cell));
+    memset(
+        &row->cells[scr->cur.col], 0,
+        count * sizeof(struct runes_cell));
 }
 
 void runes_screen_insert_lines(RunesTerm *t, int count)
@@ -215,9 +221,15 @@ void runes_screen_insert_lines(RunesTerm *t, int count)
 
 void runes_screen_delete_characters(RunesTerm *t, int count)
 {
-    UNUSED(t);
-    UNUSED(count);
-    fprintf(stderr, "delete_characters nyi\n");
+    RunesScreen *scr = &t->scr;
+    struct runes_row *row = &scr->rows[scr->cur.row];
+
+    memmove(
+        &row->cells[scr->cur.col], &row->cells[scr->cur.col + count],
+        (scr->max.col - scr->cur.col - count) * sizeof(struct runes_cell));
+    memset(
+        &row->cells[scr->max.col - count], 0,
+        count * sizeof(struct runes_cell));
 }
 
 void runes_screen_delete_lines(RunesTerm *t, int count)
