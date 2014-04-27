@@ -84,7 +84,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
      * cell */
     while ((next = g_utf8_next_char(c))) {
         gunichar uc;
-        struct runes_cell *cell;
+        struct runes_cell *cell = NULL;
         int is_wide, is_combining;
         GUnicodeType ctype;
 
@@ -97,9 +97,14 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
                     || ctype == G_UNICODE_NON_SPACING_MARK;
 
         if (is_combining) {
-            /* XXX this should also check the previous line if it wrapped */
             if (scr->cur.col > 0) {
                 cell = &scr->rows[scr->cur.row].cells[scr->cur.col - 1];
+            }
+            else if (scr->cur.row > 0 && scr->rows[scr->cur.row - 1].wrapped) {
+                cell = &scr->rows[scr->cur.row - 1].cells[scr->max.col - 1];
+            }
+
+            if (cell) {
                 memcpy(cell->contents + cell->len, c, next - c);
                 cell->len += next - c;
             }
