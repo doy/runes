@@ -105,8 +105,18 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
             }
 
             if (cell) {
+                char *normal;
+
                 memcpy(cell->contents + cell->len, c, next - c);
                 cell->len += next - c;
+                /* some fonts have combined characters but can't handle
+                 * combining characters, so try to fix that here */
+                /* XXX it'd be nice if there was a way to do this that didn't
+                 * require an allocation */
+                normal = g_utf8_normalize(
+                    cell->contents, cell->len, G_NORMALIZE_NFC);
+                memcpy(cell->contents, normal, cell->len);
+                free(normal);
             }
         }
         else {
