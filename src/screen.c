@@ -83,25 +83,43 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
     /* XXX need to detect combining characters and append them to the previous
      * cell */
     while ((next = g_utf8_next_char(c))) {
+        gunichar uc;
         struct runes_cell *cell;
-        int is_wide;
+        int is_wide, is_combining;
+        GUnicodeType ctype;
 
+        uc = g_utf8_get_char(c);
         /* XXX handle zero width characters */
-        is_wide = g_unichar_iswide(g_utf8_get_char(c));
+        is_wide = g_unichar_iswide(uc);
+        ctype = g_unichar_type(uc);
+        /* XXX should this also include spacing marks? */
+        is_combining = ctype == G_UNICODE_ENCLOSING_MARK
+                    || ctype == G_UNICODE_NON_SPACING_MARK;
 
-        if (scr->cur.col + (is_wide ? 2 : 1) > scr->max.col) {
-            scr->rows[scr->cur.row].wrapped = 1;
-            runes_screen_move_to(t, scr->cur.row + 1, 0);
+        if (is_combining) {
+            /* XXX this should also check the previous line if it wrapped */
+            if (scr->cur.col > 0) {
+                cell = &scr->rows[scr->cur.row].cells[scr->cur.col - 1];
+                memcpy(cell->contents + cell->len, c, next - c);
+                cell->len += next - c;
+            }
         }
-        cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
-        cell->is_wide = is_wide;
+        else {
+            if (scr->cur.col + (is_wide ? 2 : 1) > scr->max.col) {
+                scr->rows[scr->cur.row].wrapped = 1;
+                runes_screen_move_to(t, scr->cur.row + 1, 0);
+            }
+            cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
+            cell->is_wide = is_wide;
 
-        cell->len = next - c;
-        strncpy(cell->contents, c, cell->len);
-        cell->attrs = scr->attrs;
+            cell->len = next - c;
+            memcpy(cell->contents, c, cell->len);
+            cell->attrs = scr->attrs;
 
-        runes_screen_move_to(
-            t, scr->cur.row, scr->cur.col + (is_wide ? 2 : 1));
+            runes_screen_move_to(
+                t, scr->cur.row, scr->cur.col + (is_wide ? 2 : 1));
+        }
+
         c = next;
         if ((size_t)(c - buf) >= len) {
             break;
