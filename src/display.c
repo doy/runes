@@ -140,12 +140,6 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 void runes_display_cleanup(RunesTerm *t)
 {
     g_object_unref(t->layout);
-    if (t->fgcustom) {
-        cairo_pattern_destroy(t->fgcustom);
-    }
-    if (t->bgcustom) {
-        cairo_pattern_destroy(t->bgcustom);
-    }
     cairo_destroy(t->cr);
 }
 
