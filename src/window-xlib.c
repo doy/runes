@@ -215,6 +215,7 @@ void runes_window_backend_start_loop(RunesTerm *t)
     void *data;
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
+    XSelectInput(w->dpy, w->border_w, mask|KeyPressMask);
     XSelectInput(
         w->dpy, w->w,
         mask|KeyPressMask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|EnterWindowMask|LeaveWindowMask|StructureNotifyMask|ExposureMask|FocusChangeMask);
