@@ -115,7 +115,8 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     XClassHint class_hints = { "runes", "runes" };
     XWMHints wm_hints;
     XSizeHints normal_hints;
-    unsigned long white;
+    double bg_r, bg_g, bg_b;
+    XColor bgcolor;
     XIM im;
     Cursor cursor;
     double mouse_r, mouse_g, mouse_b;
@@ -136,14 +137,20 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     normal_hints.base_width  = t->fontx * t->default_cols;
     normal_hints.base_height = t->fonty * t->default_rows;
 
+    cairo_pattern_get_rgba(t->bgdefault, &bg_r, &bg_g, &bg_b, NULL);
+    bgcolor.red   = bg_r * 65535;
+    bgcolor.green = bg_g * 65535;
+    bgcolor.blue  = bg_b * 65535;
+
     XInitThreads();
 
     w->dpy = XOpenDisplay(NULL);
-    white  = WhitePixel(w->dpy, DefaultScreen(w->dpy));
-    w->w   = XCreateSimpleWindow(
+    XAllocColor(
+        w->dpy, DefaultColormap(w->dpy, DefaultScreen(w->dpy)), &bgcolor);
+    w->w = XCreateSimpleWindow(
         w->dpy, DefaultRootWindow(w->dpy),
         0, 0, normal_hints.base_width, normal_hints.base_height,
-        0, white, white);
+        0, bgcolor.pixel, bgcolor.pixel);
 
     XSetLocaleModifiers("");
     im = XOpenIM(w->dpy, NULL, NULL, NULL);
