@@ -16,7 +16,7 @@ void runes_display_init(RunesTerm *t)
 {
     runes_display_recalculate_font_metrics(t);
 
-    t->cursorcolor = cairo_pattern_create_rgba(0.0, 1.0, 0.0, 0.5);
+    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
 }
 
 void runes_display_set_window_size(RunesTerm *t)
@@ -102,6 +102,41 @@ void runes_display_draw_screen(RunesTerm *t)
         }
     }
     runes_window_backend_request_flush(t);
+}
+
+void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
+{
+    if (!t->scr.hide_cursor) {
+        int row = t->scr.cur.row, col = t->scr.cur.col;
+
+        if (col >= t->scr.max.col) {
+            col = t->scr.max.col - 1;
+        }
+
+        cairo_save(cr);
+        cairo_set_source(cr, t->cursorcolor);
+        if (t->unfocused) {
+            cairo_set_line_width(cr, 1);
+            cairo_rectangle(
+                cr,
+                col * t->fontx + 0.5, row * t->fonty + 0.5,
+                t->fontx, t->fonty);
+            cairo_stroke(cr);
+        }
+        else {
+            struct runes_cell *cell = &t->scr.rows[row].cells[col];
+
+            cairo_rectangle(
+                cr,
+                col * t->fontx, row * t->fonty,
+                t->fontx, t->fonty);
+            cairo_fill(cr);
+            runes_display_draw_glyph(
+                t, cr, t->bgdefault, cell->attrs,
+                cell->contents, cell->len, row, col);
+        }
+        cairo_restore(cr);
+    }
 }
 
 void runes_display_cleanup(RunesTerm *t)
@@ -261,7 +296,7 @@ static void runes_display_draw_glyph(
     cairo_move_to(cr, col * t->fontx, row * t->fonty);
     cairo_set_source(cr, pattern);
     pango_layout_set_text(t->layout, buf, len);
-    pango_cairo_update_layout(t->cr, t->layout);
-    pango_cairo_show_layout(t->cr, t->layout);
+    pango_cairo_update_layout(cr, t->layout);
+    pango_cairo_show_layout(cr, t->layout);
     cairo_restore(cr);
 }

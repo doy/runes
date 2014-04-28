@@ -87,7 +87,6 @@ static void runes_window_backend_visual_bell(RunesTerm *t);
 static void runes_window_backend_reset_visual_bell(uv_timer_t *handle);
 static void runes_window_backend_visual_bell_free_handle(uv_handle_t *handle);
 static void runes_window_backend_audible_bell(RunesTerm *t);
-static void runes_window_backend_draw_cursor(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
 static void runes_window_backend_paste(RunesTerm *t, Time time);
@@ -472,7 +471,7 @@ static void runes_window_backend_flush(RunesTerm *t)
 
     cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
     cairo_paint(t->backend_cr);
-    runes_window_backend_draw_cursor(t);
+    runes_display_draw_cursor(t, t->backend_cr);
     cairo_surface_flush(cairo_get_target(t->backend_cr));
 }
 
@@ -523,36 +522,6 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
         runes_window_backend_set_urgent(t);
     }
     XBell(w->dpy, 0);
-}
-
-static void runes_window_backend_draw_cursor(RunesTerm *t)
-{
-    if (!t->scr.hide_cursor) {
-        int row = t->scr.cur.row, col = t->scr.cur.col;
-
-        if (col >= t->scr.max.col) {
-            col = t->scr.max.col - 1;
-        }
-
-        cairo_save(t->backend_cr);
-        cairo_set_source(t->backend_cr, t->cursorcolor);
-        if (t->unfocused) {
-            cairo_set_line_width(t->backend_cr, 1);
-            cairo_rectangle(
-                t->backend_cr,
-                col * t->fontx + 0.5, row * t->fonty + 0.5,
-                t->fontx, t->fonty);
-            cairo_stroke(t->backend_cr);
-        }
-        else {
-            cairo_rectangle(
-                t->backend_cr,
-                col * t->fontx, row * t->fonty,
-                t->fontx, t->fonty);
-            cairo_fill(t->backend_cr);
-        }
-        cairo_restore(t->backend_cr);
-    }
 }
 
 static void runes_window_backend_set_urgent(RunesTerm *t)
