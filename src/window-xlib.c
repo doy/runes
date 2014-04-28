@@ -130,12 +130,12 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
 
-    normal_hints.min_width   = t->fontx;
-    normal_hints.min_height  = t->fonty;
+    normal_hints.min_width   = t->fontx + 4;
+    normal_hints.min_height  = t->fonty + 4;
     normal_hints.width_inc   = t->fontx;
     normal_hints.height_inc  = t->fonty;
-    normal_hints.base_width  = t->fontx * t->default_cols;
-    normal_hints.base_height = t->fonty * t->default_rows;
+    normal_hints.base_width  = t->fontx * t->default_cols + 4;
+    normal_hints.base_height = t->fonty * t->default_rows + 4;
 
     cairo_pattern_get_rgba(t->bgdefault, &bg_r, &bg_g, &bg_b, NULL);
     bgcolor.red   = bg_r * 65535;
@@ -147,9 +147,13 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     w->dpy = XOpenDisplay(NULL);
     XAllocColor(
         w->dpy, DefaultColormap(w->dpy, DefaultScreen(w->dpy)), &bgcolor);
-    w->w = XCreateSimpleWindow(
+    w->border_w = XCreateSimpleWindow(
         w->dpy, DefaultRootWindow(w->dpy),
         0, 0, normal_hints.base_width, normal_hints.base_height,
+        0, bgcolor.pixel, bgcolor.pixel);
+    w->w = XCreateSimpleWindow(
+        w->dpy, w->border_w,
+        2, 2, normal_hints.base_width - 4, normal_hints.base_height - 4,
         0, bgcolor.pixel, bgcolor.pixel);
 
     XSetLocaleModifiers("");
@@ -167,15 +171,15 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     }
 
     XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
-    XSetWMProtocols(w->dpy, w->w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
+    XSetWMProtocols(w->dpy, w->border_w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
 
     Xutf8SetWMProperties(
-        w->dpy, w->w, "runes", "runes", argv, argc,
+        w->dpy, w->border_w, "runes", "runes", argv, argc,
         &normal_hints, &wm_hints, &class_hints);
 
     pid = getpid();
     XChangeProperty(
-        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_PID],
+        w->dpy, w->border_w, w->atoms[RUNES_ATOM_NET_WM_PID],
         XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
 
     runes_window_backend_set_icon_name(t, "runes", 5);
@@ -203,6 +207,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     cairo_surface_destroy(surface);
 
     XMapWindow(w->dpy, w->w);
+    XMapWindow(w->dpy, w->border_w);
 }
 
 void runes_window_backend_start_loop(RunesTerm *t)
@@ -310,11 +315,11 @@ void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
     RunesWindowBackend *w = &t->w;
 
     XChangeProperty(
-        w->dpy, w->w, XA_WM_ICON_NAME,
+        w->dpy, w->border_w, XA_WM_ICON_NAME,
         w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
     XChangeProperty(
-        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
+        w->dpy, w->border_w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
         w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
 }
@@ -325,11 +330,11 @@ void runes_window_backend_set_window_title(
     RunesWindowBackend *w = &t->w;
 
     XChangeProperty(
-        w->dpy, w->w, XA_WM_NAME,
+        w->dpy, w->border_w, XA_WM_NAME,
         w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
     XChangeProperty(
-        w->dpy, w->w, w->atoms[RUNES_ATOM_NET_WM_NAME],
+        w->dpy, w->border_w, w->atoms[RUNES_ATOM_NET_WM_NAME],
         w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
 }
@@ -344,6 +349,7 @@ void runes_window_backend_cleanup(RunesTerm *t)
     XDestroyIC(w->ic);
     XCloseIM(im);
     XDestroyWindow(w->dpy, w->w);
+    XDestroyWindow(w->dpy, w->border_w);
     XCloseDisplay(w->dpy);
 }
 
@@ -535,9 +541,9 @@ static void runes_window_backend_set_urgent(RunesTerm *t)
 {
     XWMHints *hints;
 
-    hints = XGetWMHints(t->w.dpy, t->w.w);
+    hints = XGetWMHints(t->w.dpy, t->w.border_w);
     hints->flags |= XUrgencyHint;
-    XSetWMHints(t->w.dpy, t->w.w, hints);
+    XSetWMHints(t->w.dpy, t->w.border_w, hints);
     XFree(hints);
 }
 
@@ -545,9 +551,9 @@ static void runes_window_backend_clear_urgent(RunesTerm *t)
 {
     XWMHints *hints;
 
-    hints = XGetWMHints(t->w.dpy, t->w.w);
+    hints = XGetWMHints(t->w.dpy, t->w.border_w);
     hints->flags &= ~XUrgencyHint;
-    XSetWMHints(t->w.dpy, t->w.w, hints);
+    XSetWMHints(t->w.dpy, t->w.border_w, hints);
     XFree(hints);
 }
 

@@ -22,6 +22,7 @@ enum runes_atoms {
 struct runes_window {
     Display *dpy;
     Window w;
+    Window border_w;
     XIC ic;
 
     Atom atoms[RUNES_NUM_ATOMS];
