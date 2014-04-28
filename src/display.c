@@ -15,8 +15,6 @@ static void runes_display_draw_glyph(
 void runes_display_init(RunesTerm *t)
 {
     runes_display_recalculate_font_metrics(t);
-
-    t->cursorcolor = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
 }
 
 void runes_display_set_window_size(RunesTerm *t)
@@ -148,7 +146,6 @@ void runes_display_cleanup(RunesTerm *t)
     if (t->bgcustom) {
         cairo_pattern_destroy(t->bgcustom);
     }
-    cairo_pattern_destroy(t->cursorcolor);
     cairo_destroy(t->cr);
 }
 

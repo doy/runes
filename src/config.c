@@ -26,6 +26,7 @@ void runes_config_cleanup(RunesTerm *t)
     int i;
 
     free(t->font_name);
+    cairo_pattern_destroy(t->cursorcolor);
     cairo_pattern_destroy(t->mousecursorcolor);
     cairo_pattern_destroy(t->fgdefault);
     cairo_pattern_destroy(t->bgdefault);
@@ -44,6 +45,7 @@ static void runes_config_set_defaults(RunesTerm *t)
     t->audible_bell   = 1;
     t->bell_is_urgent = 1;
 
+    t->cursorcolor      = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
     t->mousecursorcolor = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
 
     t->fgdefault = cairo_pattern_create_rgb(0.827, 0.827, 0.827);
@@ -451,6 +453,14 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
         if (newcolor) {
             cairo_pattern_destroy(t->fgdefault);
             t->fgdefault = newcolor;
+        }
+    }
+    else if (!strcmp(key, "cursorcolor")) {
+        cairo_pattern_t *newcolor;
+        newcolor = runes_config_parse_color(val);
+        if (newcolor) {
+            cairo_pattern_destroy(t->cursorcolor);
+            t->cursorcolor = newcolor;
         }
     }
     else if (!strcmp(key, "mousecursorcolor")) {
