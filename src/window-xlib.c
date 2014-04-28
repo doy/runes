@@ -18,8 +18,6 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "UTF8_STRING",
     "WM_PROTOCOLS",
     "RUNES_FLUSH",
-    "RUNES_VISUAL_BELL",
-    "RUNES_AUDIBLE_BELL",
     "RUNES_SELECTION"
 };
 
@@ -247,36 +245,6 @@ void runes_window_backend_request_flush(RunesTerm *t)
     XUnlockDisplay(t->w.dpy);
 }
 
-void runes_window_backend_request_visual_bell(RunesTerm *t)
-{
-    XEvent e;
-
-    e.xclient.type = ClientMessage;
-    e.xclient.window = t->w.w;
-    e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_RUNES_VISUAL_BELL];
-
-    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
-    XLockDisplay(t->w.dpy);
-    XFlush(t->w.dpy);
-    XUnlockDisplay(t->w.dpy);
-}
-
-void runes_window_backend_request_audible_bell(RunesTerm *t)
-{
-    XEvent e;
-
-    e.xclient.type = ClientMessage;
-    e.xclient.window = t->w.w;
-    e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_RUNES_AUDIBLE_BELL];
-
-    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
-    XLockDisplay(t->w.dpy);
-    XFlush(t->w.dpy);
-    XUnlockDisplay(t->w.dpy);
-}
-
 void runes_window_backend_request_close(RunesTerm *t)
 {
     XEvent e;
@@ -410,12 +378,6 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_FLUSH]) {
                 runes_window_backend_flush(t);
-            }
-            else if (a == w->atoms[RUNES_ATOM_RUNES_VISUAL_BELL]) {
-                runes_window_backend_visual_bell(t);
-            }
-            else if (a == w->atoms[RUNES_ATOM_RUNES_AUDIBLE_BELL]) {
-                runes_window_backend_audible_bell(t);
             }
             break;
         }
