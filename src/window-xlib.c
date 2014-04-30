@@ -132,10 +132,10 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     normal_hints.min_height  = t->fonty + 4;
     normal_hints.width_inc   = t->fontx;
     normal_hints.height_inc  = t->fonty;
-    normal_hints.base_width  = t->fontx * t->default_cols + 4;
-    normal_hints.base_height = t->fonty * t->default_rows + 4;
+    normal_hints.base_width  = t->fontx * t->config.default_cols + 4;
+    normal_hints.base_height = t->fonty * t->config.default_rows + 4;
 
-    cairo_pattern_get_rgba(t->bgdefault, &bg_r, &bg_g, &bg_b, NULL);
+    cairo_pattern_get_rgba(t->config.bgdefault, &bg_r, &bg_g, &bg_b, NULL);
     bgcolor.red   = bg_r * 65535;
     bgcolor.green = bg_g * 65535;
     bgcolor.blue  = bg_b * 65535;
@@ -185,7 +185,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     cursor = XCreateFontCursor(w->dpy, XC_xterm);
     cairo_pattern_get_rgba(
-        t->mousecursorcolor, &mouse_r, &mouse_g, &mouse_b, NULL);
+        t->config.mousecursorcolor, &mouse_r, &mouse_g, &mouse_b, NULL);
     cursor_fg.red   = (unsigned short)(mouse_r * 65535);
     cursor_fg.green = (unsigned short)(mouse_g * 65535);
     cursor_fg.blue  = (unsigned short)(mouse_b * 65535);
@@ -453,7 +453,7 @@ static void runes_window_backend_flush(RunesTerm *t)
 
 static void runes_window_backend_visual_bell(RunesTerm *t)
 {
-    if (t->bell_is_urgent) {
+    if (t->config.bell_is_urgent) {
         runes_window_backend_set_urgent(t);
     }
 
@@ -462,7 +462,7 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
         uv_timer_t *timer_req;
 
         t->visual_bell_is_ringing = 1;
-        cairo_set_source(t->backend_cr, t->fgdefault);
+        cairo_set_source(t->backend_cr, t->config.fgdefault);
         cairo_paint(t->backend_cr);
         cairo_surface_flush(cairo_get_target(t->backend_cr));
         XFlush(w->dpy);
@@ -494,7 +494,7 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
 
-    if (t->bell_is_urgent) {
+    if (t->config.bell_is_urgent) {
         runes_window_backend_set_urgent(t);
     }
     XBell(w->dpy, 0);

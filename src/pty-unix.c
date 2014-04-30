@@ -44,7 +44,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 
         close(pty->slave);
 
-        cmd = t->cmd;
+        cmd = t->config.cmd;
         if (!cmd) {
             cmd = getenv("SHELL");
         }

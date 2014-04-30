@@ -2363,7 +2363,7 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 
 static void runes_parser_handle_bel(RunesTerm *t)
 {
-    if (t->audible_bell) {
+    if (t->config.audible_bell) {
         runes_screen_audible_bell(t);
     }
     else {

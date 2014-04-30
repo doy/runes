@@ -5,6 +5,7 @@ struct runes_term {
     RunesWindowBackend w;
     RunesPtyBackend pty;
     RunesScreen scr;
+    RunesConfig config;
 
     cairo_t *cr;
     cairo_t *backend_cr;
@@ -23,24 +24,6 @@ struct runes_term {
 
     char visual_bell_is_ringing;
     char unfocused;
-
-    cairo_pattern_t *mousecursorcolor;
-    cairo_pattern_t *cursorcolor;
-
-    cairo_pattern_t *fgdefault;
-    cairo_pattern_t *bgdefault;
-    cairo_pattern_t *colors[256];
-
-    int default_rows;
-    int default_cols;
-
-    char *cmd;
-    char *font_name;
-
-    char bell_is_urgent;
-    char bold_is_bright;
-    char bold_is_bold;
-    char audible_bell;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);

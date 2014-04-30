@@ -233,7 +233,7 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 
 static void runes_parser_handle_bel(RunesTerm *t)
 {
-    if (t->audible_bell) {
+    if (t->config.audible_bell) {
         runes_screen_audible_bell(t);
     }
     else {

@@ -57,7 +57,7 @@ void runes_display_set_window_size(RunesTerm *t)
         PangoFontDescription *font_desc;
 
         attrs = pango_attr_list_new();
-        font_desc = pango_font_description_from_string(t->font_name);
+        font_desc = pango_font_description_from_string(t->config.font_name);
 
         t->layout = pango_cairo_create_layout(t->cr);
         pango_layout_set_attributes(t->layout, attrs);
@@ -73,7 +73,7 @@ void runes_display_set_window_size(RunesTerm *t)
         cairo_set_source_surface(t->cr, cairo_get_target(old_cr), 0.0, 0.0);
     }
     else {
-        cairo_set_source(t->cr, t->bgdefault);
+        cairo_set_source(t->cr, t->config.bgdefault);
     }
 
     cairo_paint(t->cr);
@@ -112,7 +112,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
         }
 
         cairo_save(cr);
-        cairo_set_source(cr, t->cursorcolor);
+        cairo_set_source(cr, t->config.cursorcolor);
         if (t->unfocused) {
             cairo_set_line_width(cr, 1);
             cairo_rectangle(
@@ -130,7 +130,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
                 t->fontx, t->fonty);
             cairo_fill(cr);
             runes_display_draw_glyph(
-                t, cr, t->bgdefault, cell->attrs,
+                t, cr, t->config.bgdefault, cell->attrs,
                 cell->contents, cell->len, row, col);
         }
         cairo_restore(cr);
@@ -156,7 +156,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
         context = pango_layout_get_context(t->layout);
     }
     else {
-        desc = pango_font_description_from_string(t->font_name);
+        desc = pango_font_description_from_string(t->config.font_name);
         context = pango_font_map_create_context(
             pango_cairo_font_map_get_default());
     }
@@ -184,10 +184,10 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     switch (cell->attrs.bgcolor.type) {
     case RUNES_COLOR_DEFAULT:
-        bg = t->bgdefault;
+        bg = t->config.bgdefault;
         break;
     case RUNES_COLOR_IDX:
-        bg = t->colors[cell->attrs.bgcolor.idx];
+        bg = t->config.colors[cell->attrs.bgcolor.idx];
         break;
     case RUNES_COLOR_RGB:
         bg = cairo_pattern_create_rgb(
@@ -200,15 +200,15 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     switch (cell->attrs.fgcolor.type) {
     case RUNES_COLOR_DEFAULT:
-        fg = t->fgdefault;
+        fg = t->config.fgdefault;
         break;
     case RUNES_COLOR_IDX: {
         unsigned char idx = cell->attrs.fgcolor.idx;
 
-        if (t->bold_is_bright && cell->attrs.bold && idx < 8) {
+        if (t->config.bold_is_bright && cell->attrs.bold && idx < 8) {
             idx += 8;
         }
-        fg = t->colors[idx];
+        fg = t->config.colors[idx];
         break;
     }
     case RUNES_COLOR_RGB:
@@ -222,8 +222,8 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     if (cell->attrs.inverse) {
         if (cell->attrs.fgcolor.id == cell->attrs.bgcolor.id) {
-            fg = t->bgdefault;
-            bg = t->fgdefault;
+            fg = t->config.bgdefault;
+            bg = t->config.fgdefault;
         }
         else {
             cairo_pattern_t *tmp = fg;
@@ -271,7 +271,7 @@ static void runes_display_draw_glyph(
     PangoAttrList *pango_attrs;
 
     pango_attrs = pango_layout_get_attributes(t->layout);
-    if (t->bold_is_bold) {
+    if (t->config.bold_is_bold) {
         pango_attr_list_change(
             pango_attrs, pango_attr_weight_new(
                 attrs.bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL));

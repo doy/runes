@@ -1,7 +1,11 @@
+#include <string.h>
+
 #include "runes.h"
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[])
 {
+    memset((void *)t, 0, sizeof(*t));
+
     runes_config_init(t, argc, argv);
     runes_display_init(t);
 
