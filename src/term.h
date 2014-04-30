@@ -22,8 +22,8 @@ struct runes_term {
     int fontx;
     int fonty;
 
-    char visual_bell_is_ringing;
-    char unfocused;
+    char visual_bell_is_ringing: 1;
+    char unfocused: 1;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);

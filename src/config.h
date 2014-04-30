@@ -15,10 +15,10 @@ struct runes_config {
     char *cmd;
     char *font_name;
 
-    char bell_is_urgent;
-    char bold_is_bright;
-    char bold_is_bold;
-    char audible_bell;
+    char bell_is_urgent: 1;
+    char bold_is_bright: 1;
+    char bold_is_bold: 1;
+    char audible_bell: 1;
 };
 
 void runes_config_init(RunesTerm *t, int argc, char *argv[]);
