@@ -23,6 +23,8 @@ struct runes_window {
     Window border_w;
     XIC ic;
 
+    cairo_t *backend_cr;
+
     Atom atoms[RUNES_NUM_ATOMS];
 };
 

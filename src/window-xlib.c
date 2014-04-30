@@ -201,7 +201,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
     surface = cairo_xlib_surface_create(
         w->dpy, w->w, vis, normal_hints.base_width, normal_hints.base_height);
-    t->backend_cr = cairo_create(surface);
+    w->backend_cr = cairo_create(surface);
     cairo_surface_destroy(surface);
 
     XMapWindow(w->dpy, w->w);
@@ -272,9 +272,10 @@ unsigned long runes_window_backend_get_window_id(RunesTerm *t)
 
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
 {
+    RunesWindowBackend *w = &t->w;
     cairo_surface_t *surface;
 
-    surface = cairo_get_target(t->backend_cr);
+    surface = cairo_get_target(w->backend_cr);
     *xpixel = cairo_xlib_surface_get_width(surface);
     *ypixel = cairo_xlib_surface_get_height(surface);
 }
@@ -313,7 +314,7 @@ void runes_window_backend_cleanup(RunesTerm *t)
     RunesWindowBackend *w = &t->w;
     XIM im;
 
-    cairo_destroy(t->backend_cr);
+    cairo_destroy(w->backend_cr);
     im = XIMOfIC(w->ic);
     XDestroyIC(w->ic);
     XCloseIM(im);
@@ -401,6 +402,8 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height)
 {
+    RunesWindowBackend *w = &t->w;
+
     /* XXX no idea why shrinking the window dimensions to 0 makes xlib think
      * that the dimension is 65535 */
     if (width < 1 || width >= 65535) {
@@ -412,13 +415,15 @@ static void runes_window_backend_resize_window(
 
     if (width != t->xpixel || height != t->ypixel) {
         cairo_xlib_surface_set_size(
-            cairo_get_target(t->backend_cr), width, height);
+            cairo_get_target(w->backend_cr), width, height);
         runes_display_set_window_size(t);
     }
 }
 
 static void runes_window_backend_flush(RunesTerm *t)
 {
+    RunesWindowBackend *w = &t->w;
+
     if (t->scr.audible_bell) {
         runes_window_backend_audible_bell(t);
         t->scr.audible_bell = 0;
@@ -445,10 +450,10 @@ static void runes_window_backend_flush(RunesTerm *t)
         return;
     }
 
-    cairo_set_source_surface(t->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
-    cairo_paint(t->backend_cr);
-    runes_display_draw_cursor(t, t->backend_cr);
-    cairo_surface_flush(cairo_get_target(t->backend_cr));
+    cairo_set_source_surface(w->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
+    cairo_paint(w->backend_cr);
+    runes_display_draw_cursor(t, w->backend_cr);
+    cairo_surface_flush(cairo_get_target(w->backend_cr));
 }
 
 static void runes_window_backend_visual_bell(RunesTerm *t)
@@ -462,9 +467,9 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
         uv_timer_t *timer_req;
 
         t->visual_bell_is_ringing = 1;
-        cairo_set_source(t->backend_cr, t->config.fgdefault);
-        cairo_paint(t->backend_cr);
-        cairo_surface_flush(cairo_get_target(t->backend_cr));
+        cairo_set_source(w->backend_cr, t->config.fgdefault);
+        cairo_paint(w->backend_cr);
+        cairo_surface_flush(cairo_get_target(w->backend_cr));
         XFlush(w->dpy);
 
         timer_req = malloc(sizeof(uv_timer_t));
