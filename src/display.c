@@ -32,12 +32,6 @@ void runes_display_set_window_size(RunesTerm *t)
     t->xpixel = width;
     t->ypixel = height;
 
-    t->scr.max.row = t->ypixel / t->fonty;
-    t->scr.max.col = t->xpixel / t->fontx;
-
-    t->scr.scroll_top    = 0;
-    t->scr.scroll_bottom = t->scr.max.row - 1;
-
     old_cr = t->cr;
 
     /* XXX this should really use cairo_surface_create_similar_image, but when
@@ -84,6 +78,7 @@ void runes_display_set_window_size(RunesTerm *t)
         cairo_destroy(old_cr);
     }
 
+    runes_screen_set_window_size(t);
     runes_pty_backend_set_window_size(t);
 }
 

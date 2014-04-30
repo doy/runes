@@ -6,13 +6,63 @@
 
 void runes_screen_init(RunesTerm *t)
 {
+    UNUSED(t);
+    /* nothing (for now?) */
+}
+
+void runes_screen_set_window_size(RunesTerm *t)
+{
     RunesScreen *scr = &t->scr;
+    struct runes_row *old_rows = scr->rows;
+    struct runes_loc old_size;
     int i;
+
+    old_size.row = scr->max.row;
+    old_size.col = scr->max.col;
+
+    scr->max.row = t->ypixel / t->fonty;
+    scr->max.col = t->xpixel / t->fontx;
+
+    if (scr->max.row == 0) {
+        scr->max.row = 1;
+    }
+    if (scr->max.col == 0) {
+        scr->max.col = 1;
+    }
+
+    if (scr->max.row == old_size.row && scr->max.col == old_size.col) {
+        return;
+    }
+
+    if (scr->cur.row >= scr->max.row) {
+        scr->cur.row = scr->max.row - 1;
+    }
+    if (scr->cur.col > scr->max.col) {
+        scr->cur.col = scr->max.col;
+    }
+
+    scr->scroll_top    = 0;
+    scr->scroll_bottom = scr->max.row - 1;
 
     scr->rows = calloc(scr->max.row, sizeof(struct runes_row));
     for (i = 0; i < scr->max.row; ++i) {
         scr->rows[i].cells = calloc(
             scr->max.col, sizeof(struct runes_cell));
+    }
+
+    if (old_rows) {
+        struct runes_loc overlap = {
+            scr->max.row < old_size.row ? scr->max.row : old_size.row,
+            scr->max.col < old_size.col ? scr->max.col : old_size.col
+        };
+
+        for (i = 0; i < overlap.row; ++i) {
+            memcpy(
+                scr->rows[i].cells, old_rows[i].cells,
+                overlap.col * sizeof(struct runes_cell));
+            free(old_rows[i].cells);
+        }
+        free(old_rows);
     }
 }
 
@@ -496,6 +546,7 @@ void runes_screen_use_alternate_buffer(RunesTerm *t)
     runes_screen_save_cursor(t);
 
     scr->alternate = scr->rows;
+    scr->alternate_max = scr->max;
 
     scr->rows = calloc(scr->max.row, sizeof(struct runes_row));
     for (i = 0; i < scr->max.row; ++i) {
@@ -519,9 +570,11 @@ void runes_screen_use_normal_buffer(RunesTerm *t)
     free(scr->rows);
 
     scr->rows = scr->alternate;
+    scr->max = scr->alternate_max;
     scr->alternate = NULL;
 
     runes_screen_restore_cursor(t);
+    runes_screen_set_window_size(t);
 }
 
 void runes_screen_save_cursor(RunesTerm *t)

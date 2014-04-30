@@ -215,7 +215,7 @@ void runes_window_backend_start_loop(RunesTerm *t)
     void *data;
 
     XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(w->dpy, w->border_w, mask|KeyPressMask);
+    XSelectInput(w->dpy, w->border_w, mask|KeyPressMask|StructureNotifyMask);
     XSelectInput(
         w->dpy, w->w,
         mask|KeyPressMask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|EnterWindowMask|LeaveWindowMask|StructureNotifyMask|ExposureMask|FocusChangeMask);
@@ -414,8 +414,9 @@ static void runes_window_backend_resize_window(
     }
 
     if (width != t->xpixel || height != t->ypixel) {
+        XResizeWindow(w->dpy, w->w, width - 4, height - 4);
         cairo_xlib_surface_set_size(
-            cairo_get_target(w->backend_cr), width, height);
+            cairo_get_target(w->backend_cr), width - 4, height - 4);
         runes_display_set_window_size(t);
     }
 }
@@ -738,7 +739,12 @@ static void runes_window_backend_handle_configure_event(
 {
     RunesWindowBackend *w = &t->w;
 
-    while (XCheckTypedWindowEvent(w->dpy, w->w, ConfigureNotify, (XEvent *)e));
+    if (e->window != w->border_w) {
+        return;
+    }
+
+    while (XCheckTypedWindowEvent(
+        w->dpy, w->border_w, ConfigureNotify, (XEvent *)e));
     runes_window_backend_resize_window(t, e->width, e->height);
 }
 

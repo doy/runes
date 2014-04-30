@@ -60,6 +60,7 @@ struct runes_row {
 struct runes_screen {
     struct runes_loc cur;
     struct runes_loc max;
+    struct runes_loc alternate_max;
     struct runes_loc saved;
 
     int scroll_top;
@@ -88,6 +89,7 @@ struct runes_screen {
 };
 
 void runes_screen_init(RunesTerm *t);
+void runes_screen_set_window_size(RunesTerm *t);
 void runes_screen_process_string(RunesTerm *t, char *buf, size_t len);
 void runes_screen_audible_bell(RunesTerm *t);
 void runes_screen_visual_bell(RunesTerm *t);
