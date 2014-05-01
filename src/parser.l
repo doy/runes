@@ -121,53 +121,53 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
 
 %%
 
-{BEL}     runes_parser_handle_bel(yyextra);                    return -1;
-{BS}      runes_parser_handle_bs(yyextra);                     return -1;
-{TAB}     runes_parser_handle_tab(yyextra);                    return -1;
+{BEL}     runes_parser_handle_bel(yyextra);
+{BS}      runes_parser_handle_bs(yyextra);
+{TAB}     runes_parser_handle_tab(yyextra);
 {LF}      |
 {VT}      |
-{FF}      runes_parser_handle_lf(yyextra);                     return -1;
-{CR}      runes_parser_handle_cr(yyextra);                     return -1;
-{SI}                                                           return -1;
+{FF}      runes_parser_handle_lf(yyextra);
+{CR}      runes_parser_handle_cr(yyextra);
+{SI}
 
-{DECKPAM} runes_parser_handle_deckpam(yyextra);                return -1;
-{DECKPNM} runes_parser_handle_deckpnm(yyextra);                return -1;
-{RI}      runes_parser_handle_ri(yyextra);                     return -1;
-{RIS}     runes_parser_handle_ris(yyextra);                    return -1;
-{VB}      runes_parser_handle_vb(yyextra);                     return -1;
-{DECSC}   runes_parser_handle_decsc(yyextra);                  return -1;
-{DECRC}   runes_parser_handle_decrc(yyextra);                  return -1;
+{DECKPAM} runes_parser_handle_deckpam(yyextra);
+{DECKPNM} runes_parser_handle_deckpnm(yyextra);
+{RI}      runes_parser_handle_ri(yyextra);
+{RIS}     runes_parser_handle_ris(yyextra);
+{VB}      runes_parser_handle_vb(yyextra);
+{DECSC}   runes_parser_handle_decsc(yyextra);
+{DECRC}   runes_parser_handle_decrc(yyextra);
 
-{ICH}     runes_parser_handle_ich(yyextra, yytext, yyleng);    return -1;
-{CUU}     runes_parser_handle_cuu(yyextra, yytext, yyleng);    return -1;
-{CUD}     runes_parser_handle_cud(yyextra, yytext, yyleng);    return -1;
-{CUF}     runes_parser_handle_cuf(yyextra, yytext, yyleng);    return -1;
-{CUB}     runes_parser_handle_cub(yyextra, yytext, yyleng);    return -1;
-{CUP}     runes_parser_handle_cup(yyextra, yytext, yyleng);    return -1;
-{ED}      runes_parser_handle_ed(yyextra, yytext, yyleng);     return -1;
-{EL}      runes_parser_handle_el(yyextra, yytext, yyleng);     return -1;
-{IL}      runes_parser_handle_il(yyextra, yytext, yyleng);     return -1;
-{DL}      runes_parser_handle_dl(yyextra, yytext, yyleng);     return -1;
-{DCH}     runes_parser_handle_dch(yyextra, yytext, yyleng);    return -1;
-{SM}      runes_parser_handle_sm(yyextra, yytext, yyleng);     return -1;
-{RM}      runes_parser_handle_rm(yyextra, yytext, yyleng);     return -1;
-{SGR}     runes_parser_handle_sgr(yyextra, yytext, yyleng);    return -1;
-{CSR}     runes_parser_handle_csr(yyextra, yytext, yyleng);    return -1;
+{ICH}     runes_parser_handle_ich(yyextra, yytext, yyleng);
+{CUU}     runes_parser_handle_cuu(yyextra, yytext, yyleng);
+{CUD}     runes_parser_handle_cud(yyextra, yytext, yyleng);
+{CUF}     runes_parser_handle_cuf(yyextra, yytext, yyleng);
+{CUB}     runes_parser_handle_cub(yyextra, yytext, yyleng);
+{CUP}     runes_parser_handle_cup(yyextra, yytext, yyleng);
+{ED}      runes_parser_handle_ed(yyextra, yytext, yyleng);
+{EL}      runes_parser_handle_el(yyextra, yytext, yyleng);
+{IL}      runes_parser_handle_il(yyextra, yytext, yyleng);
+{DL}      runes_parser_handle_dl(yyextra, yytext, yyleng);
+{DCH}     runes_parser_handle_dch(yyextra, yytext, yyleng);
+{SM}      runes_parser_handle_sm(yyextra, yytext, yyleng);
+{RM}      runes_parser_handle_rm(yyextra, yytext, yyleng);
+{SGR}     runes_parser_handle_sgr(yyextra, yytext, yyleng);
+{CSR}     runes_parser_handle_csr(yyextra, yytext, yyleng);
 
-{DECSED}  runes_parser_handle_decsed(yyextra, yytext, yyleng); return -1;
-{DECSEL}  runes_parser_handle_decsel(yyextra, yytext, yyleng); return -1;
+{DECSED}  runes_parser_handle_decsed(yyextra, yytext, yyleng);
+{DECSEL}  runes_parser_handle_decsel(yyextra, yytext, yyleng);
 
-{OSC0}    runes_parser_handle_osc0(yyextra, yytext, yyleng);   return -1;
-{OSC1}    runes_parser_handle_osc1(yyextra, yytext, yyleng);   return -1;
-{OSC2}    runes_parser_handle_osc2(yyextra, yytext, yyleng);   return -1;
+{OSC0}    runes_parser_handle_osc0(yyextra, yytext, yyleng);
+{OSC1}    runes_parser_handle_osc1(yyextra, yytext, yyleng);
+{OSC2}    runes_parser_handle_osc2(yyextra, yytext, yyleng);
 
 {GZD4}    |
 {G1D4}    |
 {G2D4}    |
-{G3D4}                                                         return -1;
+{G3D4}
 
-{ASCII}+  runes_parser_handle_ascii(yyextra, yytext, yyleng);  return -1;
-{CHAR}+   runes_parser_handle_text(yyextra, yytext, yyleng);   return -1;
+{ASCII}+  runes_parser_handle_ascii(yyextra, yytext, yyleng);
+{CHAR}+   runes_parser_handle_text(yyextra, yytext, yyleng);
 
 {LEAD2}                      |
 {LEAD3}{CONT}?               |
@@ -183,50 +183,42 @@ static void runes_parser_handle_text(RunesTerm *t, char *text, size_t len);
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
-    return -1;
 }
 
 {CSI}[<=?]?{CSIPARAMS}{CHAR} {
     fprintf(
         stderr, "unhandled CSI sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
-    return -1;
 }
 
 {OSC}{CTRL} {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
-    return -1;
 }
 
 {OSC}{CHAR} {
     fprintf(
         stderr, "unhandled OSC sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
-    return -1;
 }
 
 {ESC}{CTRL} {
     fprintf(stderr, "unhandled escape sequence: \\%hho\n", yytext[1]);
-    return -1;
 }
 
 {ESC}{CHAR} {
     fprintf(
         stderr, "unhandled escape sequence: %*s\n",
         (int)yyleng - 1, yytext + 1);
-    return -1;
 }
 
 {CTRL} {
     fprintf(stderr, "unhandled control character: \\%hho\n", yytext[0]);
-    return -1;
 }
 
 (?s:.) {
     fprintf(stderr, "invalid utf8 byte: \\%hho\n", yytext[0]);
-    return -1;
 }
 
 %%

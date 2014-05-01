@@ -77,7 +77,7 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
      * that case */
     runes_parser_yylex_init_extra(t, &scanner);
     state = runes_parser_yy_scan_bytes(buf, len, scanner);
-    while ((remaining = runes_parser_yylex(scanner)) == -1);
+    remaining = runes_parser_yylex(scanner);
     t->remaininglen = remaining;
     if (t->remaininglen) {
         memmove(t->readbuf, &buf[len - t->remaininglen], t->remaininglen);

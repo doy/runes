@@ -330,7 +330,7 @@ extern int runes_parser_yylex (yyscan_t yyscanner);
 #undef YY_DECL
 #endif
 
-#line 232 "src/parser.l"
+#line 224 "src/parser.l"
 
 
 #line 337 "src/parser.h"
