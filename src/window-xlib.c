@@ -476,6 +476,8 @@ static void runes_window_backend_flush(RunesTerm *t)
         return;
     }
 
+    runes_display_draw_screen(t);
+
     cairo_set_source_surface(w->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
     cairo_paint(w->backend_cr);
     runes_display_draw_cursor(t, w->backend_cr);

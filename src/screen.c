@@ -84,8 +84,6 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
     }
     runes_parser_yy_delete_buffer(state, scanner);
     runes_parser_yylex_destroy(scanner);
-
-    runes_display_draw_screen(t);
 }
 
 void runes_screen_audible_bell(RunesTerm *t)
