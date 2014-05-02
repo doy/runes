@@ -78,6 +78,8 @@ static struct function_key application_cursor_keys[] = {
 
 static void runes_window_backend_get_next_event(uv_work_t *req);
 static void runes_window_backend_process_event(uv_work_t *req, int status);
+static Bool runes_window_backend_find_flush_events(
+    Display *dpy, XEvent *e, XPointer arg);
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
@@ -379,6 +381,13 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
                 );
             }
             else if (a == w->atoms[RUNES_ATOM_RUNES_FLUSH]) {
+                Bool res = True;
+
+                while (res) {
+                    res = XCheckIfEvent(
+                        w->dpy, e, runes_window_backend_find_flush_events,
+                        (XPointer)w);
+                }
                 runes_window_backend_flush(t);
             }
             break;
@@ -396,6 +405,22 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
     else {
         runes_pty_backend_request_close(t);
         free(req);
+    }
+}
+
+static Bool runes_window_backend_find_flush_events(
+    Display *dpy, XEvent *e, XPointer arg)
+{
+    RunesWindowBackend *w = (RunesWindowBackend *)arg;
+
+    UNUSED(dpy);
+
+    if (e->type == ClientMessage) {
+        Atom a = e->xclient.data.l[0];
+        return a == w->atoms[RUNES_ATOM_RUNES_FLUSH] ? True : False;
+    }
+    else {
+        return False;
     }
 }
 
