@@ -86,6 +86,10 @@ void runes_display_draw_screen(RunesTerm *t)
 {
     int r;
 
+    if (!t->scr.dirty) {
+        return;
+    }
+
     /* XXX quite inefficient */
     for (r = 0; r < t->scr.max.row; ++r) {
         int c = 0;
@@ -95,6 +99,8 @@ void runes_display_draw_screen(RunesTerm *t)
         }
     }
     runes_window_backend_request_flush(t);
+
+    t->scr.dirty = 0;
 }
 
 void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)

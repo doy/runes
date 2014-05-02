@@ -121,6 +121,8 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
 
         runes_screen_move_to(t, scr->cur.row, scr->cur.col + 1);
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
@@ -188,6 +190,8 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
             break;
         }
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_move_to(RunesTerm *t, int row, int col)
@@ -239,6 +243,8 @@ void runes_screen_clear_screen(RunesTerm *t)
             scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
         scr->rows[r].wrapped = 0;
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_clear_screen_forward(RunesTerm *t)
@@ -255,6 +261,8 @@ void runes_screen_clear_screen_forward(RunesTerm *t)
             scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
         scr->rows[r].wrapped = 0;
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_clear_screen_backward(RunesTerm *t)
@@ -270,6 +278,8 @@ void runes_screen_clear_screen_backward(RunesTerm *t)
     memset(
         scr->rows[scr->cur.row].cells, 0,
         scr->cur.col * sizeof(struct runes_cell));
+
+    scr->dirty = 1;
 }
 
 void runes_screen_kill_line(RunesTerm *t)
@@ -280,6 +290,8 @@ void runes_screen_kill_line(RunesTerm *t)
         scr->rows[scr->cur.row].cells, 0,
         scr->max.col * sizeof(struct runes_cell));
     scr->rows[scr->cur.row].wrapped = 0;
+
+    scr->dirty = 1;
 }
 
 void runes_screen_kill_line_forward(RunesTerm *t)
@@ -290,6 +302,8 @@ void runes_screen_kill_line_forward(RunesTerm *t)
         &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
         (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
     scr->rows[scr->cur.row].wrapped = 0;
+
+    scr->dirty = 1;
 }
 
 void runes_screen_kill_line_backward(RunesTerm *t)
@@ -302,6 +316,8 @@ void runes_screen_kill_line_backward(RunesTerm *t)
     if (scr->cur.row > 0) {
         scr->rows[scr->cur.row - 1].wrapped = 0;
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_insert_characters(RunesTerm *t, int count)
@@ -321,6 +337,8 @@ void runes_screen_insert_characters(RunesTerm *t, int count)
             count * sizeof(struct runes_cell));
         scr->rows[scr->cur.row].wrapped = 0;
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_insert_lines(RunesTerm *t, int count)
@@ -349,6 +367,8 @@ void runes_screen_insert_lines(RunesTerm *t, int count)
             scr->rows[i].wrapped = 0;
         }
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_delete_characters(RunesTerm *t, int count)
@@ -368,6 +388,8 @@ void runes_screen_delete_characters(RunesTerm *t, int count)
             count * sizeof(struct runes_cell));
         scr->rows[scr->cur.row].wrapped = 0;
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_delete_lines(RunesTerm *t, int count)
@@ -396,6 +418,8 @@ void runes_screen_delete_lines(RunesTerm *t, int count)
             scr->rows[i].wrapped = 0;
         }
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_set_scroll_region(
@@ -551,6 +575,8 @@ void runes_screen_use_alternate_buffer(RunesTerm *t)
         scr->rows[i].cells = calloc(
             scr->max.col, sizeof(struct runes_cell));
     }
+
+    scr->dirty = 1;
 }
 
 void runes_screen_use_normal_buffer(RunesTerm *t)
@@ -573,6 +599,8 @@ void runes_screen_use_normal_buffer(RunesTerm *t)
 
     runes_screen_restore_cursor(t);
     runes_screen_set_window_size(t);
+
+    scr->dirty = 1;
 }
 
 void runes_screen_save_cursor(RunesTerm *t)
