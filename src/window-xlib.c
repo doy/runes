@@ -213,14 +213,17 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 void runes_window_backend_start_loop(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
-    unsigned long mask;
+    unsigned long xim_mask, common_mask;
     void *data;
 
-    XGetICValues(w->ic, XNFilterEvents, &mask, NULL);
-    XSelectInput(w->dpy, w->border_w, mask|KeyPressMask|StructureNotifyMask);
+    XGetICValues(w->ic, XNFilterEvents, &xim_mask, NULL);
+    common_mask = KeyPressMask|EnterWindowMask|LeaveWindowMask|FocusChangeMask;
+
+    XSelectInput(
+        w->dpy, w->border_w, xim_mask|common_mask|StructureNotifyMask);
     XSelectInput(
         w->dpy, w->w,
-        mask|KeyPressMask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|EnterWindowMask|LeaveWindowMask|StructureNotifyMask|ExposureMask|FocusChangeMask);
+        xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|ExposureMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
