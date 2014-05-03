@@ -797,6 +797,13 @@ static void runes_window_backend_handle_focus_event(
         return;
     }
 
+    if (e->type == FocusIn && !t->unfocused) {
+        return;
+    }
+    if (e->type == FocusOut && t->unfocused) {
+        return;
+    }
+
     runes_window_backend_clear_urgent(t);
     if (e->type == FocusIn) {
         t->unfocused = 0;
