@@ -217,10 +217,19 @@ void runes_window_backend_start_loop(RunesTerm *t)
     void *data;
 
     XGetICValues(w->ic, XNFilterEvents, &xim_mask, NULL);
-    common_mask = KeyPressMask|EnterWindowMask|LeaveWindowMask|FocusChangeMask;
+    /* we always want to receive keyboard events, and enter/leave window events
+     * are what allows keyboard focus switching to work when the mouse is over
+     * the window but hidden, for whatever reason */
+    common_mask = KeyPressMask|EnterWindowMask|LeaveWindowMask;
 
+    /* the top level window is the only one that needs to worry about window
+     * size and focus changes */
     XSelectInput(
-        w->dpy, w->border_w, xim_mask|common_mask|StructureNotifyMask);
+        w->dpy, w->border_w,
+        xim_mask|common_mask|StructureNotifyMask|FocusChangeMask);
+    /* we only care about mouse events if they are over the actual terminal
+     * area, and the terminal area is the only area we need to redraw, so it's
+     * the only thing we care about exposure events for */
     XSelectInput(
         w->dpy, w->w,
         xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|ExposureMask);
@@ -781,6 +790,13 @@ static void runes_window_backend_handle_configure_event(
 static void runes_window_backend_handle_focus_event(
     RunesTerm *t, XFocusChangeEvent *e)
 {
+    /* we don't care about focus events that are only sent because the pointer
+     * is in the window, if focus is changing between two other unrelated
+     * windows */
+    if (e->detail == NotifyPointer) {
+        return;
+    }
+
     runes_window_backend_clear_urgent(t);
     if (e->type == FocusIn) {
         t->unfocused = 0;
