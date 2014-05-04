@@ -310,6 +310,8 @@ static void runes_config_set_defaults(RunesTerm *t)
 
     config->default_rows = 24;
     config->default_cols = 80;
+
+    config->scroll_lines = 3;
 }
 
 static FILE *runes_config_get_config_file()
@@ -493,6 +495,9 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
     }
     else if (!strcmp(key, "cols")) {
         config->default_cols = runes_config_parse_uint(val);
+    }
+    else if (!strcmp(key, "scroll_lines")) {
+        config->scroll_lines = runes_config_parse_uint(val);
     }
     else if (!strcmp(key, "command")) {
         config->cmd = runes_config_parse_string(val);

@@ -759,18 +759,20 @@ static int runes_window_backend_handle_builtin_button_press(
         return 1;
         break;
     case Button4:
-        if (t->scr.row_visible_offset < t->scr.row_count - t->scr.max.row) {
-            t->scr.row_visible_offset++;
-            t->scr.dirty = 1;
-            runes_window_backend_flush(t);
+        t->scr.row_visible_offset += t->config.scroll_lines;
+        if (t->scr.row_visible_offset > t->scr.row_count - t->scr.max.row) {
+            t->scr.row_visible_offset = t->scr.row_count - t->scr.max.row;
         }
+        t->scr.dirty = 1;
+        runes_window_backend_flush(t);
         break;
     case Button5:
-        if (t->scr.row_visible_offset > 0) {
-            t->scr.row_visible_offset--;
-            t->scr.dirty = 1;
-            runes_window_backend_flush(t);
+        t->scr.row_visible_offset -= t->config.scroll_lines;
+        if (t->scr.row_visible_offset < 0) {
+            t->scr.row_visible_offset = 0;
         }
+        t->scr.dirty = 1;
+        runes_window_backend_flush(t);
         break;
     default:
         break;

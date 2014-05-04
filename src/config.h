@@ -12,6 +12,8 @@ struct runes_config {
     int default_rows;
     int default_cols;
 
+    int scroll_lines;
+
     char *cmd;
     char *font_name;
 
