@@ -74,6 +74,7 @@ struct runes_screen {
     int row_count;
     int row_capacity;
     int row_top;
+    int row_visible_offset;
 
     struct runes_row *rows;
     struct runes_row *alternate;
