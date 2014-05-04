@@ -118,7 +118,8 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
             cairo_set_line_width(cr, 1);
             cairo_rectangle(
                 cr,
-                col * t->fontx + 0.5, row * t->fonty + 0.5,
+                col * t->fontx + 0.5,
+                (row + t->scr.row_visible_offset) * t->fonty + 0.5,
                 t->fontx, t->fonty);
             cairo_stroke(cr);
         }
@@ -127,12 +128,14 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 
             cairo_rectangle(
                 cr,
-                col * t->fontx, row * t->fonty,
+                col * t->fontx,
+                (row + t->scr.row_visible_offset) * t->fonty,
                 t->fontx, t->fonty);
             cairo_fill(cr);
             runes_display_draw_glyph(
                 t, cr, t->config.bgdefault, cell->attrs,
-                cell->contents, cell->len, row, col);
+                cell->contents, cell->len,
+                row + t->scr.row_visible_offset, col);
         }
         cairo_restore(cr);
     }
