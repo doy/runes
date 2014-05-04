@@ -71,6 +71,10 @@ struct runes_screen {
     char *icon_name;
     size_t icon_name_len;
 
+    int row_count;
+    int row_capacity;
+    int row_top;
+
     struct runes_row *rows;
     struct runes_row *alternate;
 

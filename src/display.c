@@ -123,7 +123,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
             cairo_stroke(cr);
         }
         else {
-            struct runes_cell *cell = &t->scr.rows[row].cells[col];
+            struct runes_cell *cell = &t->scr.rows[t->scr.row_top + row].cells[col];
 
             cairo_rectangle(
                 cr,
@@ -179,7 +179,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 
 static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
-    struct runes_cell *cell = &t->scr.rows[row].cells[col];
+    struct runes_cell *cell = &t->scr.rows[row + t->scr.row_top].cells[col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
 

@@ -4,6 +4,13 @@
 #include "runes.h"
 #include "parser.h"
 
+static void runes_screen_ensure_capacity(RunesTerm *t, int size);
+static struct runes_row *runes_screen_row_at(RunesTerm *t, int row);
+static struct runes_cell *runes_screen_cell_at(RunesTerm *t, int row, int col);
+static void runes_screen_scroll_down(RunesTerm *t, int count);
+static void runes_screen_scroll_up(RunesTerm *t, int count);
+static int runes_screen_scroll_region_is_active(RunesTerm *t);
+
 void runes_screen_init(RunesTerm *t)
 {
     UNUSED(t);
@@ -13,7 +20,6 @@ void runes_screen_init(RunesTerm *t)
 void runes_screen_set_window_size(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
-    struct runes_row *old_rows = scr->rows;
     struct runes_loc old_size;
     int i;
 
@@ -41,29 +47,33 @@ void runes_screen_set_window_size(RunesTerm *t)
         scr->cur.col = scr->max.col;
     }
 
-    scr->scroll_top    = 0;
-    scr->scroll_bottom = scr->max.row - 1;
+    runes_screen_ensure_capacity(t, scr->max.row);
 
-    scr->rows = calloc(scr->max.row, sizeof(struct runes_row));
-    for (i = 0; i < scr->max.row; ++i) {
+    for (i = 0; i < scr->row_count; ++i) {
+        scr->rows[i].cells = realloc(
+            scr->rows[i].cells, scr->max.col * sizeof(struct runes_cell));
+        if (old_size.col > scr->max.col) {
+            memset(
+                &scr->rows[i].cells[scr->max.col], 0,
+                (old_size.col - scr->max.col) * sizeof(struct runes_cell));
+        }
+    }
+
+    for (i = scr->row_count; i < scr->max.row; ++i) {
         scr->rows[i].cells = calloc(
             scr->max.col, sizeof(struct runes_cell));
     }
 
-    if (old_rows) {
-        struct runes_loc overlap = {
-            scr->max.row < old_size.row ? scr->max.row : old_size.row,
-            scr->max.col < old_size.col ? scr->max.col : old_size.col
-        };
-
-        for (i = 0; i < overlap.row; ++i) {
-            memcpy(
-                scr->rows[i].cells, old_rows[i].cells,
-                overlap.col * sizeof(struct runes_cell));
-            free(old_rows[i].cells);
-        }
-        free(old_rows);
+    if (scr->row_count < scr->max.row) {
+        scr->row_count = scr->max.row;
+        scr->row_top = 0;
     }
+    else {
+        scr->row_top = scr->row_count - scr->max.row;
+    }
+
+    scr->scroll_top    = 0;
+    scr->scroll_bottom = scr->max.row - 1;
 }
 
 void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
@@ -109,10 +119,10 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
         struct runes_cell *cell;
 
         if (scr->cur.col >= scr->max.col) {
-            scr->rows[scr->cur.row].wrapped = 1;
+            runes_screen_row_at(t, scr->cur.row)->wrapped = 1;
             runes_screen_move_to(t, scr->cur.row + 1, 0);
         }
-        cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
+        cell = runes_screen_cell_at(t, scr->cur.row, scr->cur.col);
 
         cell->len = 1;
         cell->contents[0] = buf[i];
@@ -148,10 +158,11 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 
         if (is_combining) {
             if (scr->cur.col > 0) {
-                cell = &scr->rows[scr->cur.row].cells[scr->cur.col - 1];
+                cell = runes_screen_cell_at(t, scr->cur.row, scr->cur.col - 1);
             }
-            else if (scr->cur.row > 0 && scr->rows[scr->cur.row - 1].wrapped) {
-                cell = &scr->rows[scr->cur.row - 1].cells[scr->max.col - 1];
+            else if (scr->cur.row > 0 && runes_screen_row_at(t, scr->cur.row - 1)->wrapped) {
+                cell = runes_screen_cell_at(
+                    t, scr->cur.row - 1, scr->max.col - 1);
             }
 
             if (cell) {
@@ -171,10 +182,10 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
         }
         else {
             if (scr->cur.col + (is_wide ? 2 : 1) > scr->max.col) {
-                scr->rows[scr->cur.row].wrapped = 1;
+                runes_screen_row_at(t, scr->cur.row)->wrapped = 1;
                 runes_screen_move_to(t, scr->cur.row + 1, 0);
             }
-            cell = &scr->rows[scr->cur.row].cells[scr->cur.col];
+            cell = runes_screen_cell_at(t, scr->cur.row, scr->cur.col);
             cell->is_wide = is_wide;
 
             cell->len = next - c;
@@ -199,26 +210,13 @@ void runes_screen_move_to(RunesTerm *t, int row, int col)
     RunesScreen *scr = &t->scr;
     int top = scr->scroll_top, bottom = scr->scroll_bottom;
 
-    /* XXX should be able to do this all in one operation */
-    while (row > bottom) {
-        free(scr->rows[top].cells);
-        memmove(
-            &scr->rows[top], &scr->rows[top + 1],
-            (bottom - top) * sizeof(struct runes_row));
-        scr->rows[bottom].cells = calloc(
-            scr->max.col, sizeof(struct runes_cell));
-        scr->rows[bottom].wrapped = 0;
-        row--;
+    if (row > bottom) {
+        runes_screen_scroll_down(t, row - bottom);
+        row = bottom;
     }
-    while (row < top) {
-        free(scr->rows[bottom].cells);
-        memmove(
-            &scr->rows[top + 1], &scr->rows[top],
-            (bottom - top) * sizeof(struct runes_row));
-        scr->rows[top].cells = calloc(
-            scr->max.col, sizeof(struct runes_cell));
-        scr->rows[top].wrapped = 0;
-        row++;
+    else if (row < top) {
+        runes_screen_scroll_up(t, top - row);
+        row = top;
     }
 
     if (col < 0) {
@@ -239,9 +237,11 @@ void runes_screen_clear_screen(RunesTerm *t)
     int r;
 
     for (r = 0; r < scr->max.row; ++r) {
-        memset(
-            scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
-        scr->rows[r].wrapped = 0;
+        struct runes_row *row;
+
+        row = runes_screen_row_at(t, r);
+        memset(row->cells, 0, scr->max.col * sizeof(struct runes_cell));
+        row->wrapped = 0;
     }
 
     scr->dirty = 1;
@@ -250,16 +250,18 @@ void runes_screen_clear_screen(RunesTerm *t)
 void runes_screen_clear_screen_forward(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
+    struct runes_row *row;
     int r;
 
+    row = runes_screen_row_at(t, scr->cur.row);
     memset(
-        &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
+        &row->cells[scr->cur.col], 0,
         (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
-    scr->rows[scr->cur.row].wrapped = 0;
+    row->wrapped = 0;
     for (r = scr->cur.row + 1; r < scr->max.row; ++r) {
-        memset(
-            scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
-        scr->rows[r].wrapped = 0;
+        row = runes_screen_row_at(t, r);
+        memset(row->cells, 0, scr->max.col * sizeof(struct runes_cell));
+        row->wrapped = 0;
     }
 
     scr->dirty = 1;
@@ -268,16 +270,16 @@ void runes_screen_clear_screen_forward(RunesTerm *t)
 void runes_screen_clear_screen_backward(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
+    struct runes_row *row;
     int r;
 
     for (r = 0; r < scr->cur.row - 1; ++r) {
-        memset(
-            scr->rows[r].cells, 0, scr->max.col * sizeof(struct runes_cell));
-        scr->rows[r].wrapped = 0;
+        row = runes_screen_row_at(t, r);
+        memset(row->cells, 0, scr->max.col * sizeof(struct runes_cell));
+        row->wrapped = 0;
     }
-    memset(
-        scr->rows[scr->cur.row].cells, 0,
-        scr->cur.col * sizeof(struct runes_cell));
+    row = runes_screen_row_at(t, scr->cur.row);
+    memset(row->cells, 0, scr->cur.col * sizeof(struct runes_cell));
 
     scr->dirty = 1;
 }
@@ -285,11 +287,11 @@ void runes_screen_clear_screen_backward(RunesTerm *t)
 void runes_screen_kill_line(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
+    struct runes_row *row;
 
-    memset(
-        scr->rows[scr->cur.row].cells, 0,
-        scr->max.col * sizeof(struct runes_cell));
-    scr->rows[scr->cur.row].wrapped = 0;
+    row = runes_screen_row_at(t, scr->cur.row);
+    memset(row->cells, 0, scr->max.col * sizeof(struct runes_cell));
+    row->wrapped = 0;
 
     scr->dirty = 1;
 }
@@ -297,11 +299,13 @@ void runes_screen_kill_line(RunesTerm *t)
 void runes_screen_kill_line_forward(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
+    struct runes_row *row;
 
+    row = runes_screen_row_at(t, scr->cur.row);
     memset(
-        &scr->rows[scr->cur.row].cells[scr->cur.col], 0,
+        &row->cells[scr->cur.col], 0,
         (scr->max.col - scr->cur.col) * sizeof(struct runes_cell));
-    scr->rows[scr->cur.row].wrapped = 0;
+    row->wrapped = 0;
 
     scr->dirty = 1;
 }
@@ -309,12 +313,13 @@ void runes_screen_kill_line_forward(RunesTerm *t)
 void runes_screen_kill_line_backward(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;
+    struct runes_row *row;
 
-    memset(
-        scr->rows[scr->cur.row].cells, 0,
-        scr->cur.col * sizeof(struct runes_cell));
+    row = runes_screen_row_at(t, scr->cur.row);
+    memset(row->cells, 0, scr->cur.col * sizeof(struct runes_cell));
     if (scr->cur.row > 0) {
-        scr->rows[scr->cur.row - 1].wrapped = 0;
+        row = runes_screen_row_at(t, scr->cur.row - 1);
+        row->wrapped = 0;
     }
 
     scr->dirty = 1;
@@ -323,8 +328,9 @@ void runes_screen_kill_line_backward(RunesTerm *t)
 void runes_screen_insert_characters(RunesTerm *t, int count)
 {
     RunesScreen *scr = &t->scr;
-    struct runes_row *row = &scr->rows[scr->cur.row];
+    struct runes_row *row;
 
+    row = runes_screen_row_at(t, scr->cur.row);
     if (count >= scr->max.col - scr->cur.col) {
         runes_screen_kill_line_forward(t);
     }
@@ -335,7 +341,7 @@ void runes_screen_insert_characters(RunesTerm *t, int count)
         memset(
             &row->cells[scr->cur.col], 0,
             count * sizeof(struct runes_cell));
-        scr->rows[scr->cur.row].wrapped = 0;
+        row->wrapped = 0;
     }
 
     scr->dirty = 1;
@@ -350,21 +356,22 @@ void runes_screen_insert_lines(RunesTerm *t, int count)
         runes_screen_kill_line(t);
     }
     else {
+        struct runes_row *row;
         int i;
 
         for (i = scr->max.row - count; i < scr->max.row; ++i) {
-            free(scr->rows[i].cells);
+            row = runes_screen_row_at(t, i);
+            free(row->cells);
         }
+        row = runes_screen_row_at(t, scr->cur.row);
         memmove(
-            &scr->rows[scr->cur.row + count], &scr->rows[scr->cur.row],
+            row + count, row,
             (scr->max.row - scr->cur.row - count) * sizeof(struct runes_row));
-        memset(
-            &scr->rows[scr->cur.row], 0,
-            count * sizeof(struct runes_row));
+        memset(row, 0, count * sizeof(struct runes_row));
         for (i = scr->cur.row; i < scr->cur.row + count; ++i) {
-            scr->rows[i].cells = calloc(
-                scr->max.col, sizeof(struct runes_cell));
-            scr->rows[i].wrapped = 0;
+            row = runes_screen_row_at(t, i);
+            row->cells = calloc(scr->max.col, sizeof(struct runes_cell));
+            row->wrapped = 0;
         }
     }
 
@@ -374,19 +381,21 @@ void runes_screen_insert_lines(RunesTerm *t, int count)
 void runes_screen_delete_characters(RunesTerm *t, int count)
 {
     RunesScreen *scr = &t->scr;
-    struct runes_row *row = &scr->rows[scr->cur.row];
 
     if (count >= scr->max.col - scr->cur.col) {
         runes_screen_kill_line_forward(t);
     }
     else {
+        struct runes_row *row;
+
+        row = runes_screen_row_at(t, scr->cur.row);
         memmove(
             &row->cells[scr->cur.col], &row->cells[scr->cur.col + count],
             (scr->max.col - scr->cur.col - count) * sizeof(struct runes_cell));
         memset(
             &row->cells[scr->max.col - count], 0,
             count * sizeof(struct runes_cell));
-        scr->rows[scr->cur.row].wrapped = 0;
+        row->wrapped = 0;
     }
 
     scr->dirty = 1;
@@ -401,21 +410,23 @@ void runes_screen_delete_lines(RunesTerm *t, int count)
         runes_screen_kill_line(t);
     }
     else {
+        struct runes_row *row;
         int i;
 
         for (i = scr->cur.row; i < scr->cur.row + count; ++i) {
-            free(scr->rows[i].cells);
+            row = runes_screen_row_at(t, i);
+            free(row->cells);
         }
+        row = runes_screen_row_at(t, scr->cur.row);
         memmove(
-            &scr->rows[scr->cur.row], &scr->rows[scr->cur.row + count],
+            row, row + count,
             (scr->max.row - scr->cur.row - count) * sizeof(struct runes_row));
-        memset(
-            &scr->rows[scr->max.row - count], 0,
-            count * sizeof(struct runes_row));
+        row = runes_screen_row_at(t, scr->max.row - count);
+        memset(row, 0, count * sizeof(struct runes_row));
         for (i = scr->max.row - count; i < scr->max.row; ++i) {
-            scr->rows[i].cells = calloc(
-                scr->max.col, sizeof(struct runes_cell));
-            scr->rows[i].wrapped = 0;
+            row = runes_screen_row_at(t, i);
+            row->cells = calloc(scr->max.col, sizeof(struct runes_cell));
+            row->wrapped = 0;
         }
     }
 
@@ -714,11 +725,132 @@ void runes_screen_cleanup(RunesTerm *t)
     RunesScreen *scr = &t->scr;
     int i;
 
-    for (i = 0; i < scr->max.row; ++i) {
+    for (i = 0; i < scr->row_count; ++i) {
         free(scr->rows[i].cells);
     }
     free(scr->rows);
 
     free(scr->title);
     free(scr->icon_name);
+}
+
+static void runes_screen_ensure_capacity(RunesTerm *t, int size)
+{
+    RunesScreen *scr = &t->scr;
+    int old_capacity = scr->row_capacity;
+
+    if (scr->row_capacity >= size) {
+        return;
+    }
+
+    if (scr->row_capacity == 0) {
+        scr->row_capacity = scr->max.row;
+    }
+
+    while (scr->row_capacity < size) {
+        scr->row_capacity *= 1.5;
+    }
+
+    scr->rows = realloc(
+        scr->rows, scr->row_capacity * sizeof(struct runes_row));
+    memset(
+        &scr->rows[old_capacity], 0,
+        (scr->row_capacity - old_capacity) * sizeof(struct runes_row));
+}
+
+static struct runes_row *runes_screen_row_at(RunesTerm *t, int row)
+{
+    RunesScreen *scr = &t->scr;
+
+    return &scr->rows[row + scr->row_top];
+}
+
+static struct runes_cell *runes_screen_cell_at(RunesTerm *t, int row, int col)
+{
+    RunesScreen *scr = &t->scr;
+
+    return &scr->rows[row + scr->row_top].cells[col];
+}
+
+static void runes_screen_scroll_down(RunesTerm *t, int count)
+{
+    RunesScreen *scr = &t->scr;
+    struct runes_row *row;
+    int i;
+
+    if (runes_screen_scroll_region_is_active(t) || scr->alternate) {
+        int bottom = scr->scroll_bottom, top = scr->scroll_top;
+
+        if (bottom - top + 1 > count) {
+            for (i = 0; i < count; ++i) {
+                row = runes_screen_row_at(t, top + i);
+                free(row->cells);
+            }
+            row = runes_screen_row_at(t, top);
+            memmove(
+                row, row + count,
+                (bottom - top + 1 - count) * sizeof(struct runes_row));
+            for (i = 0; i < count; ++i) {
+                row = runes_screen_row_at(t, bottom - i);
+                row->cells = calloc(scr->max.col, sizeof(struct runes_cell));
+                row->wrapped = 0;
+            }
+        }
+        else {
+            for (i = 0; i < bottom - top + 1; ++i) {
+                row = runes_screen_row_at(t, top + i);
+                memset(
+                    row->cells, 0,
+                    scr->max.col * sizeof(struct runes_cell));
+                row->wrapped = 0;
+            }
+        }
+    }
+    else {
+        runes_screen_ensure_capacity(t, scr->row_count + count);
+        for (i = 0; i < count; ++i) {
+            row = runes_screen_row_at(t, i + scr->max.row);
+            row->cells = calloc(scr->max.col, sizeof(struct runes_cell));
+        }
+        scr->row_count += count;
+        scr->row_top += count;
+    }
+}
+
+static void runes_screen_scroll_up(RunesTerm *t, int count)
+{
+    RunesScreen *scr = &t->scr;
+    struct runes_row *row;
+    int bottom = scr->scroll_bottom, top = scr->scroll_top;
+    int i;
+
+    if (bottom - top + 1 > count) {
+        for (i = 0; i < count; ++i) {
+            row = runes_screen_row_at(t, bottom - i);
+            free(row->cells);
+        }
+        row = runes_screen_row_at(t, top);
+        memmove(
+            row + count, row,
+            (bottom - top + 1 - count) * sizeof(struct runes_row));
+        for (i = 0; i < count; ++i) {
+            row = runes_screen_row_at(t, top + i);
+            row->cells = calloc(scr->max.col, sizeof(struct runes_cell));
+            row->wrapped = 0;
+        }
+    }
+    else {
+        for (i = 0; i < bottom - top + 1; ++i) {
+            row = runes_screen_row_at(t, top + i);
+            memset(row->cells, 0, scr->max.col * sizeof(struct runes_cell));
+            row->wrapped = 0;
+        }
+    }
+}
+
+static int runes_screen_scroll_region_is_active(RunesTerm *t)
+{
+    RunesScreen *scr = &t->scr;
+
+    return scr->scroll_top != 0 || scr->scroll_bottom != scr->max.row - 1;
 }
