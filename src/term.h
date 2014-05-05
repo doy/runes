@@ -6,23 +6,9 @@ struct runes_term {
     RunesPtyBackend pty;
     RunesScreen scr;
     RunesConfig config;
+    RunesDisplay display;
 
-    cairo_t *cr;
     uv_loop_t *loop;
-
-    PangoLayout *layout;
-
-    char readbuf[RUNES_READ_BUFFER_LENGTH];
-    int readlen;
-    int remaininglen;
-
-    int xpixel;
-    int ypixel;
-    int fontx;
-    int fonty;
-
-    char visual_bell_is_ringing: 1;
-    char unfocused: 1;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);

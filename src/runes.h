@@ -12,6 +12,7 @@ struct runes_window;
 struct runes_pty;
 struct runes_screen;
 struct runes_config;
+struct runes_display;
 struct runes_loop_data;
 
 typedef struct runes_term RunesTerm;
@@ -19,6 +20,7 @@ typedef struct runes_window RunesWindowBackend;
 typedef struct runes_pty RunesPtyBackend;
 typedef struct runes_screen RunesScreen;
 typedef struct runes_config RunesConfig;
+typedef struct runes_display RunesDisplay;
 typedef struct runes_loop_data RunesLoopData;
 
 struct runes_loop_data {
@@ -31,8 +33,9 @@ struct runes_loop_data {
 
 #include "screen.h"
 #include "config.h"
-#include "term.h"
 #include "display.h"
+
+#include "term.h"
 
 #define UNUSED(x) ((void)x)
 

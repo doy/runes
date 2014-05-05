@@ -5,6 +5,10 @@ struct runes_pty {
     int master;
     int slave;
     pid_t child_pid;
+
+    char readbuf[RUNES_READ_BUFFER_LENGTH];
+    int readlen;
+    int remaininglen;
 };
 
 void runes_pty_backend_spawn_subprocess(RunesTerm *t);

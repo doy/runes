@@ -27,8 +27,8 @@ void runes_screen_set_window_size(RunesTerm *t)
     old_size.row = scr->grid->max.row;
     old_size.col = scr->grid->max.col;
 
-    scr->grid->max.row = t->ypixel / t->fonty;
-    scr->grid->max.col = t->xpixel / t->fontx;
+    scr->grid->max.row = t->display.ypixel / t->display.fonty;
+    scr->grid->max.col = t->display.xpixel / t->display.fontx;
 
     if (scr->grid->max.row == 0) {
         scr->grid->max.row = 1;
@@ -90,9 +90,11 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
     runes_parser_yylex_init_extra(t, &scanner);
     state = runes_parser_yy_scan_bytes(buf, len, scanner);
     remaining = runes_parser_yylex(scanner);
-    t->remaininglen = remaining;
-    if (t->remaininglen) {
-        memmove(t->readbuf, &buf[len - t->remaininglen], t->remaininglen);
+    t->pty.remaininglen = remaining;
+    if (t->pty.remaininglen) {
+        memmove(
+            t->pty.readbuf, &buf[len - t->pty.remaininglen],
+            t->pty.remaininglen);
     }
     runes_parser_yy_delete_buffer(state, scanner);
     runes_parser_yylex_destroy(scanner);

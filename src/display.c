@@ -19,20 +19,21 @@ void runes_display_init(RunesTerm *t)
 
 void runes_display_set_window_size(RunesTerm *t)
 {
+    RunesDisplay *display = &t->display;
     int width, height;
     cairo_t *old_cr = NULL;
     cairo_surface_t *surface;
 
     runes_window_backend_get_size(t, &width, &height);
 
-    if (width == t->xpixel && height == t->ypixel) {
+    if (width == display->xpixel && height == display->ypixel) {
         return;
     }
 
-    t->xpixel = width;
-    t->ypixel = height;
+    display->xpixel = width;
+    display->ypixel = height;
 
-    old_cr = t->cr;
+    old_cr = display->cr;
 
     /* XXX this should really use cairo_surface_create_similar_image, but when
      * i did that, drawing calls would occasionally block until an X event
@@ -40,11 +41,11 @@ void runes_display_set_window_size(RunesTerm *t)
      * create_similar_image does things that are more efficient (using some
      * xlib shm stuff) */
     surface = cairo_image_surface_create(
-        CAIRO_FORMAT_RGB24, t->xpixel, t->ypixel);
-    t->cr = cairo_create(surface);
+        CAIRO_FORMAT_RGB24, display->xpixel, display->ypixel);
+    display->cr = cairo_create(surface);
     cairo_surface_destroy(surface);
-    if (t->layout) {
-        pango_cairo_update_layout(t->cr, t->layout);
+    if (display->layout) {
+        pango_cairo_update_layout(display->cr, display->layout);
     }
     else {
         PangoAttrList *attrs;
@@ -53,26 +54,27 @@ void runes_display_set_window_size(RunesTerm *t)
         attrs = pango_attr_list_new();
         font_desc = pango_font_description_from_string(t->config.font_name);
 
-        t->layout = pango_cairo_create_layout(t->cr);
-        pango_layout_set_attributes(t->layout, attrs);
-        pango_layout_set_font_description(t->layout, font_desc);
+        display->layout = pango_cairo_create_layout(display->cr);
+        pango_layout_set_attributes(display->layout, attrs);
+        pango_layout_set_font_description(display->layout, font_desc);
 
         pango_attr_list_unref(attrs);
         pango_font_description_free(font_desc);
     }
 
-    cairo_save(t->cr);
+    cairo_save(display->cr);
 
     if (old_cr) {
-        cairo_set_source_surface(t->cr, cairo_get_target(old_cr), 0.0, 0.0);
+        cairo_set_source_surface(
+            display->cr, cairo_get_target(old_cr), 0.0, 0.0);
     }
     else {
-        cairo_set_source(t->cr, t->config.bgdefault);
+        cairo_set_source(display->cr, t->config.bgdefault);
     }
 
-    cairo_paint(t->cr);
+    cairo_paint(display->cr);
 
-    cairo_restore(t->cr);
+    cairo_restore(display->cr);
 
     if (old_cr) {
         cairo_destroy(old_cr);
@@ -106,6 +108,8 @@ void runes_display_draw_screen(RunesTerm *t)
 
 void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 {
+    RunesDisplay *display = &t->display;
+
     if (!t->scr.hide_cursor) {
         int row = t->scr.grid->cur.row, col = t->scr.grid->cur.col;
 
@@ -115,13 +119,13 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 
         cairo_save(cr);
         cairo_set_source(cr, t->config.cursorcolor);
-        if (t->unfocused) {
+        if (display->unfocused) {
             cairo_set_line_width(cr, 1);
             cairo_rectangle(
                 cr,
-                col * t->fontx + 0.5,
-                (row + t->w.row_visible_offset) * t->fonty + 0.5,
-                t->fontx - 1, t->fonty - 1);
+                col * display->fontx + 0.5,
+                (row + display->row_visible_offset) * display->fonty + 0.5,
+                display->fontx - 1, display->fonty - 1);
             cairo_stroke(cr);
         }
         else {
@@ -129,14 +133,14 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 
             cairo_rectangle(
                 cr,
-                col * t->fontx,
-                (row + t->w.row_visible_offset) * t->fonty,
-                t->fontx, t->fonty);
+                col * display->fontx,
+                (row + display->row_visible_offset) * display->fonty,
+                display->fontx, display->fonty);
             cairo_fill(cr);
             runes_display_draw_glyph(
                 t, cr, t->config.bgdefault, cell->attrs,
                 cell->contents, cell->len,
-                row + t->w.row_visible_offset, col);
+                row + display->row_visible_offset, col);
         }
         cairo_restore(cr);
     }
@@ -144,21 +148,24 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 
 void runes_display_cleanup(RunesTerm *t)
 {
-    g_object_unref(t->layout);
-    cairo_destroy(t->cr);
+    RunesDisplay *display = &t->display;
+
+    g_object_unref(display->layout);
+    cairo_destroy(display->cr);
 }
 
 static void runes_display_recalculate_font_metrics(RunesTerm *t)
 {
+    RunesDisplay *display = &t->display;
     PangoFontDescription *desc;
     PangoContext *context;
     PangoFontMetrics *metrics;
     int ascent, descent;
 
-    if (t->layout) {
+    if (display->layout) {
         desc = (PangoFontDescription *)pango_layout_get_font_description(
-            t->layout);
-        context = pango_layout_get_context(t->layout);
+            display->layout);
+        context = pango_layout_get_context(display->layout);
     }
     else {
         desc = pango_font_description_from_string(t->config.font_name);
@@ -168,14 +175,14 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 
     metrics = pango_context_get_metrics(context, desc, NULL);
 
-    t->fontx = PANGO_PIXELS(
+    display->fontx = PANGO_PIXELS(
         pango_font_metrics_get_approximate_digit_width(metrics));
     ascent   = pango_font_metrics_get_ascent(metrics);
     descent  = pango_font_metrics_get_descent(metrics);
-    t->fonty = PANGO_PIXELS(ascent + descent);
+    display->fonty = PANGO_PIXELS(ascent + descent);
 
     pango_font_metrics_unref(metrics);
-    if (!t->layout) {
+    if (!display->layout) {
         pango_font_description_free(desc);
         g_object_unref(context);
     }
@@ -183,7 +190,8 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 
 static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
-    struct runes_cell *cell = &t->scr.grid->rows[row + t->scr.grid->row_top - t->w.row_visible_offset].cells[col];
+    RunesDisplay *display = &t->display;
+    struct runes_cell *cell = &t->scr.grid->rows[row + t->scr.grid->row_top - display->row_visible_offset].cells[col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
 
@@ -238,11 +246,12 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
     }
 
     runes_display_paint_rectangle(
-        t, t->cr, bg, row, col, cell->is_wide ? 2 : 1, 1);
+        t, display->cr, bg, row, col, cell->is_wide ? 2 : 1, 1);
 
     if (cell->len) {
         runes_display_draw_glyph(
-            t, t->cr, fg, cell->attrs, cell->contents, cell->len, row, col);
+            t, display->cr, fg, cell->attrs, cell->contents, cell->len,
+            row, col);
     }
 
     if (bg_is_custom) {
@@ -260,11 +269,13 @@ static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height)
 {
+    RunesDisplay *display = &t->display;
+
     cairo_save(cr);
     cairo_set_source(cr, pattern);
     cairo_rectangle(
-        cr, col * t->fontx, row * t->fonty,
-        width * t->fontx, height * t->fonty);
+        cr, col * display->fontx, row * display->fonty,
+        width * display->fontx, height * display->fonty);
     cairo_fill(cr);
     cairo_restore(cr);
 }
@@ -273,9 +284,10 @@ static void runes_display_draw_glyph(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     struct runes_cell_attrs attrs, char *buf, size_t len, int row, int col)
 {
+    RunesDisplay *display = &t->display;
     PangoAttrList *pango_attrs;
 
-    pango_attrs = pango_layout_get_attributes(t->layout);
+    pango_attrs = pango_layout_get_attributes(display->layout);
     if (t->config.bold_is_bold) {
         pango_attr_list_change(
             pango_attrs, pango_attr_weight_new(
@@ -289,10 +301,10 @@ static void runes_display_draw_glyph(
             attrs.underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE));
 
     cairo_save(cr);
-    cairo_move_to(cr, col * t->fontx, row * t->fonty);
+    cairo_move_to(cr, col * display->fontx, row * display->fonty);
     cairo_set_source(cr, pattern);
-    pango_layout_set_text(t->layout, buf, len);
-    pango_cairo_update_layout(cr, t->layout);
-    pango_cairo_show_layout(cr, t->layout);
+    pango_layout_set_text(display->layout, buf, len);
+    pango_cairo_update_layout(cr, display->layout);
+    pango_cairo_show_layout(cr, display->layout);
     cairo_restore(cr);
 }

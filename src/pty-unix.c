@@ -101,16 +101,16 @@ void runes_pty_backend_set_window_size(RunesTerm *t)
 
     size.ws_row = t->scr.grid->max.row;
     size.ws_col = t->scr.grid->max.col;
-    size.ws_xpixel = t->xpixel;
-    size.ws_ypixel = t->ypixel;
+    size.ws_xpixel = t->display.xpixel;
+    size.ws_ypixel = t->display.ypixel;
     ioctl(t->pty.master, TIOCSWINSZ, &size);
 }
 
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
 {
     write(t->pty.master, buf, len);
-    if (t->w.row_visible_offset != 0) {
-        t->w.row_visible_offset = 0;
+    if (t->display.row_visible_offset != 0) {
+        t->display.row_visible_offset = 0;
         t->scr.dirty = 1;
         runes_window_backend_request_flush(t);
     }
@@ -134,23 +134,25 @@ static void runes_pty_backend_read(uv_work_t *req)
 {
     RunesLoopData *data = req->data;
     RunesTerm *t = data->t;
+    RunesPtyBackend *pty = &t->pty;
 
     runes_window_backend_request_flush(t);
-    t->readlen = read(
-        t->pty.master, t->readbuf + t->remaininglen,
-        RUNES_READ_BUFFER_LENGTH - t->remaininglen);
+    pty->readlen = read(
+        pty->master, pty->readbuf + pty->remaininglen,
+        RUNES_READ_BUFFER_LENGTH - pty->remaininglen);
 }
 
 static void runes_pty_backend_got_data(uv_work_t *req, int status)
 {
     RunesLoopData *data = req->data;
     RunesTerm *t = data->t;
+    RunesPtyBackend *pty = &t->pty;
 
     UNUSED(status);
 
-    if (t->readlen > 0) {
+    if (pty->readlen > 0) {
         runes_screen_process_string(
-            t, t->readbuf, t->readlen + t->remaininglen);
+            t, pty->readbuf, pty->readlen + pty->remaininglen);
         uv_queue_work(
             t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
     }

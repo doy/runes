@@ -131,12 +131,12 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
 
-    normal_hints.min_width   = t->fontx + 4;
-    normal_hints.min_height  = t->fonty + 4;
-    normal_hints.width_inc   = t->fontx;
-    normal_hints.height_inc  = t->fonty;
-    normal_hints.base_width  = t->fontx * t->config.default_cols + 4;
-    normal_hints.base_height = t->fonty * t->config.default_rows + 4;
+    normal_hints.min_width   = t->display.fontx + 4;
+    normal_hints.min_height  = t->display.fonty + 4;
+    normal_hints.width_inc   = t->display.fontx;
+    normal_hints.height_inc  = t->display.fonty;
+    normal_hints.base_width  = t->display.fontx * t->config.default_cols + 4;
+    normal_hints.base_height = t->display.fonty * t->config.default_rows + 4;
 
     cairo_pattern_get_rgba(t->config.bgdefault, &bg_r, &bg_g, &bg_b, NULL);
     bgcolor.red   = bg_r * 65535;
@@ -451,7 +451,7 @@ static void runes_window_backend_resize_window(
         height = 1;
     }
 
-    if (width != t->xpixel || height != t->ypixel) {
+    if (width != t->display.xpixel || height != t->display.ypixel) {
         XResizeWindow(w->dpy, w->w, width - 4, height - 4);
         cairo_xlib_surface_set_size(
             cairo_get_target(w->backend_cr), width - 4, height - 4);
@@ -485,13 +485,14 @@ static void runes_window_backend_flush(RunesTerm *t)
         t->scr.update_icon_name = 0;
     }
 
-    if (t->visual_bell_is_ringing) {
+    if (w->visual_bell_is_ringing) {
         return;
     }
 
     runes_display_draw_screen(t);
 
-    cairo_set_source_surface(w->backend_cr, cairo_get_target(t->cr), 0.0, 0.0);
+    cairo_set_source_surface(
+        w->backend_cr, cairo_get_target(t->display.cr), 0.0, 0.0);
     cairo_paint(w->backend_cr);
     runes_display_draw_cursor(t, w->backend_cr);
     cairo_surface_flush(cairo_get_target(w->backend_cr));
@@ -499,19 +500,18 @@ static void runes_window_backend_flush(RunesTerm *t)
 
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count)
 {
-    RunesWindowBackend *w = &t->w;
     int min = 0, max = t->scr.grid->row_count - t->scr.grid->max.row;
-    int old_offset = w->row_visible_offset;
+    int old_offset = t->display.row_visible_offset;
 
-    w->row_visible_offset += count;
-    if (w->row_visible_offset < min) {
-        w->row_visible_offset = min;
+    t->display.row_visible_offset += count;
+    if (t->display.row_visible_offset < min) {
+        t->display.row_visible_offset = min;
     }
-    if (w->row_visible_offset > max) {
-        w->row_visible_offset = max;
+    if (t->display.row_visible_offset > max) {
+        t->display.row_visible_offset = max;
     }
 
-    if (w->row_visible_offset == old_offset) {
+    if (t->display.row_visible_offset == old_offset) {
         return;
     }
 
@@ -521,15 +521,16 @@ static void runes_window_backend_visible_scroll(RunesTerm *t, int count)
 
 static void runes_window_backend_visual_bell(RunesTerm *t)
 {
+    RunesWindowBackend *w = &t->w;
+
     if (t->config.bell_is_urgent) {
         runes_window_backend_set_urgent(t);
     }
 
-    if (!t->visual_bell_is_ringing) {
-        RunesWindowBackend *w = &t->w;
+    if (!w->visual_bell_is_ringing) {
         uv_timer_t *timer_req;
 
-        t->visual_bell_is_ringing = 1;
+        w->visual_bell_is_ringing = 1;
         cairo_set_source(w->backend_cr, t->config.fgdefault);
         cairo_paint(w->backend_cr);
         cairo_surface_flush(cairo_get_target(w->backend_cr));
@@ -546,9 +547,10 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
 static void runes_window_backend_reset_visual_bell(uv_timer_t *handle)
 {
     RunesTerm *t = handle->data;
+    RunesWindowBackend *w = &t->w;
 
     runes_window_backend_request_flush(t);
-    t->visual_bell_is_ringing = 0;
+    w->visual_bell_is_ringing = 0;
     uv_close(
         (uv_handle_t *)handle, runes_window_backend_visual_bell_free_handle);
 }
@@ -750,8 +752,8 @@ static void runes_window_backend_handle_button_event(
         sprintf(
             response, "\e[M%c%c%c",
             ' ' + (status),
-            ' ' + (e->x / t->fontx + 1),
-            ' ' + (e->y / t->fonty + 1));
+            ' ' + (e->x / t->display.fontx + 1),
+            ' ' + (e->y / t->display.fonty + 1));
         runes_pty_backend_write(t, response, 6);
     }
     else if (t->scr.mouse_reporting_press && e->type == ButtonPress) {
@@ -760,8 +762,8 @@ static void runes_window_backend_handle_button_event(
         sprintf(
             response, "\e[M%c%c%c",
             ' ' + (e->button - 1),
-            ' ' + (e->x / t->fontx + 1),
-            ' ' + (e->y / t->fonty + 1));
+            ' ' + (e->x / t->display.fontx + 1),
+            ' ' + (e->y / t->display.fonty + 1));
         runes_pty_backend_write(t, response, 6);
     }
     else {
@@ -826,19 +828,19 @@ static void runes_window_backend_handle_focus_event(
         return;
     }
 
-    if (e->type == FocusIn && !t->unfocused) {
+    if (e->type == FocusIn && !t->display.unfocused) {
         return;
     }
-    if (e->type == FocusOut && t->unfocused) {
+    if (e->type == FocusOut && t->display.unfocused) {
         return;
     }
 
     runes_window_backend_clear_urgent(t);
     if (e->type == FocusIn) {
-        t->unfocused = 0;
+        t->display.unfocused = 0;
     }
     else {
-        t->unfocused = 1;
+        t->display.unfocused = 1;
     }
     runes_window_backend_flush(t);
 }

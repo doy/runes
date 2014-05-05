@@ -25,9 +25,9 @@ struct runes_window {
 
     cairo_t *backend_cr;
 
-    int row_visible_offset;
-
     Atom atoms[RUNES_NUM_ATOMS];
+
+    char visual_bell_is_ringing: 1;
 };
 
 typedef struct {
