@@ -658,6 +658,20 @@ static int runes_window_backend_handle_builtin_keypress(
             return 1;
         }
         break;
+    case XK_Page_Up:
+        if (e->state & ShiftMask) {
+            runes_window_backend_visible_scroll(
+                t, t->scr.grid->max.row - 1);
+            return 1;
+        }
+        break;
+    case XK_Page_Down:
+        if (e->state & ShiftMask) {
+            runes_window_backend_visible_scroll(
+                t, -(t->scr.grid->max.row - 1));
+            return 1;
+        }
+        break;
     default:
         break;
     }
