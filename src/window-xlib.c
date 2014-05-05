@@ -83,6 +83,7 @@ static Bool runes_window_backend_find_flush_events(
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
+static void runes_window_backend_visible_scroll(RunesTerm *t, int count);
 static void runes_window_backend_visual_bell(RunesTerm *t);
 static void runes_window_backend_reset_visual_bell(uv_timer_t *handle);
 static void runes_window_backend_visual_bell_free_handle(uv_handle_t *handle);
@@ -496,6 +497,28 @@ static void runes_window_backend_flush(RunesTerm *t)
     cairo_surface_flush(cairo_get_target(w->backend_cr));
 }
 
+static void runes_window_backend_visible_scroll(RunesTerm *t, int count)
+{
+    RunesWindowBackend *w = &t->w;
+    int min = 0, max = t->scr.grid->row_count - t->scr.grid->max.row;
+    int old_offset = w->row_visible_offset;
+
+    w->row_visible_offset += count;
+    if (w->row_visible_offset < min) {
+        w->row_visible_offset = min;
+    }
+    if (w->row_visible_offset > max) {
+        w->row_visible_offset = max;
+    }
+
+    if (w->row_visible_offset == old_offset) {
+        return;
+    }
+
+    t->scr.dirty = 1;
+    runes_window_backend_flush(t);
+}
+
 static void runes_window_backend_visual_bell(RunesTerm *t)
 {
     if (t->config.bell_is_urgent) {
@@ -759,20 +782,10 @@ static int runes_window_backend_handle_builtin_button_press(
         return 1;
         break;
     case Button4:
-        t->scr.row_visible_offset += t->config.scroll_lines;
-        if (t->scr.row_visible_offset > t->scr.grid->row_count - t->scr.grid->max.row) {
-            t->scr.row_visible_offset = t->scr.grid->row_count - t->scr.grid->max.row;
-        }
-        t->scr.dirty = 1;
-        runes_window_backend_flush(t);
+        runes_window_backend_visible_scroll(t, t->config.scroll_lines);
         break;
     case Button5:
-        t->scr.row_visible_offset -= t->config.scroll_lines;
-        if (t->scr.row_visible_offset < 0) {
-            t->scr.row_visible_offset = 0;
-        }
-        t->scr.dirty = 1;
-        runes_window_backend_flush(t);
+        runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
         break;
     default:
         break;

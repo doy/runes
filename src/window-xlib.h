@@ -25,6 +25,8 @@ struct runes_window {
 
     cairo_t *backend_cr;
 
+    int row_visible_offset;
+
     Atom atoms[RUNES_NUM_ATOMS];
 };
 

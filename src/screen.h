@@ -81,8 +81,6 @@ struct runes_screen {
     char *icon_name;
     size_t icon_name_len;
 
-    int row_visible_offset;
-
     struct runes_cell_attrs attrs;
 
     unsigned char hide_cursor: 1;

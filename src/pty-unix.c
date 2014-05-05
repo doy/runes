@@ -109,8 +109,8 @@ void runes_pty_backend_set_window_size(RunesTerm *t)
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
 {
     write(t->pty.master, buf, len);
-    if (t->scr.row_visible_offset != 0) {
-        t->scr.row_visible_offset = 0;
+    if (t->w.row_visible_offset != 0) {
+        t->w.row_visible_offset = 0;
         t->scr.dirty = 1;
         runes_window_backend_request_flush(t);
     }

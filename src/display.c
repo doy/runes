@@ -120,7 +120,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
             cairo_rectangle(
                 cr,
                 col * t->fontx + 0.5,
-                (row + t->scr.row_visible_offset) * t->fonty + 0.5,
+                (row + t->w.row_visible_offset) * t->fonty + 0.5,
                 t->fontx - 1, t->fonty - 1);
             cairo_stroke(cr);
         }
@@ -130,13 +130,13 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
             cairo_rectangle(
                 cr,
                 col * t->fontx,
-                (row + t->scr.row_visible_offset) * t->fonty,
+                (row + t->w.row_visible_offset) * t->fonty,
                 t->fontx, t->fonty);
             cairo_fill(cr);
             runes_display_draw_glyph(
                 t, cr, t->config.bgdefault, cell->attrs,
                 cell->contents, cell->len,
-                row + t->scr.row_visible_offset, col);
+                row + t->w.row_visible_offset, col);
         }
         cairo_restore(cr);
     }
@@ -183,7 +183,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 
 static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
-    struct runes_cell *cell = &t->scr.grid->rows[row + t->scr.grid->row_top - t->scr.row_visible_offset].cells[col];
+    struct runes_cell *cell = &t->scr.grid->rows[row + t->scr.grid->row_top - t->w.row_visible_offset].cells[col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
 
