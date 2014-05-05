@@ -99,8 +99,8 @@ void runes_pty_backend_set_window_size(RunesTerm *t)
 {
     struct winsize size;
 
-    size.ws_row = t->scr.max.row;
-    size.ws_col = t->scr.max.col;
+    size.ws_row = t->scr.grid->max.row;
+    size.ws_col = t->scr.grid->max.col;
     size.ws_xpixel = t->xpixel;
     size.ws_ypixel = t->ypixel;
     ioctl(t->pty.master, TIOCSWINSZ, &size);

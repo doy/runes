@@ -760,8 +760,8 @@ static int runes_window_backend_handle_builtin_button_press(
         break;
     case Button4:
         t->scr.row_visible_offset += t->config.scroll_lines;
-        if (t->scr.row_visible_offset > t->scr.row_count - t->scr.max.row) {
-            t->scr.row_visible_offset = t->scr.row_count - t->scr.max.row;
+        if (t->scr.row_visible_offset > t->scr.grid->row_count - t->scr.grid->max.row) {
+            t->scr.row_visible_offset = t->scr.grid->row_count - t->scr.grid->max.row;
         }
         t->scr.dirty = 1;
         runes_window_backend_flush(t);

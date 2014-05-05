@@ -235,23 +235,24 @@ static void runes_parser_handle_bel(RunesTerm *t)
 
 static void runes_parser_handle_bs(RunesTerm *t)
 {
-    runes_screen_move_to(t, t->scr.cur.row, t->scr.cur.col - 1);
+    runes_screen_move_to(t, t->scr.grid->cur.row, t->scr.grid->cur.col - 1);
 }
 
 static void runes_parser_handle_tab(RunesTerm *t)
 {
     runes_screen_move_to(
-        t, t->scr.cur.row, t->scr.cur.col - (t->scr.cur.col % 8) + 8);
+        t, t->scr.grid->cur.row,
+        t->scr.grid->cur.col - (t->scr.grid->cur.col % 8) + 8);
 }
 
 static void runes_parser_handle_lf(RunesTerm *t)
 {
-    runes_screen_move_to(t, t->scr.cur.row + 1, t->scr.cur.col);
+    runes_screen_move_to(t, t->scr.grid->cur.row + 1, t->scr.grid->cur.col);
 }
 
 static void runes_parser_handle_cr(RunesTerm *t)
 {
-    runes_screen_move_to(t, t->scr.cur.row, 0);
+    runes_screen_move_to(t, t->scr.grid->cur.row, 0);
 }
 
 static void runes_parser_handle_deckpam(RunesTerm *t)
@@ -266,14 +267,14 @@ static void runes_parser_handle_deckpnm(RunesTerm *t)
 
 static void runes_parser_handle_ri(RunesTerm *t)
 {
-    runes_screen_move_to(t, t->scr.cur.row - 1, t->scr.cur.col);
+    runes_screen_move_to(t, t->scr.grid->cur.row - 1, t->scr.grid->cur.col);
 }
 
 static void runes_parser_handle_ris(RunesTerm *t)
 {
     runes_screen_use_normal_buffer(t);
     runes_screen_set_scroll_region(
-        t, 0, t->scr.max.row - 1, 0, t->scr.max.col - 1);
+        t, 0, t->scr.grid->max.row - 1, 0, t->scr.grid->max.col - 1);
     runes_screen_clear_screen(t);
     runes_screen_save_cursor(t);
     runes_screen_reset_text_attributes(t);
@@ -357,7 +358,8 @@ static void runes_parser_handle_cuu(RunesTerm *t, char *buf, size_t len)
     int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    runes_screen_move_to(t, t->scr.cur.row - params[0], t->scr.cur.col);
+    runes_screen_move_to(
+        t, t->scr.grid->cur.row - params[0], t->scr.grid->cur.col);
 }
 
 static void runes_parser_handle_cud(RunesTerm *t, char *buf, size_t len)
@@ -365,7 +367,8 @@ static void runes_parser_handle_cud(RunesTerm *t, char *buf, size_t len)
     int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    runes_screen_move_to(t, t->scr.cur.row + params[0], t->scr.cur.col);
+    runes_screen_move_to(
+        t, t->scr.grid->cur.row + params[0], t->scr.grid->cur.col);
 }
 
 static void runes_parser_handle_cuf(RunesTerm *t, char *buf, size_t len)
@@ -373,7 +376,8 @@ static void runes_parser_handle_cuf(RunesTerm *t, char *buf, size_t len)
     int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    runes_screen_move_to(t, t->scr.cur.row, t->scr.cur.col + params[0]);
+    runes_screen_move_to(
+        t, t->scr.grid->cur.row, t->scr.grid->cur.col + params[0]);
 }
 
 static void runes_parser_handle_cub(RunesTerm *t, char *buf, size_t len)
@@ -381,7 +385,8 @@ static void runes_parser_handle_cub(RunesTerm *t, char *buf, size_t len)
     int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 1 }, nparams;
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    runes_screen_move_to(t, t->scr.cur.row, t->scr.cur.col - params[0]);
+    runes_screen_move_to(
+        t, t->scr.grid->cur.row, t->scr.grid->cur.col - params[0]);
 }
 
 static void runes_parser_handle_cup(RunesTerm *t, char *buf, size_t len)
@@ -446,7 +451,7 @@ static void runes_parser_handle_il(RunesTerm *t, char *buf, size_t len)
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     runes_screen_insert_lines(t, params[0]);
-    runes_screen_move_to(t, t->scr.cur.row, 0);
+    runes_screen_move_to(t, t->scr.grid->cur.row, 0);
 }
 
 static void runes_parser_handle_dl(RunesTerm *t, char *buf, size_t len)
@@ -455,7 +460,7 @@ static void runes_parser_handle_dl(RunesTerm *t, char *buf, size_t len)
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
     runes_screen_delete_lines(t, params[0]);
-    runes_screen_move_to(t, t->scr.cur.row, 0);
+    runes_screen_move_to(t, t->scr.grid->cur.row, 0);
 }
 
 static void runes_parser_handle_dch(RunesTerm *t, char *buf, size_t len)
@@ -727,7 +732,7 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
 static void runes_parser_handle_csr(RunesTerm *t, char *buf, size_t len)
 {
     int params[RUNES_PARSER_CSI_MAX_PARAMS] = {
-        1, t->scr.max.row, 1, t->scr.max.col };
+        1, t->scr.grid->max.row, 1, t->scr.grid->max.col };
     int nparams;
 
     runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);

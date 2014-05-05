@@ -57,27 +57,31 @@ struct runes_row {
     unsigned char wrapped: 1;
 };
 
-struct runes_screen {
+struct runes_grid {
     struct runes_loc cur;
     struct runes_loc max;
-    struct runes_loc alternate_max;
     struct runes_loc saved;
 
     int scroll_top;
     int scroll_bottom;
+
+    int row_count;
+    int row_capacity;
+    int row_top;
+
+    struct runes_row *rows;
+};
+
+struct runes_screen {
+    struct runes_grid *grid;
+    struct runes_grid *alternate;
 
     char *title;
     size_t title_len;
     char *icon_name;
     size_t icon_name_len;
 
-    int row_count;
-    int row_capacity;
-    int row_top;
     int row_visible_offset;
-
-    struct runes_row *rows;
-    struct runes_row *alternate;
 
     struct runes_cell_attrs attrs;
 
