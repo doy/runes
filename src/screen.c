@@ -810,13 +810,35 @@ static void runes_screen_scroll_down(RunesTerm *t, int count)
         }
     }
     else {
-        runes_screen_ensure_capacity(t, scr->grid->row_count + count);
-        for (i = 0; i < count; ++i) {
-            row = runes_screen_row_at(t, i + scr->grid->max.row);
-            row->cells = calloc(scr->grid->max.col, sizeof(struct runes_cell));
+        int scrollback = t->config.scrollback_length;
+
+        if (scr->grid->row_count + count > scrollback) {
+            int overflow = scr->grid->row_count + count - scrollback;
+
+            runes_screen_ensure_capacity(t, scrollback);
+            for (i = 0; i < overflow; ++i) {
+                free(scr->grid->rows[i].cells);
+            }
+            memmove(
+                &scr->grid->rows[0], &scr->grid->rows[overflow],
+                (scrollback - overflow) * sizeof(struct runes_row));
+            for (i = scrollback - count; i < scrollback; ++i) {
+                scr->grid->rows[i].cells = calloc(
+                    scr->grid->max.col, sizeof(struct runes_cell));
+            }
+            scr->grid->row_count = scrollback;
+            scr->grid->row_top = scrollback - scr->grid->max.row;
         }
-        scr->grid->row_count += count;
-        scr->grid->row_top += count;
+        else {
+            runes_screen_ensure_capacity(t, scr->grid->row_count + count);
+            for (i = 0; i < count; ++i) {
+                row = runes_screen_row_at(t, i + scr->grid->max.row);
+                row->cells = calloc(
+                    scr->grid->max.col, sizeof(struct runes_cell));
+            }
+            scr->grid->row_count += count;
+            scr->grid->row_top += count;
+        }
     }
 }
 
