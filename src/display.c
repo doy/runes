@@ -84,17 +84,18 @@ void runes_display_set_window_size(RunesTerm *t)
 
 void runes_display_draw_screen(RunesTerm *t)
 {
-    int r;
+    int r, rows;
 
     if (!t->scr.dirty) {
         return;
     }
 
     /* XXX quite inefficient */
-    for (r = 0; r < t->scr.grid->max.row; ++r) {
-        int c = 0;
+    rows = t->scr.grid->max.row;
+    for (r = 0; r < rows; ++r) {
+        int c = 0, cols = t->scr.grid->max.col;
 
-        while (c < t->scr.grid->max.col) {
+        while (c < cols) {
             c += runes_display_draw_cell(t, r, c);
         }
     }
