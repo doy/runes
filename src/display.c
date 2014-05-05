@@ -121,7 +121,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
                 cr,
                 col * t->fontx + 0.5,
                 (row + t->scr.row_visible_offset) * t->fonty + 0.5,
-                t->fontx, t->fonty);
+                t->fontx - 1, t->fonty - 1);
             cairo_stroke(cr);
         }
         else {
