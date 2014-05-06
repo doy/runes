@@ -101,7 +101,6 @@ void runes_display_draw_screen(RunesTerm *t)
             c += runes_display_draw_cell(t, r, c);
         }
     }
-    runes_window_backend_request_flush(t);
 
     t->scr.dirty = 0;
 }
