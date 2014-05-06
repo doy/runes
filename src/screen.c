@@ -118,23 +118,24 @@ void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len)
 {
     RunesScreen *scr = &t->scr;
     size_t i;
+    int col = scr->grid->cur.col;
 
     for (i = 0; i < len; ++i) {
         struct runes_cell *cell;
 
-        if (scr->grid->cur.col >= scr->grid->max.col) {
+        if (col >= scr->grid->max.col) {
             runes_screen_row_at(t, scr->grid->cur.row)->wrapped = 1;
             runes_screen_move_to(t, scr->grid->cur.row + 1, 0);
+            col = 0;
         }
-        cell = runes_screen_cell_at(t, scr->grid->cur.row, scr->grid->cur.col);
+        cell = runes_screen_cell_at(t, scr->grid->cur.row, col++);
 
         cell->len = 1;
         cell->contents[0] = buf[i];
         cell->attrs = scr->attrs;
         cell->is_wide = 0;
-
-        runes_screen_move_to(t, scr->grid->cur.row, scr->grid->cur.col + 1);
     }
+    runes_screen_move_to(t, scr->grid->cur.row, col);
 
     scr->dirty = 1;
 }
@@ -143,6 +144,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
 {
     RunesScreen *scr = &t->scr;
     char *c = buf, *next;
+    int col = scr->grid->cur.col;
 
     /* XXX need to detect combining characters and append them to the previous
      * cell */
@@ -161,9 +163,9 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
                     || ctype == G_UNICODE_NON_SPACING_MARK;
 
         if (is_combining) {
-            if (scr->grid->cur.col > 0) {
+            if (col > 0) {
                 cell = runes_screen_cell_at(
-                    t, scr->grid->cur.row, scr->grid->cur.col - 1);
+                    t, scr->grid->cur.row, col - 1);
             }
             else if (scr->grid->cur.row > 0 && runes_screen_row_at(t, scr->grid->cur.row - 1)->wrapped) {
                 cell = runes_screen_cell_at(
@@ -186,20 +188,19 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
             }
         }
         else {
-            if (scr->grid->cur.col + (is_wide ? 2 : 1) > scr->grid->max.col) {
+            if (col + (is_wide ? 2 : 1) > scr->grid->max.col) {
                 runes_screen_row_at(t, scr->grid->cur.row)->wrapped = 1;
                 runes_screen_move_to(t, scr->grid->cur.row + 1, 0);
+                col = 0;
             }
-            cell = runes_screen_cell_at(
-                t, scr->grid->cur.row, scr->grid->cur.col);
+            cell = runes_screen_cell_at(t, scr->grid->cur.row, col);
             cell->is_wide = is_wide;
 
             cell->len = next - c;
             memcpy(cell->contents, c, cell->len);
             cell->attrs = scr->attrs;
 
-            runes_screen_move_to(
-                t, scr->grid->cur.row, scr->grid->cur.col + (is_wide ? 2 : 1));
+            col += is_wide ? 2 : 1;
         }
 
         c = next;
@@ -207,6 +208,7 @@ void runes_screen_show_string_utf8(RunesTerm *t, char *buf, size_t len)
             break;
         }
     }
+    runes_screen_move_to(t, scr->grid->cur.row, col);
 
     scr->dirty = 1;
 }
