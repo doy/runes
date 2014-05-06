@@ -72,6 +72,12 @@ struct runes_grid {
     struct runes_row *rows;
 };
 
+/* XXX including parser.h in a place which would be visible here breaks things,
+ * so we copy these defintions over here */
+typedef void* yyscan_t;
+struct yy_buffer_state;
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+
 struct runes_screen {
     struct runes_grid *grid;
     struct runes_grid *alternate;
@@ -82,6 +88,9 @@ struct runes_screen {
     size_t icon_name_len;
 
     struct runes_cell_attrs attrs;
+
+    yyscan_t scanner;
+    YY_BUFFER_STATE state;
 
     unsigned char hide_cursor: 1;
     unsigned char application_keypad: 1;

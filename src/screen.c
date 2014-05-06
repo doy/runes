@@ -16,6 +16,7 @@ void runes_screen_init(RunesTerm *t)
     RunesScreen *scr = &t->scr;
 
     scr->grid = calloc(1, sizeof(struct runes_grid));
+    runes_parser_yylex_init_extra(t, &scr->scanner);
 }
 
 void runes_screen_set_window_size(RunesTerm *t)
@@ -80,21 +81,18 @@ void runes_screen_set_window_size(RunesTerm *t)
 
 void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
 {
-    YY_BUFFER_STATE state;
-    yyscan_t scanner;
+    RunesScreen *scr = &t->scr;
     int remaining;
 
-    runes_parser_yylex_init_extra(t, &scanner);
-    state = runes_parser_yy_scan_bytes(buf, len, scanner);
-    remaining = runes_parser_yylex(scanner);
+    scr->state = runes_parser_yy_scan_bytes(buf, len, scr->scanner);
+    remaining = runes_parser_yylex(scr->scanner);
     t->pty.remaininglen = remaining;
     if (t->pty.remaininglen) {
         memmove(
             t->pty.readbuf, &buf[len - t->pty.remaininglen],
             t->pty.remaininglen);
     }
-    runes_parser_yy_delete_buffer(state, scanner);
-    runes_parser_yylex_destroy(scanner);
+    runes_parser_yy_delete_buffer(scr->state, scr->scanner);
 }
 
 void runes_screen_audible_bell(RunesTerm *t)
@@ -737,6 +735,8 @@ void runes_screen_cleanup(RunesTerm *t)
 
     free(scr->title);
     free(scr->icon_name);
+
+    runes_parser_yylex_destroy(scr->scanner);
 }
 
 static void runes_screen_ensure_capacity(RunesTerm *t, int size)
