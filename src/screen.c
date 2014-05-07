@@ -55,10 +55,10 @@ void runes_screen_set_window_size(RunesTerm *t)
         scr->grid->rows[i].cells = realloc(
             scr->grid->rows[i].cells,
             scr->grid->max.col * sizeof(struct runes_cell));
-        if (old_size.col > scr->grid->max.col) {
+        if (old_size.col < scr->grid->max.col) {
             memset(
-                &scr->grid->rows[i].cells[scr->grid->max.col], 0,
-                (old_size.col - scr->grid->max.col) * sizeof(struct runes_cell));
+                &scr->grid->rows[i].cells[old_size.col], 0,
+                (scr->grid->max.col - old_size.col) * sizeof(struct runes_cell));
         }
     }
 
