@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -390,7 +389,7 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
         kend = kbegin + strcspn(kbegin, " \t=");
         vbegin = kend + strspn(kend, " \t");
         if (*vbegin != '=') {
-            fprintf(stderr, "couldn't parse line: '%s'\n", line);
+            runes_warn("couldn't parse line: '%s'\n", line);
         }
         vbegin++;
         vbegin = vbegin + strspn(vbegin, " \t");
@@ -414,12 +413,11 @@ static void runes_config_process_args(RunesTerm *t, int argc, char *argv[])
                 i++;
             }
             else {
-                fprintf(
-                    stderr, "option found with no argument: '%s'\n", argv[i]);
+                runes_warn("option found with no argument: '%s'\n", argv[i]);
             }
         }
         else {
-            fprintf(stderr, "unknown argument: '%s'\n", argv[i]);
+            runes_warn("unknown argument: '%s'\n", argv[i]);
         }
     }
 }
@@ -482,7 +480,7 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
 
         i = atoi(&key[5]);
         if (key[5] < '0' || key[5] > '9' || i < 0 || i > 255) {
-            fprintf(stderr, "unknown option: '%s'\n", key);
+            runes_warn("unknown option: '%s'\n", key);
             return;
         }
         newcolor = runes_config_parse_color(val);
@@ -507,7 +505,7 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
         config->cmd = runes_config_parse_string(val);
     }
     else {
-        fprintf(stderr, "unknown option: '%s'\n", key);
+        runes_warn("unknown option: '%s'\n", key);
     }
 }
 
@@ -520,7 +518,7 @@ static char runes_config_parse_bool(char *val)
         return 0;
     }
     else {
-        fprintf(stderr, "unknown boolean value: '%s'\n", val);
+        runes_warn("unknown boolean value: '%s'\n", val);
         return 0;
     }
 }
@@ -528,7 +526,7 @@ static char runes_config_parse_bool(char *val)
 static int runes_config_parse_uint(char *val)
 {
     if (strspn(val, "0123456789") != strlen(val)) {
-        fprintf(stderr, "unknown unsigned integer value: '%s'\n", val);
+        runes_warn("unknown unsigned integer value: '%s'\n", val);
     }
 
     return atoi(val);
@@ -544,7 +542,7 @@ static cairo_pattern_t *runes_config_parse_color(char *val)
     int r, g, b;
 
     if (strlen(val) != 7 || sscanf(val, "#%2x%2x%2x", &r, &g, &b) != 3) {
-        fprintf(stderr, "unknown color value: '%s'\n", val);
+        runes_warn("unknown color value: '%s'\n", val);
         return NULL;
     }
 

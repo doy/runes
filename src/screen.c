@@ -446,7 +446,7 @@ void runes_screen_set_scroll_region(
     RunesScreen *scr = &t->scr;
 
     if (left > 0 || right < scr->grid->max.col - 1) {
-        fprintf(stderr, "vertical scroll regions not yet implemented\n");
+        runes_warn("vertical scroll regions not yet implemented\n");
     }
 
     if (top > bottom) {

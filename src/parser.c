@@ -1187,8 +1187,8 @@ case 49:
 YY_RULE_SETUP
 #line 182 "src/parser.l"
 {
-    fprintf(
-        stderr, "unhandled CSI sequence: \\033%*s\\%hho\n",
+    runes_warn(
+        "unhandled CSI sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
 }
 	YY_BREAK
@@ -1196,8 +1196,8 @@ case 50:
 YY_RULE_SETUP
 #line 188 "src/parser.l"
 {
-    fprintf(
-        stderr, "unhandled CSI sequence: \\033%*s\n",
+    runes_warn(
+        "unhandled CSI sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
 }
 	YY_BREAK
@@ -1206,8 +1206,8 @@ case 51:
 YY_RULE_SETUP
 #line 194 "src/parser.l"
 {
-    fprintf(
-        stderr, "unhandled OSC sequence: \\033%*s\\%hho\n",
+    runes_warn(
+        "unhandled OSC sequence: \\033%*s\\%hho\n",
         (int)yyleng - 2, yytext + 1, yytext[yyleng - 1]);
 }
 	YY_BREAK
@@ -1215,8 +1215,8 @@ case 52:
 YY_RULE_SETUP
 #line 200 "src/parser.l"
 {
-    fprintf(
-        stderr, "unhandled OSC sequence: \\033%*s\n",
+    runes_warn(
+        "unhandled OSC sequence: \\033%*s\n",
         (int)yyleng - 1, yytext + 1);
 }
 	YY_BREAK
@@ -1225,15 +1225,15 @@ case 53:
 YY_RULE_SETUP
 #line 206 "src/parser.l"
 {
-    fprintf(stderr, "unhandled escape sequence: \\%hho\n", yytext[1]);
+    runes_warn("unhandled escape sequence: \\%hho\n", yytext[1]);
 }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
 #line 210 "src/parser.l"
 {
-    fprintf(
-        stderr, "unhandled escape sequence: %*s\n",
+    runes_warn(
+        "unhandled escape sequence: %*s\n",
         (int)yyleng - 1, yytext + 1);
 }
 	YY_BREAK
@@ -1242,14 +1242,14 @@ case 55:
 YY_RULE_SETUP
 #line 216 "src/parser.l"
 {
-    fprintf(stderr, "unhandled control character: \\%hho\n", yytext[0]);
+    runes_warn("unhandled control character: \\%hho\n", yytext[0]);
 }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
 #line 220 "src/parser.l"
 {
-    fprintf(stderr, "invalid utf8 byte: \\%hho\n", yytext[0]);
+    runes_warn("invalid utf8 byte: \\%hho\n", yytext[0]);
 }
 	YY_BREAK
 case 57:
@@ -2450,7 +2450,7 @@ static void runes_parser_extract_sm_params(
     *nparams = 0;
     while ((size_t)(pos - buf) < len) {
         if (*nparams >= RUNES_PARSER_CSI_MAX_PARAMS) {
-            fprintf(stderr, "max CSI parameter length exceeded\n");
+            runes_warn("max CSI parameter length exceeded\n");
             break;
         }
 
@@ -2549,7 +2549,7 @@ static void runes_parser_handle_ed(RunesTerm *t, char *buf, size_t len)
         runes_screen_clear_screen(t);
         break;
     default:
-        fprintf(stderr, "unknown ED parameter %d\n", params[0]);
+        runes_warn("unknown ED parameter %d\n", params[0]);
         break;
     }
 }
@@ -2570,7 +2570,7 @@ static void runes_parser_handle_el(RunesTerm *t, char *buf, size_t len)
         runes_screen_kill_line(t);
         break;
     default:
-        fprintf(stderr, "unknown EL parameter %d\n", params[0]);
+        runes_warn("unknown EL parameter %d\n", params[0]);
         break;
     }
 }
@@ -2615,9 +2615,7 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
                     /* do nothing, no idea what this is even for */
                     break;
                 default:
-                    fprintf(
-                        stderr, "unknown SM parameter: %d\n",
-                        params[i]);
+                    runes_warn("unknown SM parameter: %d\n", params[i]);
                     break;
             }
             break;
@@ -2640,16 +2638,13 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
                 runes_screen_use_alternate_buffer(t);
                 break;
             default:
-                fprintf(
-                    stderr, "unknown SM parameter: %c%d\n",
-                    modes[i], params[i]);
+                runes_warn(
+                    "unknown SM parameter: %c%d\n", modes[i], params[i]);
                 break;
             }
             break;
         default:
-            fprintf(
-                stderr, "unknown SM parameter: %c%d\n",
-                modes[i], params[i]);
+            runes_warn("unknown SM parameter: %c%d\n", modes[i], params[i]);
             break;
         }
     }
@@ -2669,9 +2664,7 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
                     /* do nothing, no idea what this is even for */
                     break;
                 default:
-                    fprintf(
-                        stderr, "unknown RM parameter: %d\n",
-                        params[i]);
+                    runes_warn("unknown RM parameter: %d\n", params[i]);
                     break;
             }
             break;
@@ -2694,16 +2687,13 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
                 runes_screen_use_normal_buffer(t);
                 break;
             default:
-                fprintf(
-                    stderr, "unknown RM parameter: %c%d\n",
-                    modes[i], params[i]);
+                runes_warn(
+                    "unknown RM parameter: %c%d\n", modes[i], params[i]);
                 break;
             }
             break;
         default:
-            fprintf(
-                stderr, "unknown RM parameter: %c%d\n",
-                modes[i], params[i]);
+            runes_warn("unknown RM parameter: %c%d\n", modes[i], params[i]);
             break;
         }
     }
@@ -2753,8 +2743,8 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
         case 38: {
             i++;
             if (i >= nparams) {
-                fprintf(
-                    stderr, "unknown SGR parameter: %d (too few parameters)\n",
+                runes_warn(
+                    "unknown SGR parameter: %d (too few parameters)\n",
                     params[i - 1]);
                 break;
             }
@@ -2763,8 +2753,7 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             case 2:
                 i += 3;
                 if (i >= nparams) {
-                    fprintf(
-                        stderr,
+                    runes_warn(
                         "unknown SGR parameter: %d;%d (too few parameters)\n",
                         params[i - 4], params[i - 3]);
                     break;
@@ -2775,8 +2764,7 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             case 5:
                 i++;
                 if (i >= nparams) {
-                    fprintf(
-                        stderr,
+                    runes_warn(
                         "unknown SGR parameter: %d;%d (too few parameters)\n",
                         params[i - 2], params[i - 1]);
                     break;
@@ -2785,8 +2773,8 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
                 break;
             default:
                 i++;
-                fprintf(
-                    stderr, "unknown SGR parameter: %d;%d\n",
+                runes_warn(
+                    "unknown SGR parameter: %d;%d\n",
                     params[i - 2], params[i - 1]);
                 break;
             }
@@ -2802,8 +2790,8 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
         case 48: {
             i++;
             if (i >= nparams) {
-                fprintf(
-                    stderr, "unknown SGR parameter: %d (too few parameters)\n",
+                runes_warn(
+                    "unknown SGR parameter: %d (too few parameters)\n",
                     params[i - 1]);
                 break;
             }
@@ -2812,8 +2800,7 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             case 2:
                 i += 3;
                 if (i >= nparams) {
-                    fprintf(
-                        stderr,
+                    runes_warn(
                         "unknown SGR parameter: %d;%d (too few parameters)\n",
                         params[i - 4], params[i - 3]);
                     break;
@@ -2824,8 +2811,7 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             case 5:
                 i++;
                 if (i >= nparams) {
-                    fprintf(
-                        stderr,
+                    runes_warn(
                         "unknown SGR parameter: %d;%d (too few parameters)\n",
                         params[i - 2], params[i - 1]);
                     break;
@@ -2834,8 +2820,8 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
                 break;
             default:
                 i++;
-                fprintf(
-                    stderr, "unknown SGR parameter: %d;%d\n",
+                runes_warn(
+                    "unknown SGR parameter: %d;%d\n",
                     params[i - 2], params[i - 1]);
                 break;
             }
@@ -2853,7 +2839,7 @@ static void runes_parser_handle_sgr(RunesTerm *t, char *buf, size_t len)
             runes_screen_set_bg_color(t, params[i] - 92);
             break;
         default:
-            fprintf(stderr, "unknown SGR parameter: %d\n", params[i]);
+            runes_warn("unknown SGR parameter: %d\n", params[i]);
             break;
         }
     }
@@ -2883,14 +2869,14 @@ static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len)
         break;
     case 1:
         /* XXX */
-        fprintf(stderr, "unhandled DECSED parameter 1\n");
+        runes_warn("unhandled DECSED parameter 1\n");
         break;
     case 2:
         /* XXX not quite correct */
         runes_screen_clear_screen(t);
         break;
     default:
-        fprintf(stderr, "unknown DECSED parameter %d\n", params[0]);
+        runes_warn("unknown DECSED parameter %d\n", params[0]);
         break;
     }
 }
@@ -2907,14 +2893,14 @@ static void runes_parser_handle_decsel(RunesTerm *t, char *buf, size_t len)
         break;
     case 1:
         /* XXX */
-        fprintf(stderr, "unhandled DECSEL parameter 1\n");
+        runes_warn("unhandled DECSEL parameter 1\n");
         break;
     case 2:
         /* XXX */
-        fprintf(stderr, "unhandled DECSEL parameter 2\n");
+        runes_warn("unhandled DECSEL parameter 2\n");
         break;
     default:
-        fprintf(stderr, "unknown DECSEL parameter %d\n", params[0]);
+        runes_warn("unknown DECSEL parameter %d\n", params[0]);
         break;
     }
 }

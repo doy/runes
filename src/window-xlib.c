@@ -1,5 +1,4 @@
 #include <cairo-xlib.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <X11/cursorfont.h>
@@ -167,7 +166,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
         NULL
     );
     if (w->ic == NULL) {
-        fprintf(stderr, "failed\n");
+        runes_warn("failed\n");
         exit(1);
     }
 

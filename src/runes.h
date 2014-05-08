@@ -28,6 +28,8 @@ struct runes_loop_data {
     RunesTerm *t;
 };
 
+#include "util.h"
+
 #include "window-xlib.h"
 #include "pty-unix.h"
 
