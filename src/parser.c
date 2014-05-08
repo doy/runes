@@ -2859,50 +2859,16 @@ static void runes_parser_handle_csr(RunesTerm *t, char *buf, size_t len)
 
 static void runes_parser_handle_decsed(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams;
-
-    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    switch (params[0]) {
-    case 0:
-        /* XXX not quite correct */
-        runes_screen_clear_screen_forward(t);
-        break;
-    case 1:
-        /* XXX */
-        runes_warn("unhandled DECSED parameter 1\n");
-        break;
-    case 2:
-        /* XXX not quite correct */
-        runes_screen_clear_screen(t);
-        break;
-    default:
-        runes_warn("unknown DECSED parameter %d\n", params[0]);
-        break;
-    }
+    /* XXX not quite correct, but i don't think programs really use anything
+     * that would show a difference */
+    runes_parser_handle_ed(t, buf, len);
 }
 
 static void runes_parser_handle_decsel(RunesTerm *t, char *buf, size_t len)
 {
-    int params[RUNES_PARSER_CSI_MAX_PARAMS] = { 0 }, nparams;
-
-    runes_parser_extract_csi_params(buf + 2, len - 3, params, &nparams);
-    switch (params[0]) {
-    case 0:
-        /* XXX not quite correct */
-        runes_screen_kill_line_forward(t);
-        break;
-    case 1:
-        /* XXX */
-        runes_warn("unhandled DECSEL parameter 1\n");
-        break;
-    case 2:
-        /* XXX */
-        runes_warn("unhandled DECSEL parameter 2\n");
-        break;
-    default:
-        runes_warn("unknown DECSEL parameter %d\n", params[0]);
-        break;
-    }
+    /* XXX not quite correct, but i don't think programs really use anything
+     * that would show a difference */
+    runes_parser_handle_el(t, buf, len);
 }
 
 static void runes_parser_handle_osc0(RunesTerm *t, char *buf, size_t len)
