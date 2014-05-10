@@ -62,6 +62,9 @@ struct runes_grid {
     struct runes_loc max;
     struct runes_loc saved;
 
+    struct runes_loc selection_start;
+    struct runes_loc selection_end;
+
     int scroll_top;
     int scroll_bottom;
 

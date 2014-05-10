@@ -99,6 +99,10 @@ static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e);
 static int runes_window_backend_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e);
+static void runes_window_backend_start_selection(
+    RunesTerm *t, int xpixel, int ypixel);
+static void runes_window_backend_stop_selection(
+    RunesTerm *t, int xpixel, int ypixel);
 static struct runes_loc runes_window_backend_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_backend_handle_expose_event(
@@ -790,27 +794,56 @@ static int runes_window_backend_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e)
 {
     if (e->type == ButtonRelease) {
-        return 0;
+        switch (e->button) {
+        case Button1:
+            runes_window_backend_stop_selection(t, e->x, e->y);
+            return 1;
+            break;
+        default:
+            break;
+        }
     }
-
-    switch (e->button) {
-    case Button2:
-        runes_window_backend_paste(t, e->time);
-        return 1;
-        break;
-    case Button4:
-        runes_window_backend_visible_scroll(t, t->config.scroll_lines);
-        return 1;
-        break;
-    case Button5:
-        runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
-        return 1;
-        break;
-    default:
-        break;
+    else {
+        switch (e->button) {
+        case Button1:
+            runes_window_backend_start_selection(t, e->x, e->y);
+            return 1;
+            break;
+        case Button2:
+            runes_window_backend_paste(t, e->time);
+            return 1;
+            break;
+        case Button4:
+            runes_window_backend_visible_scroll(t, t->config.scroll_lines);
+            return 1;
+            break;
+        case Button5:
+            runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
+            return 1;
+            break;
+        default:
+            break;
+        }
     }
 
     return 0;
+}
+
+static void runes_window_backend_start_selection(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    t->scr.grid->selection_start = runes_window_backend_get_mouse_position(
+        t, xpixel, ypixel);
+    t->scr.grid->selection_end = t->scr.grid->selection_start;
+    runes_warn("started selection at (%d, %d)\n", t->scr.grid->selection_start.row, t->scr.grid->selection_start.col);
+}
+
+static void runes_window_backend_stop_selection(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    t->scr.grid->selection_end = runes_window_backend_get_mouse_position(
+        t, xpixel, ypixel);
+    runes_warn("stopped selection at (%d, %d)\n", t->scr.grid->selection_end.row, t->scr.grid->selection_end.col);
 }
 
 static struct runes_loc runes_window_backend_get_mouse_position(
