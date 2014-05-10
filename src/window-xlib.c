@@ -99,6 +99,8 @@ static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e);
 static int runes_window_backend_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e);
+static struct runes_loc runes_window_backend_get_mouse_position(
+    RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_backend_handle_expose_event(
     RunesTerm *t, XExposeEvent *e);
 static void runes_window_backend_handle_configure_event(
@@ -724,6 +726,7 @@ static void runes_window_backend_handle_button_event(
     if (t->scr.mouse_reporting_press_release) {
         char response[7];
         char status = 0;
+        struct runes_loc loc;
 
         if (e->type == ButtonRelease && e->button > 3) {
             return;
@@ -762,21 +765,20 @@ static void runes_window_backend_handle_button_event(
             status |= 16;
         }
 
+        loc = runes_window_backend_get_mouse_position(t, e->x, e->y);
         sprintf(
             response, "\e[M%c%c%c",
-            ' ' + (status),
-            ' ' + (e->x / t->display.fontx + 1),
-            ' ' + (e->y / t->display.fonty + 1));
+            ' ' + (status), ' ' + loc.col + 1, ' ' + loc.row + 1);
         runes_pty_backend_write(t, response, 6);
     }
     else if (t->scr.mouse_reporting_press && e->type == ButtonPress) {
         char response[7];
+        struct runes_loc loc;
 
+        loc = runes_window_backend_get_mouse_position(t, e->x, e->y);
         sprintf(
             response, "\e[M%c%c%c",
-            ' ' + (e->button - 1),
-            ' ' + (e->x / t->display.fontx + 1),
-            ' ' + (e->y / t->display.fonty + 1));
+            ' ' + (e->button - 1), ' ' + loc.col + 1, ' ' + loc.row + 1);
         runes_pty_backend_write(t, response, 6);
     }
     else {
@@ -809,6 +811,26 @@ static int runes_window_backend_handle_builtin_button_press(
     }
 
     return 0;
+}
+
+static struct runes_loc runes_window_backend_get_mouse_position(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    struct runes_loc ret;
+
+    ret.row = ypixel / t->display.fonty;
+    ret.col = xpixel / t->display.fontx;
+
+    ret.row = ret.row < 0                        ? 0
+            : ret.row > t->scr.grid->max.row - 1 ? t->scr.grid->max.row - 1
+            :                                      ret.row;
+    ret.col = ret.col < 0                    ? 0
+            : ret.col > t->scr.grid->max.col ? t->scr.grid->max.col
+            :                                  ret.col;
+
+    ret.row = ret.row - t->display.row_visible_offset + t->scr.grid->row_count - t->scr.grid->max.row;
+
+    return ret;
 }
 
 static void runes_window_backend_handle_expose_event(
