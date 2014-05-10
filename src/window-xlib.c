@@ -798,9 +798,11 @@ static int runes_window_backend_handle_builtin_button_press(
         break;
     case Button4:
         runes_window_backend_visible_scroll(t, t->config.scroll_lines);
+        return 1;
         break;
     case Button5:
         runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
+        return 1;
         break;
     default:
         break;
