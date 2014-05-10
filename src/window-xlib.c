@@ -232,7 +232,7 @@ void runes_window_backend_start_loop(RunesTerm *t)
      * the only thing we care about exposure events for */
     XSelectInput(
         w->dpy, w->w,
-        xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask|ExposureMask);
+        xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|PointerMotionHintMask|ExposureMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
