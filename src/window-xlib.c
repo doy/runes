@@ -102,7 +102,7 @@ static int runes_window_backend_handle_builtin_button_press(
 static void runes_window_backend_start_selection(
     RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_backend_stop_selection(
-    RunesTerm *t, int xpixel, int ypixel);
+    RunesTerm *t, int xpixel, int ypixel, Time time);
 static struct runes_loc runes_window_backend_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_backend_handle_expose_event(
@@ -113,6 +113,10 @@ static void runes_window_backend_handle_focus_event(
     RunesTerm *t, XFocusChangeEvent *e);
 static void runes_window_backend_handle_selection_notify_event(
     RunesTerm *t, XSelectionEvent *e);
+static void runes_window_backend_handle_selection_clear_event(
+    RunesTerm *t, XSelectionClearEvent *e);
+static void runes_window_backend_handle_selection_request_event(
+    RunesTerm *t, XSelectionRequestEvent *e);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
@@ -384,6 +388,14 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
         case SelectionNotify:
             runes_window_backend_handle_selection_notify_event(
                 t, &e->xselection);
+            break;
+        case SelectionRequest:
+            runes_window_backend_handle_selection_request_event(
+                t, &e->xselectionrequest);
+            break;
+        case SelectionClear:
+            runes_window_backend_handle_selection_clear_event(
+                t, &e->xselectionclear);
             break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
@@ -796,7 +808,7 @@ static int runes_window_backend_handle_builtin_button_press(
     if (e->type == ButtonRelease) {
         switch (e->button) {
         case Button1:
-            runes_window_backend_stop_selection(t, e->x, e->y);
+            runes_window_backend_stop_selection(t, e->x, e->y, e->time);
             return 1;
             break;
         default:
@@ -835,15 +847,24 @@ static void runes_window_backend_start_selection(
     t->scr.grid->selection_start = runes_window_backend_get_mouse_position(
         t, xpixel, ypixel);
     t->scr.grid->selection_end = t->scr.grid->selection_start;
-    runes_warn("started selection at (%d, %d)\n", t->scr.grid->selection_start.row, t->scr.grid->selection_start.col);
 }
 
 static void runes_window_backend_stop_selection(
-    RunesTerm *t, int xpixel, int ypixel)
+    RunesTerm *t, int xpixel, int ypixel, Time time)
 {
+    RunesWindowBackend *w = &t->w;
+
     t->scr.grid->selection_end = runes_window_backend_get_mouse_position(
         t, xpixel, ypixel);
-    runes_warn("stopped selection at (%d, %d)\n", t->scr.grid->selection_end.row, t->scr.grid->selection_end.col);
+
+    if ((t->scr.grid->selection_start.row == t->scr.grid->selection_end.row) && (t->scr.grid->selection_start.col == t->scr.grid->selection_end.col)) {
+        XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
+        w->has_selection = 0;
+    }
+    else {
+        XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
+        w->has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+    }
 }
 
 static struct runes_loc runes_window_backend_get_mouse_position(
@@ -945,4 +966,50 @@ static void runes_window_backend_handle_selection_notify_event(
         }
         XFree(buf);
     }
+}
+
+static void runes_window_backend_handle_selection_clear_event(
+    RunesTerm *t, XSelectionClearEvent *e)
+{
+    RunesWindowBackend *w = &t->w;
+
+    UNUSED(e);
+
+    w->has_selection = 0;
+}
+
+static void runes_window_backend_handle_selection_request_event(
+    RunesTerm *t, XSelectionRequestEvent *e)
+{
+    RunesWindowBackend *w = &t->w;
+    XSelectionEvent selection;
+
+    selection.type       = SelectionNotify;
+    selection.serial     = e->serial;
+    selection.send_event = e->send_event;
+    selection.display    = e->display;
+    selection.requestor  = e->requestor;
+    selection.selection  = e->selection;
+    selection.target     = e->target;
+    selection.property   = e->property;
+    selection.time       = e->time;
+
+    if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
+        char *contents;
+        size_t len;
+
+        runes_screen_get_string(
+            t, &t->scr.grid->selection_start, &t->scr.grid->selection_end,
+            &contents, &len);
+        XChangeProperty(
+            w->dpy, e->requestor, e->property,
+            e->target, 8, PropModeReplace,
+            (unsigned char *)contents, len);
+        free(contents);
+    }
+    else {
+        selection.property = None;
+    }
+
+    XSendEvent(w->dpy, e->requestor, False, NoEventMask, (XEvent *)&selection);
 }
