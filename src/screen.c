@@ -95,6 +95,48 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
     runes_parser_yy_delete_buffer(scr->state, scr->scanner);
 }
 
+void runes_screen_get_string(
+    RunesTerm *t, struct runes_loc *start, struct runes_loc *end,
+    char **strp, size_t *lenp)
+{
+    int row, col;
+    size_t capacity = 8;
+
+    *lenp = 0;
+
+    if (end->row < start->row || (end->row == start->row && end->col <= start->col)) {
+        return;
+    }
+
+    *strp = malloc(capacity);
+
+    for (row = start->row; row <= end->row; ++row) {
+        int start_col = row == start->row ? start->col : 0;
+        int end_col   = row == end->row   ? end->col   : t->scr.grid->max.col;
+
+        for (col = start_col; col < end_col; ++col) {
+            struct runes_cell *cell;
+
+            cell = runes_screen_cell_at(t, row, col);
+            if (*lenp + cell->len > capacity) {
+                capacity *= 1.5;
+                *strp = realloc(*strp, capacity);
+            }
+            memcpy(*strp + *lenp, cell->contents, cell->len);
+            *lenp += cell->len;
+        }
+
+        if (row != end->row && !runes_screen_row_at(t, row)->wrapped) {
+            if (*lenp + 1 > capacity) {
+                capacity *= 1.5;
+                *strp = realloc(*strp, capacity);
+            }
+            memcpy(*strp + *lenp, "\n", 1);
+            *lenp += 1;
+        }
+    }
+}
+
 void runes_screen_audible_bell(RunesTerm *t)
 {
     RunesScreen *scr = &t->scr;

@@ -113,6 +113,9 @@ struct runes_screen {
 void runes_screen_init(RunesTerm *t);
 void runes_screen_set_window_size(RunesTerm *t);
 void runes_screen_process_string(RunesTerm *t, char *buf, size_t len);
+void runes_screen_get_string(
+    RunesTerm *t, struct runes_loc *start, struct runes_loc *end,
+    char **strp, size_t *lenp);
 void runes_screen_audible_bell(RunesTerm *t);
 void runes_screen_visual_bell(RunesTerm *t);
 void runes_screen_show_string_ascii(RunesTerm *t, char *buf, size_t len);
