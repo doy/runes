@@ -99,6 +99,7 @@ void runes_screen_get_string(
     RunesTerm *t, struct runes_loc *start, struct runes_loc *end,
     char **strp, size_t *lenp)
 {
+    RunesScreen *scr = &t->scr;
     int row, col;
     size_t capacity = 8;
 
@@ -113,11 +114,11 @@ void runes_screen_get_string(
     for (row = start->row; row <= end->row; ++row) {
         int start_col = row == start->row ? start->col : 0;
         int end_col   = row == end->row   ? end->col   : t->scr.grid->max.col;
+        struct runes_row *grid_row = &scr->grid->rows[row];
 
         for (col = start_col; col < end_col; ++col) {
-            struct runes_cell *cell;
+            struct runes_cell *cell = &grid_row->cells[col];
 
-            cell = runes_screen_cell_at(t, row, col);
             if (*lenp + cell->len > capacity) {
                 capacity *= 1.5;
                 *strp = realloc(*strp, capacity);
@@ -126,7 +127,7 @@ void runes_screen_get_string(
             *lenp += cell->len;
         }
 
-        if (row != end->row && !runes_screen_row_at(t, row)->wrapped) {
+        if (row != end->row && !grid_row->wrapped) {
             if (*lenp + 1 > capacity) {
                 capacity *= 1.5;
                 *strp = realloc(*strp, capacity);
