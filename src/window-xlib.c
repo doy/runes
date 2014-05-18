@@ -845,20 +845,23 @@ static int runes_window_backend_handle_builtin_button_press(
 static void runes_window_backend_start_selection(
     RunesTerm *t, int xpixel, int ypixel)
 {
-    t->scr.grid->selection_start = runes_window_backend_get_mouse_position(
-        t, xpixel, ypixel);
-    t->scr.grid->selection_end = t->scr.grid->selection_start;
+    struct runes_loc *start = &t->scr.grid->selection_start;
+    struct runes_loc *end   = &t->scr.grid->selection_end;
+
+    *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
+    *end   = *start;
 }
 
 static void runes_window_backend_stop_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time)
 {
     RunesWindowBackend *w = &t->w;
+    struct runes_loc *start = &t->scr.grid->selection_start;
+    struct runes_loc *end   = &t->scr.grid->selection_end;
 
-    t->scr.grid->selection_end = runes_window_backend_get_mouse_position(
-        t, xpixel, ypixel);
+    *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
 
-    if ((t->scr.grid->selection_start.row == t->scr.grid->selection_end.row) && (t->scr.grid->selection_start.col == t->scr.grid->selection_end.col)) {
+    if (start->row == end->row && start->col == end->col) {
         XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
         w->has_selection = 0;
     }
