@@ -861,6 +861,14 @@ static void runes_window_backend_stop_selection(
 
     *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
 
+    if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
+        struct runes_loc tmp;
+
+        tmp = *start;
+        *start = *end;
+        *end = tmp;
+    }
+
     if (start->row == end->row && start->col == end->col) {
         XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
         w->has_selection = 0;
