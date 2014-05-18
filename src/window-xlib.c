@@ -16,6 +16,7 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "_NET_WM_NAME",
     "UTF8_STRING",
     "WM_PROTOCOLS",
+    "TARGETS",
     "RUNES_FLUSH",
     "RUNES_SELECTION"
 };
@@ -994,7 +995,15 @@ static void runes_window_backend_handle_selection_request_event(
     selection.property   = e->property;
     selection.time       = e->time;
 
-    if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
+    if (e->target == w->atoms[RUNES_ATOM_TARGETS]) {
+        Atom targets[2] = { XA_STRING, w->atoms[RUNES_ATOM_UTF8_STRING] };
+
+        XChangeProperty(
+            w->dpy, e->requestor, e->property,
+            XA_ATOM, 32, PropModeReplace,
+            (unsigned char *)&targets, 2);
+    }
+    else if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
         char *contents;
         size_t len;
 
