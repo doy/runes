@@ -967,6 +967,14 @@ static int runes_screen_loc_is_between(
 {
     UNUSED(t);
 
+    if (end.row < start.row || (end.row == start.row && end.col < start.col)) {
+        struct runes_loc tmp;
+
+        tmp = start;
+        start = end;
+        end = tmp;
+    }
+
     if (loc.row < start.row || loc.row > end.row) {
         return 0;
     }

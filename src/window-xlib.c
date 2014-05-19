@@ -92,12 +92,14 @@ static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
 static void runes_window_backend_paste(RunesTerm *t, Time time);
 static void runes_window_backend_start_selection(
-    RunesTerm *t, int xpixel, int ypixel);
-static void runes_window_backend_stop_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time);
+static void runes_window_backend_update_selection(
+    RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
 static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e);
+static void runes_window_backend_handle_motion_event(
+    RunesTerm *t, XMotionEvent *e);
 static void runes_window_backend_handle_expose_event(
     RunesTerm *t, XExposeEvent *e);
 static void runes_window_backend_handle_configure_event(
@@ -243,7 +245,7 @@ void runes_window_backend_start_loop(RunesTerm *t)
      * the only thing we care about exposure events for */
     XSelectInput(
         w->dpy, w->w,
-        xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|PointerMotionHintMask|ExposureMask);
+        xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask);
     XSetICFocus(w->ic);
 
     data = malloc(sizeof(RunesXlibLoopData));
@@ -375,6 +377,9 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
         case ButtonPress:
         case ButtonRelease:
             runes_window_backend_handle_button_event(t, &e->xbutton);
+            break;
+        case MotionNotify:
+            runes_window_backend_handle_motion_event(t, &e->xmotion);
             break;
         case Expose:
             runes_window_backend_handle_expose_event(t, &e->xexpose);
@@ -618,42 +623,34 @@ static void runes_window_backend_paste(RunesTerm *t, Time time)
 }
 
 static void runes_window_backend_start_selection(
-    RunesTerm *t, int xpixel, int ypixel)
-{
-    struct runes_loc *start = &t->scr.grid->selection_start;
-    struct runes_loc *end   = &t->scr.grid->selection_end;
-
-    *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
-    *end   = *start;
-}
-
-static void runes_window_backend_stop_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time)
 {
     RunesWindowBackend *w = &t->w;
     struct runes_loc *start = &t->scr.grid->selection_start;
     struct runes_loc *end   = &t->scr.grid->selection_end;
 
+    *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
+    *end   = *start;
+
+    XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
+    t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+
+    t->scr.dirty = 1;
+    runes_window_backend_request_flush(t);
+}
+
+static void runes_window_backend_update_selection(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    struct runes_loc *end = &t->scr.grid->selection_end;
+    struct runes_loc orig_end = *end;
+
     *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
 
-    if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
-        struct runes_loc tmp;
-
-        tmp = *start;
-        *start = *end;
-        *end = tmp;
+    if (orig_end.row != end->row || orig_end.col != end->col) {
+        t->scr.dirty = 1;
+        runes_window_backend_request_flush(t);
     }
-
-    if (start->row == end->row && start->col == end->col) {
-        XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
-        t->scr.has_selection = 0;
-    }
-    else {
-        XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
-        t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
-    }
-    t->scr.dirty = 1;
-    runes_window_backend_flush(t);
 }
 
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
@@ -777,6 +774,16 @@ static void runes_window_backend_handle_button_event(
     }
 }
 
+static void runes_window_backend_handle_motion_event(
+    RunesTerm *t, XMotionEvent *e)
+{
+    if (!(e->state & Button1Mask)) {
+        return;
+    }
+
+    runes_window_backend_update_selection(t, e->x, e->y);
+}
+
 static void runes_window_backend_handle_expose_event(
     RunesTerm *t, XExposeEvent *e)
 {
@@ -895,10 +902,18 @@ static void runes_window_backend_handle_selection_request_event(
     else if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
         char *contents;
         size_t len;
+        struct runes_loc *start = &t->scr.grid->selection_start;
+        struct runes_loc *end   = &t->scr.grid->selection_end;
 
-        runes_screen_get_string(
-            t, &t->scr.grid->selection_start, &t->scr.grid->selection_end,
-            &contents, &len);
+        if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
+            struct runes_loc *tmp;
+
+            tmp = start;
+            start = end;
+            end = tmp;
+        }
+
+        runes_screen_get_string(t, start, end, &contents, &len);
         XChangeProperty(
             w->dpy, e->requestor, e->property,
             e->target, 8, PropModeReplace,
@@ -946,20 +961,10 @@ static int runes_window_backend_handle_builtin_keypress(
 static int runes_window_backend_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e)
 {
-    if (e->type == ButtonRelease) {
+    if (e->type != ButtonRelease) {
         switch (e->button) {
         case Button1:
-            runes_window_backend_stop_selection(t, e->x, e->y, e->time);
-            return 1;
-            break;
-        default:
-            break;
-        }
-    }
-    else {
-        switch (e->button) {
-        case Button1:
-            runes_window_backend_start_selection(t, e->x, e->y);
+            runes_window_backend_start_selection(t, e->x, e->y, e->time);
             return 1;
             break;
         case Button2:
