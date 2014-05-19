@@ -877,6 +877,8 @@ static void runes_window_backend_stop_selection(
         XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
         t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
     }
+    t->scr.dirty = 1;
+    runes_window_backend_flush(t);
 }
 
 static struct runes_loc runes_window_backend_get_mouse_position(
@@ -986,6 +988,8 @@ static void runes_window_backend_handle_selection_clear_event(
     UNUSED(e);
 
     t->scr.has_selection = 0;
+    t->scr.dirty = 1;
+    runes_window_backend_flush(t);
 }
 
 static void runes_window_backend_handle_selection_request_event(

@@ -190,9 +190,14 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
     RunesDisplay *display = &t->display;
-    struct runes_cell *cell = &t->scr.grid->rows[row + t->scr.grid->row_top - display->row_visible_offset].cells[col];
+    struct runes_loc loc = {
+        row + t->scr.grid->row_top - display->row_visible_offset, col };
+    struct runes_cell *cell = &t->scr.grid->rows[loc.row].cells[loc.col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
+    int selected;
+
+    selected = runes_screen_loc_is_selected(t, loc);
 
     switch (cell->attrs.bgcolor.type) {
     case RUNES_COLOR_DEFAULT:
@@ -232,7 +237,7 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
         break;
     }
 
-    if (cell->attrs.inverse) {
+    if (cell->attrs.inverse ^ selected) {
         if (cell->attrs.fgcolor.id == cell->attrs.bgcolor.id) {
             fg = t->config.bgdefault;
             bg = t->config.fgdefault;

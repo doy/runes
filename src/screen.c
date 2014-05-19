@@ -10,6 +10,9 @@ static struct runes_cell *runes_screen_cell_at(RunesTerm *t, int row, int col);
 static void runes_screen_scroll_down(RunesTerm *t, int count);
 static void runes_screen_scroll_up(RunesTerm *t, int count);
 static int runes_screen_scroll_region_is_active(RunesTerm *t);
+static int runes_screen_loc_is_between(
+    RunesTerm *t, struct runes_loc loc,
+    struct runes_loc start, struct runes_loc end);
 
 void runes_screen_init(RunesTerm *t)
 {
@@ -93,6 +96,18 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
             t->pty.remaininglen);
     }
     runes_parser_yy_delete_buffer(scr->state, scr->scanner);
+}
+
+int runes_screen_loc_is_selected(RunesTerm *t, struct runes_loc loc)
+{
+    RunesScreen *scr = &t->scr;
+
+    if (!scr->has_selection) {
+        return 0;
+    }
+
+    return runes_screen_loc_is_between(
+        t, loc, scr->grid->selection_start, scr->grid->selection_end);
 }
 
 void runes_screen_get_string(
@@ -944,4 +959,25 @@ static int runes_screen_scroll_region_is_active(RunesTerm *t)
 
     return scr->grid->scroll_top != 0
         || scr->grid->scroll_bottom != scr->grid->max.row - 1;
+}
+
+static int runes_screen_loc_is_between(
+    RunesTerm *t, struct runes_loc loc,
+    struct runes_loc start, struct runes_loc end)
+{
+    UNUSED(t);
+
+    if (loc.row < start.row || loc.row > end.row) {
+        return 0;
+    }
+
+    if (loc.row == start.row && loc.col < start.col) {
+        return 0;
+    }
+
+    if (loc.row == end.row && loc.col >= end.col) {
+        return 0;
+    }
+
+    return 1;
 }
