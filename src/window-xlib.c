@@ -91,21 +91,13 @@ static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
 static void runes_window_backend_paste(RunesTerm *t, Time time);
-static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
-static int runes_window_backend_handle_builtin_keypress(
-    RunesTerm *t, KeySym sym, XKeyEvent *e);
-static struct function_key *runes_window_backend_find_key_sequence(
-    RunesTerm *t, KeySym sym);
-static void runes_window_backend_handle_button_event(
-    RunesTerm *t, XButtonEvent *e);
-static int runes_window_backend_handle_builtin_button_press(
-    RunesTerm *t, XButtonEvent *e);
 static void runes_window_backend_start_selection(
     RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_backend_stop_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time);
-static struct runes_loc runes_window_backend_get_mouse_position(
-    RunesTerm *t, int xpixel, int ypixel);
+static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
+static void runes_window_backend_handle_button_event(
+    RunesTerm *t, XButtonEvent *e);
 static void runes_window_backend_handle_expose_event(
     RunesTerm *t, XExposeEvent *e);
 static void runes_window_backend_handle_configure_event(
@@ -118,6 +110,14 @@ static void runes_window_backend_handle_selection_clear_event(
     RunesTerm *t, XSelectionClearEvent *e);
 static void runes_window_backend_handle_selection_request_event(
     RunesTerm *t, XSelectionRequestEvent *e);
+static int runes_window_backend_handle_builtin_keypress(
+    RunesTerm *t, KeySym sym, XKeyEvent *e);
+static int runes_window_backend_handle_builtin_button_press(
+    RunesTerm *t, XButtonEvent *e);
+static struct function_key *runes_window_backend_find_key_sequence(
+    RunesTerm *t, KeySym sym);
+static struct runes_loc runes_window_backend_get_mouse_position(
+    RunesTerm *t, int xpixel, int ypixel);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
@@ -617,6 +617,45 @@ static void runes_window_backend_paste(RunesTerm *t, Time time)
         w->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, time);
 }
 
+static void runes_window_backend_start_selection(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    struct runes_loc *start = &t->scr.grid->selection_start;
+    struct runes_loc *end   = &t->scr.grid->selection_end;
+
+    *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
+    *end   = *start;
+}
+
+static void runes_window_backend_stop_selection(
+    RunesTerm *t, int xpixel, int ypixel, Time time)
+{
+    RunesWindowBackend *w = &t->w;
+    struct runes_loc *start = &t->scr.grid->selection_start;
+    struct runes_loc *end   = &t->scr.grid->selection_end;
+
+    *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
+
+    if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
+        struct runes_loc tmp;
+
+        tmp = *start;
+        *start = *end;
+        *end = tmp;
+    }
+
+    if (start->row == end->row && start->col == end->col) {
+        XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
+        t->scr.has_selection = 0;
+    }
+    else {
+        XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
+        t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+    }
+    t->scr.dirty = 1;
+    runes_window_backend_flush(t);
+}
+
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
 {
     RunesWindowBackend *w = &t->w;
@@ -664,71 +703,6 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
         break;
     }
     free(buf);
-}
-
-static int runes_window_backend_handle_builtin_keypress(
-    RunesTerm *t, KeySym sym, XKeyEvent *e)
-{
-    switch (sym) {
-    case XK_Insert:
-        if (e->state & ShiftMask) {
-            runes_window_backend_paste(t, e->time);
-            return 1;
-        }
-        break;
-    case XK_Page_Up:
-        if (e->state & ShiftMask) {
-            runes_window_backend_visible_scroll(
-                t, t->scr.grid->max.row - 1);
-            return 1;
-        }
-        break;
-    case XK_Page_Down:
-        if (e->state & ShiftMask) {
-            runes_window_backend_visible_scroll(
-                t, -(t->scr.grid->max.row - 1));
-            return 1;
-        }
-        break;
-    default:
-        break;
-    }
-
-    return 0;
-}
-
-static struct function_key *runes_window_backend_find_key_sequence(
-    RunesTerm *t, KeySym sym)
-{
-    struct function_key *key;
-
-    if (t->scr.application_keypad) {
-        if (t->scr.application_cursor) {
-            key = &application_cursor_keys[0];
-            while (key->sym != XK_VoidSymbol) {
-                if (key->sym == sym) {
-                    return key;
-                }
-                key++;
-            }
-        }
-        key = &application_keypad_keys[0];
-        while (key->sym != XK_VoidSymbol) {
-            if (key->sym == sym) {
-                return key;
-            }
-            key++;
-        }
-    }
-    key = &keys[0];
-    while (key->sym != XK_VoidSymbol) {
-        if (key->sym == sym) {
-            return key;
-        }
-        key++;
-    }
-
-    return key;
 }
 
 static void runes_window_backend_handle_button_event(
@@ -801,104 +775,6 @@ static void runes_window_backend_handle_button_event(
     else {
         runes_window_backend_handle_builtin_button_press(t, e);
     }
-}
-
-static int runes_window_backend_handle_builtin_button_press(
-    RunesTerm *t, XButtonEvent *e)
-{
-    if (e->type == ButtonRelease) {
-        switch (e->button) {
-        case Button1:
-            runes_window_backend_stop_selection(t, e->x, e->y, e->time);
-            return 1;
-            break;
-        default:
-            break;
-        }
-    }
-    else {
-        switch (e->button) {
-        case Button1:
-            runes_window_backend_start_selection(t, e->x, e->y);
-            return 1;
-            break;
-        case Button2:
-            runes_window_backend_paste(t, e->time);
-            return 1;
-            break;
-        case Button4:
-            runes_window_backend_visible_scroll(t, t->config.scroll_lines);
-            return 1;
-            break;
-        case Button5:
-            runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
-            return 1;
-            break;
-        default:
-            break;
-        }
-    }
-
-    return 0;
-}
-
-static void runes_window_backend_start_selection(
-    RunesTerm *t, int xpixel, int ypixel)
-{
-    struct runes_loc *start = &t->scr.grid->selection_start;
-    struct runes_loc *end   = &t->scr.grid->selection_end;
-
-    *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
-    *end   = *start;
-}
-
-static void runes_window_backend_stop_selection(
-    RunesTerm *t, int xpixel, int ypixel, Time time)
-{
-    RunesWindowBackend *w = &t->w;
-    struct runes_loc *start = &t->scr.grid->selection_start;
-    struct runes_loc *end   = &t->scr.grid->selection_end;
-
-    *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
-
-    if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
-        struct runes_loc tmp;
-
-        tmp = *start;
-        *start = *end;
-        *end = tmp;
-    }
-
-    if (start->row == end->row && start->col == end->col) {
-        XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
-        t->scr.has_selection = 0;
-    }
-    else {
-        XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
-        t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
-    }
-    t->scr.dirty = 1;
-    runes_window_backend_flush(t);
-}
-
-static struct runes_loc runes_window_backend_get_mouse_position(
-    RunesTerm *t, int xpixel, int ypixel)
-{
-    struct runes_loc ret;
-
-    ret.row = ypixel / t->display.fonty;
-    ret.col = xpixel / t->display.fontx;
-
-    ret.row = ret.row < 0                        ? 0
-            : ret.row > t->scr.grid->max.row - 1 ? t->scr.grid->max.row - 1
-            :                                      ret.row;
-    ret.col = ret.col < 0                    ? 0
-            : ret.col > t->scr.grid->max.col ? t->scr.grid->max.col
-            :                                  ret.col;
-
-    ret.row = ret.row - t->display.row_visible_offset + t->scr.grid->row_count - t->scr.grid->max.row;
-
-    return ret;
 }
 
 static void runes_window_backend_handle_expose_event(
@@ -1034,4 +910,128 @@ static void runes_window_backend_handle_selection_request_event(
     }
 
     XSendEvent(w->dpy, e->requestor, False, NoEventMask, (XEvent *)&selection);
+}
+
+static int runes_window_backend_handle_builtin_keypress(
+    RunesTerm *t, KeySym sym, XKeyEvent *e)
+{
+    switch (sym) {
+    case XK_Insert:
+        if (e->state & ShiftMask) {
+            runes_window_backend_paste(t, e->time);
+            return 1;
+        }
+        break;
+    case XK_Page_Up:
+        if (e->state & ShiftMask) {
+            runes_window_backend_visible_scroll(
+                t, t->scr.grid->max.row - 1);
+            return 1;
+        }
+        break;
+    case XK_Page_Down:
+        if (e->state & ShiftMask) {
+            runes_window_backend_visible_scroll(
+                t, -(t->scr.grid->max.row - 1));
+            return 1;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+static int runes_window_backend_handle_builtin_button_press(
+    RunesTerm *t, XButtonEvent *e)
+{
+    if (e->type == ButtonRelease) {
+        switch (e->button) {
+        case Button1:
+            runes_window_backend_stop_selection(t, e->x, e->y, e->time);
+            return 1;
+            break;
+        default:
+            break;
+        }
+    }
+    else {
+        switch (e->button) {
+        case Button1:
+            runes_window_backend_start_selection(t, e->x, e->y);
+            return 1;
+            break;
+        case Button2:
+            runes_window_backend_paste(t, e->time);
+            return 1;
+            break;
+        case Button4:
+            runes_window_backend_visible_scroll(t, t->config.scroll_lines);
+            return 1;
+            break;
+        case Button5:
+            runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
+            return 1;
+            break;
+        default:
+            break;
+        }
+    }
+
+    return 0;
+}
+
+static struct function_key *runes_window_backend_find_key_sequence(
+    RunesTerm *t, KeySym sym)
+{
+    struct function_key *key;
+
+    if (t->scr.application_keypad) {
+        if (t->scr.application_cursor) {
+            key = &application_cursor_keys[0];
+            while (key->sym != XK_VoidSymbol) {
+                if (key->sym == sym) {
+                    return key;
+                }
+                key++;
+            }
+        }
+        key = &application_keypad_keys[0];
+        while (key->sym != XK_VoidSymbol) {
+            if (key->sym == sym) {
+                return key;
+            }
+            key++;
+        }
+    }
+    key = &keys[0];
+    while (key->sym != XK_VoidSymbol) {
+        if (key->sym == sym) {
+            return key;
+        }
+        key++;
+    }
+
+    return key;
+}
+
+static struct runes_loc runes_window_backend_get_mouse_position(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    struct runes_loc ret;
+
+    ret.row = ypixel / t->display.fonty;
+    ret.col = xpixel / t->display.fontx;
+
+    ret.row = ret.row < 0                        ? 0
+            : ret.row > t->scr.grid->max.row - 1 ? t->scr.grid->max.row - 1
+            :                                      ret.row;
+    ret.col = ret.col < 0                    ? 0
+            : ret.col > t->scr.grid->max.col ? t->scr.grid->max.col
+            :                                  ret.col;
+
+    ret.row = ret.row - t->display.row_visible_offset + t->scr.grid->row_count - t->scr.grid->max.row;
+
+    return ret;
 }
