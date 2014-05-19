@@ -29,7 +29,6 @@ struct runes_window {
     Atom atoms[RUNES_NUM_ATOMS];
 
     char visual_bell_is_ringing: 1;
-    char has_selection: 1;
 };
 
 typedef struct {

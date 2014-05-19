@@ -106,6 +106,7 @@ struct runes_screen {
     unsigned char audible_bell: 1;
     unsigned char update_title: 1;
     unsigned char update_icon_name: 1;
+    unsigned char has_selection: 1;
 
     unsigned char dirty: 1;
 };

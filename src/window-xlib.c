@@ -871,11 +871,11 @@ static void runes_window_backend_stop_selection(
 
     if (start->row == end->row && start->col == end->col) {
         XSetSelectionOwner(w->dpy, XA_PRIMARY, None, time);
-        w->has_selection = 0;
+        t->scr.has_selection = 0;
     }
     else {
         XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
-        w->has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+        t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
     }
 }
 
@@ -983,11 +983,9 @@ static void runes_window_backend_handle_selection_notify_event(
 static void runes_window_backend_handle_selection_clear_event(
     RunesTerm *t, XSelectionClearEvent *e)
 {
-    RunesWindowBackend *w = &t->w;
-
     UNUSED(e);
 
-    w->has_selection = 0;
+    t->scr.has_selection = 0;
 }
 
 static void runes_window_backend_handle_selection_request_event(
