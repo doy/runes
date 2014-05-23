@@ -13,6 +13,7 @@ static int runes_screen_scroll_region_is_active(RunesTerm *t);
 static int runes_screen_loc_is_between(
     RunesTerm *t, struct runes_loc loc,
     struct runes_loc start, struct runes_loc end);
+static int runes_screen_row_max_col(RunesTerm *t, int row);
 
 void runes_screen_init(RunesTerm *t)
 {
@@ -101,13 +102,32 @@ void runes_screen_process_string(RunesTerm *t, char *buf, size_t len)
 int runes_screen_loc_is_selected(RunesTerm *t, struct runes_loc loc)
 {
     RunesScreen *scr = &t->scr;
+    struct runes_loc start = scr->grid->selection_start;
+    struct runes_loc end = scr->grid->selection_end;
 
     if (!scr->has_selection) {
         return 0;
     }
 
-    return runes_screen_loc_is_between(
-        t, loc, scr->grid->selection_start, scr->grid->selection_end);
+    if (loc.row == start.row) {
+        int start_max_col;
+
+        start_max_col = runes_screen_row_max_col(t, start.row);
+        if (start.col > start_max_col) {
+            start.col = scr->grid->max.col;
+        }
+    }
+
+    if (loc.row == end.row) {
+        int end_max_col;
+
+        end_max_col = runes_screen_row_max_col(t, end.row);
+        if (end.col > end_max_col) {
+            end.col = scr->grid->max.col;
+        }
+    }
+
+    return runes_screen_loc_is_between(t, loc, start, end);
 }
 
 void runes_screen_get_string(
@@ -988,4 +1008,19 @@ static int runes_screen_loc_is_between(
     }
 
     return 1;
+}
+
+static int runes_screen_row_max_col(RunesTerm *t, int row)
+{
+    RunesScreen *scr = &t->scr;
+    struct runes_cell *cells = scr->grid->rows[row].cells;
+    int i, max = -1;
+
+    for (i = 0; i < scr->grid->max.col; ++i) {
+        if (cells[i].len) {
+            max = i;
+        }
+    }
+
+    return max + 1;
 }
