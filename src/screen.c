@@ -147,22 +147,58 @@ void runes_screen_get_string(
     *strp = malloc(capacity);
 
     for (row = start->row; row <= end->row; ++row) {
-        int start_col = row == start->row ? start->col : 0;
-        int end_col   = row == end->row   ? end->col   : t->scr.grid->max.col;
+        int start_col, end_col, max_col;
         struct runes_row *grid_row = &scr->grid->rows[row];
+
+        max_col = runes_screen_row_max_col(t, row);
+
+        if (row == start->row) {
+            if (start->col > max_col) {
+                start_col = scr->grid->max.col;
+            }
+            else {
+                start_col = start->col;
+            }
+        }
+        else {
+            start_col = 0;
+        }
+
+        if (row == end->row) {
+            if (end->col > max_col) {
+                end_col = scr->grid->max.col;
+            }
+            else {
+                end_col = end->col;
+            }
+        }
+        else {
+            end_col = scr->grid->max.col;
+        }
+
+        if (end_col > max_col) {
+            end_col = max_col;
+        }
 
         for (col = start_col; col < end_col; ++col) {
             struct runes_cell *cell = &grid_row->cells[col];
+            char *contents = cell->contents;
+            size_t len = cell->len;
 
-            if (*lenp + cell->len > capacity) {
+            if (cell->len == 0) {
+                contents = " ";
+                len = 1;
+            }
+
+            if (*lenp + len > capacity) {
                 capacity *= 1.5;
                 *strp = realloc(*strp, capacity);
             }
-            memcpy(*strp + *lenp, cell->contents, cell->len);
-            *lenp += cell->len;
+            memcpy(*strp + *lenp, contents, len);
+            *lenp += len;
         }
 
-        if (row != end->row && !grid_row->wrapped) {
+        if ((row != end->row || end->col > max_col) && !grid_row->wrapped) {
             if (*lenp + 1 > capacity) {
                 capacity *= 1.5;
                 *strp = realloc(*strp, capacity);
