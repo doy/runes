@@ -95,6 +95,7 @@ static void runes_window_backend_start_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time);
 static void runes_window_backend_update_selection(
     RunesTerm *t, int xpixel, int ypixel);
+static void runes_window_backend_clear_selection(RunesTerm *t);
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e);
 static void runes_window_backend_handle_button_event(
     RunesTerm *t, XButtonEvent *e);
@@ -479,6 +480,7 @@ static void runes_window_backend_resize_window(
         cairo_xlib_surface_set_size(
             cairo_get_target(w->backend_cr), width - 4, height - 4);
         runes_display_set_window_size(t);
+        runes_window_backend_clear_selection(t);
     }
 }
 
@@ -645,12 +647,24 @@ static void runes_window_backend_update_selection(
     struct runes_loc *end = &t->scr.grid->selection_end;
     struct runes_loc orig_end = *end;
 
+    if (!t->scr.has_selection) {
+        return;
+    }
+
     *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
 
     if (orig_end.row != end->row || orig_end.col != end->col) {
         t->scr.dirty = 1;
         runes_window_backend_request_flush(t);
     }
+}
+
+static void runes_window_backend_clear_selection(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+
+    XSetSelectionOwner(w->dpy, XA_PRIMARY, None, CurrentTime);
+    t->scr.has_selection = 0;
 }
 
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
