@@ -97,6 +97,7 @@ struct runes_screen {
     unsigned char application_cursor: 1;
     unsigned char mouse_reporting_press: 1;
     unsigned char mouse_reporting_press_release: 1;
+    unsigned char bracketed_paste: 1;
 
     unsigned char visual_bell: 1;
     unsigned char audible_bell: 1;
@@ -157,6 +158,8 @@ void runes_screen_set_mouse_reporting_press(RunesTerm *t);
 void runes_screen_reset_mouse_reporting_press(RunesTerm *t);
 void runes_screen_set_mouse_reporting_press_release(RunesTerm *t);
 void runes_screen_reset_mouse_reporting_press_release(RunesTerm *t);
+void runes_screen_set_bracketed_paste(RunesTerm *t);
+void runes_screen_reset_bracketed_paste(RunesTerm *t);
 void runes_screen_set_window_title(RunesTerm *t, char *buf, size_t len);
 void runes_screen_set_icon_name(RunesTerm *t, char *buf, size_t len);
 void runes_screen_cleanup(RunesTerm *t);

@@ -903,7 +903,13 @@ static void runes_window_backend_handle_selection_notify_event(
         XGetWindowProperty(
             w->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
             AnyPropertyType, &type, &format, &nitems, &left, &buf);
+        if (t->scr.bracketed_paste) {
+            runes_pty_backend_write(t, "\e[200~", 6);
+        }
         runes_pty_backend_write(t, (char *)buf, nitems);
+        if (t->scr.bracketed_paste) {
+            runes_pty_backend_write(t, "\e[201~", 6);
+        }
         XFree(buf);
     }
 }

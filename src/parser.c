@@ -2637,6 +2637,9 @@ static void runes_parser_handle_sm(RunesTerm *t, char *buf, size_t len)
             case 1049:
                 runes_screen_use_alternate_buffer(t);
                 break;
+            case 2004:
+                runes_screen_set_bracketed_paste(t);
+                break;
             default:
                 runes_warn(
                     "unknown SM parameter: %c%d\n", modes[i], params[i]);
@@ -2685,6 +2688,9 @@ static void runes_parser_handle_rm(RunesTerm *t, char *buf, size_t len)
             case 47:
             case 1049:
                 runes_screen_use_normal_buffer(t);
+                break;
+            case 2004:
+                runes_screen_reset_bracketed_paste(t);
                 break;
             default:
                 runes_warn(

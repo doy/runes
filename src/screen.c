@@ -700,6 +700,20 @@ void runes_screen_reset_mouse_reporting_press_release(RunesTerm *t)
     scr->mouse_reporting_press_release = 0;
 }
 
+void runes_screen_set_bracketed_paste(RunesTerm *t)
+{
+    RunesScreen *scr = &t->scr;
+
+    scr->bracketed_paste = 1;
+}
+
+void runes_screen_reset_bracketed_paste(RunesTerm *t)
+{
+    RunesScreen *scr = &t->scr;
+
+    scr->bracketed_paste = 0;
+}
+
 void runes_screen_set_window_title(RunesTerm *t, char *buf, size_t len)
 {
     RunesScreen *scr = &t->scr;
