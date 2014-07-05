@@ -857,6 +857,8 @@ static void runes_screen_scroll_down(RunesTerm *t, int count)
             scr->grid->row_top += count;
         }
     }
+
+    scr->dirty = 1;
 }
 
 static void runes_screen_scroll_up(RunesTerm *t, int count)
@@ -889,6 +891,8 @@ static void runes_screen_scroll_up(RunesTerm *t, int count)
             row->wrapped = 0;
         }
     }
+
+    scr->dirty = 1;
 }
 
 static int runes_screen_scroll_region_is_active(RunesTerm *t)
