@@ -12,7 +12,8 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     runes_window_backend_create_window(t, argc, argv);
     runes_pty_backend_spawn_subprocess(t);
 
-    runes_screen_init(t);
+    vt100_screen_init(&t->scr);
+    vt100_screen_set_scrollback_length(&t->scr, t->config.scrollback_length);
     runes_display_set_window_size(t);
 
     t->loop = uv_default_loop();
@@ -24,7 +25,7 @@ void runes_term_cleanup(RunesTerm *t)
 {
     runes_config_cleanup(t);
     runes_display_cleanup(t);
-    runes_screen_cleanup(t);
+    vt100_screen_cleanup(&t->scr);
     runes_window_backend_cleanup(t);
     runes_pty_backend_cleanup(t);
 }

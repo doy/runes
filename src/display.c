@@ -10,7 +10,7 @@ static void runes_display_paint_rectangle(
     int row, int col, int width, int height);
 static void runes_display_draw_glyph(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
-    struct runes_cell_attrs attrs, char *buf, size_t len, int row, int col);
+    struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col);
 
 void runes_display_init(RunesTerm *t)
 {
@@ -80,7 +80,8 @@ void runes_display_set_window_size(RunesTerm *t)
         cairo_destroy(old_cr);
     }
 
-    runes_screen_set_window_size(t);
+    vt100_screen_set_window_size(&t->scr,
+        height / t->display.fonty, width / t->display.fontx);
     runes_pty_backend_set_window_size(t);
 }
 
@@ -128,7 +129,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
             cairo_stroke(cr);
         }
         else {
-            struct runes_cell *cell = &t->scr.grid->rows[t->scr.grid->row_top + row].cells[col];
+            struct vt100_cell *cell = &t->scr.grid->rows[t->scr.grid->row_top + row].cells[col];
 
             cairo_rectangle(
                 cr,
@@ -143,6 +144,66 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
         }
         cairo_restore(cr);
     }
+}
+
+int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc)
+{
+    RunesDisplay *display = &t->display;
+    struct vt100_loc start = display->selection_start;
+    struct vt100_loc end = display->selection_end;
+
+    if (!display->has_selection) {
+        return 0;
+    }
+
+    if (loc.row == start.row) {
+        int start_max_col;
+
+        start_max_col = vt100_screen_row_max_col(&t->scr, start.row);
+        if (start.col > start_max_col) {
+            start.col = t->scr.grid->max.col;
+        }
+    }
+
+    if (loc.row == end.row) {
+        int end_max_col;
+
+        end_max_col = vt100_screen_row_max_col(&t->scr, end.row);
+        if (end.col > end_max_col) {
+            end.col = t->scr.grid->max.col;
+        }
+    }
+
+    return runes_display_loc_is_between(t, loc, start, end);
+}
+
+int runes_display_loc_is_between(
+     RunesTerm *t, struct vt100_loc loc,
+     struct vt100_loc start, struct vt100_loc end)
+{
+    UNUSED(t);
+
+    if (end.row < start.row || (end.row == start.row && end.col < start.col)) {
+        struct vt100_loc tmp;
+
+        tmp = start;
+        start = end;
+        end = tmp;
+    }
+
+    if (loc.row < start.row || loc.row > end.row) {
+        return 0;
+    }
+
+    if (loc.row == start.row && loc.col < start.col) {
+        return 0;
+    }
+
+    if (loc.row == end.row && loc.col >= end.col) {
+        return 0;
+    }
+
+    return 1;
 }
 
 void runes_display_cleanup(RunesTerm *t)
@@ -190,23 +251,23 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
     RunesDisplay *display = &t->display;
-    struct runes_loc loc = {
+    struct vt100_loc loc = {
         row + t->scr.grid->row_top - display->row_visible_offset, col };
-    struct runes_cell *cell = &t->scr.grid->rows[loc.row].cells[loc.col];
+    struct vt100_cell *cell = &t->scr.grid->rows[loc.row].cells[loc.col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
     int selected;
 
-    selected = runes_screen_loc_is_selected(t, loc);
+    selected = runes_display_loc_is_selected(t, loc);
 
     switch (cell->attrs.bgcolor.type) {
-    case RUNES_COLOR_DEFAULT:
+    case VT100_COLOR_DEFAULT:
         bg = t->config.bgdefault;
         break;
-    case RUNES_COLOR_IDX:
+    case VT100_COLOR_IDX:
         bg = t->config.colors[cell->attrs.bgcolor.idx];
         break;
-    case RUNES_COLOR_RGB:
+    case VT100_COLOR_RGB:
         bg = cairo_pattern_create_rgb(
             cell->attrs.bgcolor.r / 255.0,
             cell->attrs.bgcolor.g / 255.0,
@@ -216,10 +277,10 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
     }
 
     switch (cell->attrs.fgcolor.type) {
-    case RUNES_COLOR_DEFAULT:
+    case VT100_COLOR_DEFAULT:
         fg = t->config.fgdefault;
         break;
-    case RUNES_COLOR_IDX: {
+    case VT100_COLOR_IDX: {
         unsigned char idx = cell->attrs.fgcolor.idx;
 
         if (t->config.bold_is_bright && cell->attrs.bold && idx < 8) {
@@ -228,7 +289,7 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
         fg = t->config.colors[idx];
         break;
     }
-    case RUNES_COLOR_RGB:
+    case VT100_COLOR_RGB:
         fg = cairo_pattern_create_rgb(
             cell->attrs.fgcolor.r / 255.0,
             cell->attrs.fgcolor.g / 255.0,
@@ -286,7 +347,7 @@ static void runes_display_paint_rectangle(
 
 static void runes_display_draw_glyph(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
-    struct runes_cell_attrs attrs, char *buf, size_t len, int row, int col)
+    struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col)
 {
     RunesDisplay *display = &t->display;
     PangoAttrList *pango_attrs;

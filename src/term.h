@@ -4,7 +4,7 @@
 struct runes_term {
     RunesWindowBackend w;
     RunesPtyBackend pty;
-    RunesScreen scr;
+    VT100Screen scr;
     RunesConfig config;
     RunesDisplay display;
 

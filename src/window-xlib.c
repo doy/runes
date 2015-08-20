@@ -119,7 +119,7 @@ static int runes_window_backend_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e);
 static struct function_key *runes_window_backend_find_key_sequence(
     RunesTerm *t, KeySym sym);
-static struct runes_loc runes_window_backend_get_mouse_position(
+static struct vt100_loc runes_window_backend_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel);
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
@@ -628,14 +628,14 @@ static void runes_window_backend_start_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time)
 {
     RunesWindowBackend *w = &t->w;
-    struct runes_loc *start = &t->scr.grid->selection_start;
-    struct runes_loc *end   = &t->scr.grid->selection_end;
+    struct vt100_loc *start = &t->display.selection_start;
+    struct vt100_loc *end   = &t->display.selection_end;
 
     *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
     *end   = *start;
 
     XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
-    t->scr.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+    t->display.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
 
     t->scr.dirty = 1;
     runes_window_backend_request_flush(t);
@@ -644,10 +644,10 @@ static void runes_window_backend_start_selection(
 static void runes_window_backend_update_selection(
     RunesTerm *t, int xpixel, int ypixel)
 {
-    struct runes_loc *end = &t->scr.grid->selection_end;
-    struct runes_loc orig_end = *end;
+    struct vt100_loc *end = &t->display.selection_end;
+    struct vt100_loc orig_end = *end;
 
-    if (!t->scr.has_selection) {
+    if (!t->display.has_selection) {
         return;
     }
 
@@ -664,7 +664,7 @@ static void runes_window_backend_clear_selection(RunesTerm *t)
     RunesWindowBackend *w = &t->w;
 
     XSetSelectionOwner(w->dpy, XA_PRIMARY, None, CurrentTime);
-    t->scr.has_selection = 0;
+    t->display.has_selection = 0;
 }
 
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
@@ -728,7 +728,7 @@ static void runes_window_backend_handle_button_event(
     if (t->scr.mouse_reporting_press_release) {
         char response[7];
         char status = 0;
-        struct runes_loc loc;
+        struct vt100_loc loc;
 
         if (e->type == ButtonRelease && e->button > 3) {
             return;
@@ -775,7 +775,7 @@ static void runes_window_backend_handle_button_event(
     }
     else if (t->scr.mouse_reporting_press && e->type == ButtonPress) {
         char response[7];
-        struct runes_loc loc;
+        struct vt100_loc loc;
 
         loc = runes_window_backend_get_mouse_position(t, e->x, e->y);
         sprintf(
@@ -884,7 +884,7 @@ static void runes_window_backend_handle_selection_clear_event(
 {
     UNUSED(e);
 
-    t->scr.has_selection = 0;
+    t->display.has_selection = 0;
     t->scr.dirty = 1;
     runes_window_backend_flush(t);
 }
@@ -916,18 +916,18 @@ static void runes_window_backend_handle_selection_request_event(
     else if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
         char *contents;
         size_t len;
-        struct runes_loc *start = &t->scr.grid->selection_start;
-        struct runes_loc *end   = &t->scr.grid->selection_end;
+        struct vt100_loc *start = &t->display.selection_start;
+        struct vt100_loc *end   = &t->display.selection_end;
 
         if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
-            struct runes_loc *tmp;
+            struct vt100_loc *tmp;
 
             tmp = start;
             start = end;
             end = tmp;
         }
 
-        runes_screen_get_string(t, start, end, &contents, &len);
+        vt100_screen_get_string_plaintext(&t->scr, start, end, &contents, &len);
         XChangeProperty(
             w->dpy, e->requestor, e->property,
             e->target, 8, PropModeReplace,
@@ -1035,10 +1035,10 @@ static struct function_key *runes_window_backend_find_key_sequence(
     return key;
 }
 
-static struct runes_loc runes_window_backend_get_mouse_position(
+static struct vt100_loc runes_window_backend_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel)
 {
-    struct runes_loc ret;
+    struct vt100_loc ret;
 
     ret.row = ypixel / t->display.fonty;
     ret.col = xpixel / t->display.fontx;

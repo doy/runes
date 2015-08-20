@@ -4,8 +4,6 @@ SRC      = src/
 OBJ      = $(BUILD)runes.o \
 	   $(BUILD)display.o \
 	   $(BUILD)term.o \
-	   $(BUILD)parser.o \
-	   $(BUILD)screen.o \
 	   $(BUILD)config.o \
 	   $(BUILD)window-xlib.o \
 	   $(BUILD)pty-unix.o \
@@ -14,15 +12,18 @@ LIBS     = cairo cairo-xlib libuv pangocairo
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
 
-ALLCFLAGS  = $(shell pkg-config --cflags $(LIBS)) $(CFLAGS)
-ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
+ALLCFLAGS  = $(shell pkg-config --cflags $(LIBS)) -Ilibvt100/src $(CFLAGS)
+ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) -Llibvt100 -lvt100 $(LDFLAGS)
 
 MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
 build: $(OUT)
 
-$(OUT): $(OBJ)
+$(OUT): $(OBJ) libvt100/libvt100.so
 	$(CC) $(ALLLDFLAGS) -o $@ $^
+
+libvt100/libvt100.so:
+	cd libvt100 && make
 
 $(BUILD)%.o: $(SRC)%.c
 	@mkdir -p $(BUILD)
@@ -38,6 +39,7 @@ $(SRC)%.h: $(SRC)%.l
 	$(LEX) --header-file=$(<:.l=.h) -o /dev/null $<
 
 clean:
+	cd libvt100 && make clean
 	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
 	@rmdir -p $(BUILD) > /dev/null 2>&1
 

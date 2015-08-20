@@ -152,8 +152,8 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
     UNUSED(status);
 
     if (pty->readlen > 0) {
-        runes_screen_process_string(
-            t, pty->readbuf, pty->readlen + pty->remaininglen);
+        vt100_screen_process_string(
+            &t->scr, pty->readbuf, pty->readlen + pty->remaininglen);
         uv_queue_work(
             t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
     }

@@ -4,13 +4,13 @@
 #include <cairo.h>
 #include <pango/pangocairo.h>
 #include <uv.h>
+#include <vt100.h>
 
 #define RUNES_READ_BUFFER_LENGTH 4096
 
 struct runes_term;
 struct runes_window;
 struct runes_pty;
-struct runes_screen;
 struct runes_config;
 struct runes_display;
 struct runes_loop_data;
@@ -18,7 +18,6 @@ struct runes_loop_data;
 typedef struct runes_term RunesTerm;
 typedef struct runes_window RunesWindowBackend;
 typedef struct runes_pty RunesPtyBackend;
-typedef struct runes_screen RunesScreen;
 typedef struct runes_config RunesConfig;
 typedef struct runes_display RunesDisplay;
 typedef struct runes_loop_data RunesLoopData;
@@ -33,7 +32,6 @@ struct runes_loop_data {
 #include "window-xlib.h"
 #include "pty-unix.h"
 
-#include "screen.h"
 #include "config.h"
 #include "display.h"
 
