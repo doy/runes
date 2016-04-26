@@ -152,8 +152,11 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
     UNUSED(status);
 
     if (pty->readlen > 0) {
-        vt100_screen_process_string(
-            &t->scr, pty->readbuf, pty->readlen + pty->remaininglen);
+        int to_process = pty->readlen + pty->remaininglen;
+        int processed = vt100_screen_process_string(
+            &t->scr, pty->readbuf, to_process);
+        pty->remaininglen = to_process - processed;
+        memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
         uv_queue_work(
             t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
     }
