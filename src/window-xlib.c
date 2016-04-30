@@ -224,7 +224,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     XMapWindow(w->dpy, w->border_w);
 }
 
-void runes_window_backend_start_loop(RunesTerm *t)
+void runes_window_backend_init_loop(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
     unsigned long xim_mask, common_mask;
@@ -254,7 +254,7 @@ void runes_window_backend_start_loop(RunesTerm *t)
     ((RunesLoopData *)data)->t = t;
 
     uv_queue_work(
-        t->loop, data,
+        t->loop.loop, data,
         runes_window_backend_get_next_event,
         runes_window_backend_process_event);
 }
@@ -436,7 +436,7 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
 
     if (!should_close) {
         uv_queue_work(
-            t->loop, req, runes_window_backend_get_next_event,
+            t->loop.loop, req, runes_window_backend_get_next_event,
             runes_window_backend_process_event);
     }
     else {
@@ -562,7 +562,7 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
         XFlush(w->dpy);
 
         timer_req = malloc(sizeof(uv_timer_t));
-        uv_timer_init(t->loop, timer_req);
+        uv_timer_init(t->loop.loop, timer_req);
         timer_req->data = (void *)t;
         uv_timer_start(
             timer_req, runes_window_backend_reset_visual_bell, 20, 0);

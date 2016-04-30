@@ -37,7 +37,7 @@ typedef struct {
 } RunesXlibLoopData;
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[]);
-void runes_window_backend_start_loop(RunesTerm *t);
+void runes_window_backend_init_loop(RunesTerm *t);
 void runes_window_backend_request_flush(RunesTerm *t);
 void runes_window_backend_request_close(RunesTerm *t);
 unsigned long runes_window_backend_get_window_id(RunesTerm *t);

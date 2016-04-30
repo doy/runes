@@ -7,8 +7,7 @@ struct runes_term {
     VT100Screen scr;
     RunesConfig config;
     RunesDisplay display;
-
-    uv_loop_t *loop;
+    RunesLoop loop;
 };
 
 void runes_term_init(RunesTerm *t, int argc, char *argv[]);

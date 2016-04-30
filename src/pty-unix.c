@@ -84,7 +84,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
     }
 }
 
-void runes_pty_backend_start_loop(RunesTerm *t)
+void runes_pty_backend_init_loop(RunesTerm *t)
 {
     void *data;
 
@@ -93,7 +93,8 @@ void runes_pty_backend_start_loop(RunesTerm *t)
     ((RunesLoopData *)data)->t = t;
 
     uv_queue_work(
-        t->loop, data, runes_pty_backend_read, runes_pty_backend_got_data);
+        t->loop.loop, data, runes_pty_backend_read,
+        runes_pty_backend_got_data);
 }
 
 void runes_pty_backend_set_window_size(RunesTerm *t)
@@ -158,7 +159,8 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
         pty->remaininglen = to_process - processed;
         memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
         uv_queue_work(
-            t->loop, req, runes_pty_backend_read, runes_pty_backend_got_data);
+            t->loop.loop, req, runes_pty_backend_read,
+            runes_pty_backend_got_data);
     }
     else {
         runes_window_backend_request_close(t);

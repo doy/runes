@@ -10,7 +10,7 @@ int main (int argc, char *argv[])
 
     runes_term_init(&t, argc, argv);
 
-    uv_run(t.loop, UV_RUN_DEFAULT);
+    runes_loop_run(&t);
 
     runes_term_cleanup(&t);
 

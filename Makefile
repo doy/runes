@@ -7,6 +7,7 @@ OBJ      = $(BUILD)runes.o \
 	   $(BUILD)config.o \
 	   $(BUILD)window-xlib.o \
 	   $(BUILD)pty-unix.o \
+	   $(BUILD)loop.o \
 	   $(BUILD)util.o
 LIBS     = cairo cairo-xlib libuv pangocairo
 CFLAGS  ?= -g -Wall -Wextra -Werror
