@@ -14,6 +14,8 @@ struct runes_loop_data {
 
 void runes_loop_init(RunesTerm *t);
 void runes_loop_run(RunesTerm *t);
+void runes_loop_timer_set(RunesTerm *t, int timeout, int repeat,
+                          void (*cb)(RunesTerm*));
 void runes_loop_cleanup(RunesTerm *t);
 
 #endif

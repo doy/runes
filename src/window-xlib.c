@@ -85,8 +85,7 @@ static void runes_window_backend_resize_window(
 static void runes_window_backend_flush(RunesTerm *t);
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count);
 static void runes_window_backend_visual_bell(RunesTerm *t);
-static void runes_window_backend_reset_visual_bell(uv_timer_t *handle);
-static void runes_window_backend_visual_bell_free_handle(uv_handle_t *handle);
+static void runes_window_backend_reset_visual_bell(RunesTerm *t);
 static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
@@ -553,36 +552,22 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
     }
 
     if (!w->visual_bell_is_ringing) {
-        uv_timer_t *timer_req;
-
         w->visual_bell_is_ringing = 1;
         cairo_set_source(w->backend_cr, t->config.fgdefault);
         cairo_paint(w->backend_cr);
         cairo_surface_flush(cairo_get_target(w->backend_cr));
         XFlush(w->dpy);
 
-        timer_req = malloc(sizeof(uv_timer_t));
-        uv_timer_init(t->loop.loop, timer_req);
-        timer_req->data = (void *)t;
-        uv_timer_start(
-            timer_req, runes_window_backend_reset_visual_bell, 20, 0);
+        runes_loop_timer_set(t, 20, 0, runes_window_backend_reset_visual_bell);
     }
 }
 
-static void runes_window_backend_reset_visual_bell(uv_timer_t *handle)
+static void runes_window_backend_reset_visual_bell(RunesTerm *t)
 {
-    RunesTerm *t = handle->data;
     RunesWindowBackend *w = &t->w;
 
     runes_window_backend_request_flush(t);
     w->visual_bell_is_ringing = 0;
-    uv_close(
-        (uv_handle_t *)handle, runes_window_backend_visual_bell_free_handle);
-}
-
-static void runes_window_backend_visual_bell_free_handle(uv_handle_t *handle)
-{
-    free(handle);
 }
 
 static void runes_window_backend_audible_bell(RunesTerm *t)
