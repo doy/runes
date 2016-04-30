@@ -589,10 +589,15 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
 
-    if (t->config.bell_is_urgent) {
-        runes_window_backend_set_urgent(t);
+    if (t->config.audible_bell) {
+        if (t->config.bell_is_urgent) {
+            runes_window_backend_set_urgent(t);
+        }
+        XBell(w->dpy, 0);
     }
-    XBell(w->dpy, 0);
+    else {
+        runes_window_backend_visual_bell(t);
+    }
 }
 
 static void runes_window_backend_set_urgent(RunesTerm *t)
