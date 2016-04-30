@@ -14,17 +14,17 @@ CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
 
 ALLCFLAGS  = $(shell pkg-config --cflags $(LIBS)) -Ilibvt100/src $(CFLAGS)
-ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) -Llibvt100 -lvt100 $(LDFLAGS)
+ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
 
 MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
 build: $(OUT)
 
-$(OUT): $(OBJ) libvt100/libvt100.so
+$(OUT): $(OBJ) libvt100/libvt100.a
 	$(CC) $(ALLLDFLAGS) -o $@ $^
 
-libvt100/libvt100.so:
-	cd libvt100 && make
+libvt100/libvt100.a:
+	cd libvt100 && make static
 
 $(BUILD)%.o: $(SRC)%.c
 	@mkdir -p $(BUILD)
