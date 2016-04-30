@@ -72,7 +72,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         unsetenv("LINES");
         unsetenv("COLUMNS");
 
-        if (strchr(cmd, ' ')) {
+        if (strpbrk(cmd, " $")) {
             execlp("/bin/sh", "/bin/sh", "-c", cmd, (char *)NULL);
         }
         else {
