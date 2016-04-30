@@ -1,6 +1,8 @@
 #ifndef _RUNES_CONFIG_H
 #define _RUNES_CONFIG_H
 
+#include <cairo.h>
+
 struct runes_config {
     cairo_pattern_t *mousecursorcolor;
     cairo_pattern_t *cursorcolor;

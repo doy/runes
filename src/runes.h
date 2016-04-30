@@ -1,11 +1,6 @@
 #ifndef _RUNES_H
 #define _RUNES_H
 
-#include <cairo.h>
-#include <pango/pangocairo.h>
-#include <uv.h>
-#include <vt100.h>
-
 #define RUNES_READ_BUFFER_LENGTH 4096
 
 struct runes_term;
@@ -35,7 +30,5 @@ typedef struct runes_loop_data RunesLoopData;
 #include "display.h"
 
 #include "term.h"
-
-#define UNUSED(x) ((void)x)
 
 #endif

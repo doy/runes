@@ -1,6 +1,10 @@
 #ifndef _RUNES_DISPLAY_H
 #define _RUNES_DISPLAY_H
 
+#include <cairo.h>
+#include <pango/pangocairo.h>
+#include <vt100.h>
+
 struct runes_display {
     cairo_t *cr;
     PangoLayout *layout;

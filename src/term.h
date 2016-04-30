@@ -1,6 +1,8 @@
 #ifndef _RUNES_TERM_H
 #define _RUNES_TERM_H
 
+#include <vt100.h>
+
 struct runes_term {
     RunesWindowBackend w;
     RunesPtyBackend pty;

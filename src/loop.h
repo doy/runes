@@ -1,6 +1,8 @@
 #ifndef _RUNES_LOOP_H
 #define _RUNES_LOOP_H
 
+#include <uv.h>
+
 struct runes_loop {
     uv_loop_t *loop;
 };
