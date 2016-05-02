@@ -2,6 +2,14 @@
 
 #include "runes.h"
 
+struct runes_loop_data {
+    uv_work_t req;
+    RunesLoop *loop;
+    RunesTerm *t;
+    void (*work_cb)(RunesTerm*);
+    int (*after_work_cb)(RunesTerm*);
+};
+
 struct runes_loop_timer_data {
     RunesTerm *t;
     void (*cb)(RunesTerm*);
@@ -26,16 +34,16 @@ void runes_loop_start_work(RunesLoop *loop, RunesTerm *t,
                            void (*work_cb)(RunesTerm*),
                            int (*after_work_cb)(RunesTerm*))
 {
-    void *data;
+    struct runes_loop_data *data;
 
-    data = malloc(sizeof(RunesLoopData));
-    ((RunesLoopData *)data)->req.data = data;
-    ((RunesLoopData *)data)->loop = loop;
-    ((RunesLoopData *)data)->t = t;
-    ((RunesLoopData *)data)->work_cb = work_cb;
-    ((RunesLoopData *)data)->after_work_cb = after_work_cb;
+    data = malloc(sizeof(struct runes_loop_data));
+    data->req.data = data;
+    data->loop = loop;
+    data->t = t;
+    data->work_cb = work_cb;
+    data->after_work_cb = after_work_cb;
 
-    uv_queue_work(loop->loop, data, runes_loop_do_work,
+    uv_queue_work(loop->loop, (void*)data, runes_loop_do_work,
                   runes_loop_do_after_work);
 }
 
@@ -61,7 +69,7 @@ void runes_loop_cleanup(RunesLoop *loop)
 
 static void runes_loop_do_work(uv_work_t *req)
 {
-    RunesLoopData *data = req->data;
+    struct runes_loop_data *data = req->data;
     RunesTerm *t = data->t;
 
     data->work_cb(t);
@@ -69,7 +77,7 @@ static void runes_loop_do_work(uv_work_t *req)
 
 static void runes_loop_do_after_work(uv_work_t *req, int status)
 {
-    RunesLoopData *data = req->data;
+    struct runes_loop_data *data = req->data;
     RunesLoop *loop = data->loop;
     RunesTerm *t = data->t;
     int should_loop = 0;

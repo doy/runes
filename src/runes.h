@@ -9,7 +9,6 @@ struct runes_pty;
 struct runes_config;
 struct runes_display;
 struct runes_loop;
-struct runes_loop_data;
 
 typedef struct runes_term RunesTerm;
 typedef struct runes_window RunesWindowBackend;
@@ -17,7 +16,6 @@ typedef struct runes_pty RunesPtyBackend;
 typedef struct runes_config RunesConfig;
 typedef struct runes_display RunesDisplay;
 typedef struct runes_loop RunesLoop;
-typedef struct runes_loop_data RunesLoopData;
 
 #include "util.h"
 
