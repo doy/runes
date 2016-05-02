@@ -84,9 +84,9 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
     }
 }
 
-void runes_pty_backend_init_loop(RunesTerm *t)
+void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop)
 {
-    runes_loop_start_work(t, runes_pty_backend_read,
+    runes_loop_start_work(loop, t, runes_pty_backend_read,
                           runes_pty_backend_got_data);
 }
 

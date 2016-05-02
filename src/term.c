@@ -2,7 +2,7 @@
 
 #include "runes.h"
 
-void runes_term_init(RunesTerm *t, int argc, char *argv[])
+void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[])
 {
     memset((void *)t, 0, sizeof(*t));
 
@@ -16,12 +16,11 @@ void runes_term_init(RunesTerm *t, int argc, char *argv[])
     vt100_screen_set_scrollback_length(&t->scr, t->config.scrollback_length);
     runes_display_set_window_size(t);
 
-    runes_loop_init(t);
+    runes_loop_init_term(loop, t);
 }
 
 void runes_term_cleanup(RunesTerm *t)
 {
-    runes_loop_cleanup(t);
     runes_config_cleanup(t);
     runes_display_cleanup(t);
     vt100_screen_cleanup(&t->scr);

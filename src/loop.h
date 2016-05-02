@@ -9,17 +9,20 @@ struct runes_loop {
 
 struct runes_loop_data {
     uv_work_t req;
+    RunesLoop *loop;
     RunesTerm *t;
     void (*work_cb)(RunesTerm*);
     int (*after_work_cb)(RunesTerm*);
 };
 
-void runes_loop_init(RunesTerm *t);
-void runes_loop_run(RunesTerm *t);
-void runes_loop_start_work(RunesTerm *t, void (*work_cb)(RunesTerm*),
+void runes_loop_init(RunesLoop *loop);
+void runes_loop_init_term(RunesLoop *loop, RunesTerm *t);
+void runes_loop_run(RunesLoop *loop);
+void runes_loop_start_work(RunesLoop *loop, RunesTerm *t,
+                           void (*work_cb)(RunesTerm*),
                            int (*after_work_cb)(RunesTerm*));
-void runes_loop_timer_set(RunesTerm *t, int timeout, int repeat,
-                          void (*cb)(RunesTerm*));
-void runes_loop_cleanup(RunesTerm *t);
+void runes_loop_timer_set(RunesLoop *loop, int timeout, int repeat,
+                          RunesTerm *t, void (*cb)(RunesTerm*));
+void runes_loop_cleanup(RunesLoop *loop);
 
 #endif

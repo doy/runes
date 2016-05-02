@@ -223,7 +223,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     XMapWindow(w->dpy, w->border_w);
 }
 
-void runes_window_backend_init_loop(RunesTerm *t)
+void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
 {
     RunesWindowBackend *w = &t->w;
     unsigned long xim_mask, common_mask;
@@ -247,7 +247,7 @@ void runes_window_backend_init_loop(RunesTerm *t)
         xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask);
     XSetICFocus(w->ic);
 
-    runes_loop_start_work(t, runes_window_backend_get_next_event,
+    runes_loop_start_work(loop, t, runes_window_backend_get_next_event,
                           runes_window_backend_process_event);
 }
 
@@ -542,7 +542,8 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
         cairo_surface_flush(cairo_get_target(w->backend_cr));
         XFlush(w->dpy);
 
-        runes_loop_timer_set(t, 20, 0, runes_window_backend_reset_visual_bell);
+        runes_loop_timer_set(t->loop, 20, 0, t,
+                             runes_window_backend_reset_visual_bell);
     }
 }
 

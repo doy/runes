@@ -12,7 +12,7 @@ struct runes_pty {
 };
 
 void runes_pty_backend_spawn_subprocess(RunesTerm *t);
-void runes_pty_backend_init_loop(RunesTerm *t);
+void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop);
 void runes_pty_backend_set_window_size(RunesTerm *t);
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len);
 void runes_pty_backend_request_close(RunesTerm *t);
