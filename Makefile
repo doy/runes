@@ -1,4 +1,6 @@
 OUT      = runes
+DOUT     = runesd
+COUT     = runesc
 BUILD    = build/
 SRC      = src/
 OBJ      = $(BUILD)runes.o \
@@ -9,6 +11,17 @@ OBJ      = $(BUILD)runes.o \
 	   $(BUILD)pty-unix.o \
 	   $(BUILD)loop.o \
 	   $(BUILD)util.o
+DOBJ     = $(BUILD)runesd.o \
+	   $(BUILD)display.o \
+	   $(BUILD)term.o \
+	   $(BUILD)config.o \
+	   $(BUILD)window-xlib.o \
+	   $(BUILD)pty-unix.o \
+	   $(BUILD)loop.o \
+	   $(BUILD)util.o \
+	   $(BUILD)socket.o
+COBJ     = $(BUILD)runesc.o \
+	   $(BUILD)util.o
 LIBS     = cairo cairo-xlib libuv pangocairo
 CFLAGS  ?= -g -Wall -Wextra -Werror
 LDFLAGS ?= -g -Wall -Wextra -Werror
@@ -18,9 +31,15 @@ ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
 
 MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
-build: $(OUT)
+build: $(OUT) $(DOUT) $(COUT)
 
 $(OUT): $(OBJ) libvt100/libvt100.a
+	$(CC) $(ALLLDFLAGS) -o $@ $^
+
+$(DOUT): $(DOBJ) libvt100/libvt100.a
+	$(CC) $(ALLLDFLAGS) -o $@ $^
+
+$(COUT): $(COBJ)
 	$(CC) $(ALLLDFLAGS) -o $@ $^
 
 libvt100/libvt100.a:
@@ -41,7 +60,7 @@ $(SRC)%.h: $(SRC)%.l
 
 clean:
 	cd libvt100 && make clean
-	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
+	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d) $(DOUT) $(DOBJ) $(DOBJ:$(BUILD)%.o=$(BUILD).%.d) $(COUT) $(COBJ) $(COBJ:$(BUILD)%.o=$(BUILD).%.d)
 	@rmdir -p $(BUILD) > /dev/null 2>&1
 
 -include $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
