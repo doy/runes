@@ -6,7 +6,7 @@
 void runes_warn(const char *fmt, ...);
 void runes_die(const char *fmt, ...);
 char *runes_get_socket_name();
-int sprintf_dup(char **out, const char *fmt, ...);
-void mkdir_p(char *dir);
+int runes_sprintf_dup(char **out, const char *fmt, ...);
+void runes_mkdir_p(char *dir);
 
 #endif

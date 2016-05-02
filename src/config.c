@@ -326,10 +326,10 @@ static FILE *runes_config_get_config_file()
         config_dir = strdup(config_dir);
     }
     else {
-        sprintf_dup(&config_dir, "%s/.config", home);
+        runes_sprintf_dup(&config_dir, "%s/.config", home);
     }
 
-    sprintf_dup(&path, "%s/runes/runes.conf", config_dir);
+    runes_sprintf_dup(&path, "%s/runes/runes.conf", config_dir);
     free(config_dir);
 
     file = fopen(path, "r");
@@ -339,7 +339,7 @@ static FILE *runes_config_get_config_file()
         return file;
     }
 
-    sprintf_dup(&path, "%s/.runesrc", home);
+    runes_sprintf_dup(&path, "%s/.runesrc", home);
 
     file = fopen(path, "r");
     free(path);

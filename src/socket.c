@@ -49,7 +49,7 @@ static int runes_socket_open(RunesSocket *sock)
         runes_die("socket path %s must be an absolute path\n", sock->name);
     }
     *slash = '\0';
-    mkdir_p(dir);
+    runes_mkdir_p(dir);
     free(dir);
 
     unlink(sock->name);

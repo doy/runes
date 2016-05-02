@@ -34,19 +34,19 @@ char *runes_get_socket_name()
 
     runtime_dir = getenv("XDG_RUNTIME_DIR");
     if (runtime_dir) {
-        sprintf_dup(&socket_dir, "%s/runes", runtime_dir);
+        runes_sprintf_dup(&socket_dir, "%s/runes", runtime_dir);
     }
     else {
-        sprintf_dup(&socket_dir, "%s/.runes", home);
+        runes_sprintf_dup(&socket_dir, "%s/.runes", home);
     }
 
-    sprintf_dup(&socket_file, "%s/runesd", socket_dir);
+    runes_sprintf_dup(&socket_file, "%s/runesd", socket_dir);
     free(socket_dir);
 
     return socket_file;
 }
 
-int sprintf_dup(char **out, const char *fmt, ...)
+int runes_sprintf_dup(char **out, const char *fmt, ...)
 {
     int outlen = 0;
     va_list ap;
@@ -64,7 +64,7 @@ int sprintf_dup(char **out, const char *fmt, ...)
     return outlen;
 }
 
-void mkdir_p(char *dir)
+void runes_mkdir_p(char *dir)
 {
     char *path_component, *save_ptr, *tok_str, *partial_path;
     struct stat st;
@@ -75,7 +75,7 @@ void mkdir_p(char *dir)
     while ((path_component = strtok_r(tok_str, "/", &save_ptr))) {
         char *new_path;
 
-        sprintf_dup(&new_path, "%s%s/", partial_path, path_component);
+        runes_sprintf_dup(&new_path, "%s%s/", partial_path, path_component);
 
         if (mkdir(new_path, 0755)) {
             if (errno != EEXIST) {
