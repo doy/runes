@@ -47,18 +47,18 @@ static int runes_socket_open_client(char *name)
     struct sockaddr_un client;
 
     if (strlen(name) + 1 > MAX_SOCKET_PATH_LEN) {
-        runes_die("socket path %s is too long\n", name);
+        runes_die("socket path %s is too long", name);
     }
 
     s = socket(AF_UNIX, SOCK_STREAM, 0);
     if (s < 0) {
-        runes_die("couldn't create socket: %s\n", strerror(errno));
+        runes_die("couldn't create socket: %s", strerror(errno));
     }
 
     client.sun_family = AF_UNIX;
     strcpy(client.sun_path, name);
     if (connect(s, (struct sockaddr*)(&client), sizeof(struct sockaddr_un))) {
-        runes_die("couldn't connect to socket at %s: %s\n", name,
+        runes_die("couldn't connect to socket at %s: %s", name,
                   strerror(errno));
     }
 

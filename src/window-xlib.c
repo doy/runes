@@ -179,8 +179,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
         NULL
     );
     if (w->ic == NULL) {
-        runes_warn("failed\n");
-        exit(1);
+        runes_die("failed");
     }
 
     XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);

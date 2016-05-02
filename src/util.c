@@ -6,12 +6,13 @@
 
 #include "runes.h"
 
+static void runes_vwarn(const char *fmt, va_list ap);
+
 void runes_warn(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    /* XXX make this do something else on windows */
-    vfprintf(stderr, fmt, ap);
+    runes_vwarn(fmt, ap);
     va_end(ap);
 }
 
@@ -19,8 +20,7 @@ void runes_die(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    /* XXX make this do something else on windows */
-    vfprintf(stderr, fmt, ap);
+    runes_vwarn(fmt, ap);
     va_end(ap);
 
     exit(1);
@@ -79,7 +79,7 @@ void runes_mkdir_p(char *dir)
 
         if (mkdir(new_path, 0755)) {
             if (errno != EEXIST) {
-                runes_die("couldn't create directory %s: %s\n",
+                runes_die("couldn't create directory %s: %s",
                           new_path, strerror(errno));
             }
         }
@@ -90,14 +90,29 @@ void runes_mkdir_p(char *dir)
     }
 
     if (stat(partial_path, &st)) {
-        runes_die("couldn't stat %s: %s\n", partial_path, strerror(errno));
+        runes_die("couldn't stat %s: %s", partial_path, strerror(errno));
     }
 
     if (!S_ISDIR(st.st_mode)) {
-        runes_die("couldn't create directory %s: %s\n",
+        runes_die("couldn't create directory %s: %s",
                   partial_path, strerror(EEXIST));
     }
 
     free(partial_path);
     free(dir);
+}
+
+static void runes_vwarn(const char *fmt, va_list ap)
+{
+    size_t fmt_len;
+    char *fmt_with_nl;
+
+    fmt_len = strlen(fmt);
+    fmt_with_nl = malloc(fmt_len + 2);
+    strcpy(fmt_with_nl, fmt);
+    fmt_with_nl[fmt_len] = '\n';
+    fmt_with_nl[fmt_len + 1] = '\0';
+
+    /* XXX make this do something else on windows */
+    vfprintf(stderr, fmt_with_nl, ap);
 }

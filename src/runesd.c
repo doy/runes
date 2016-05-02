@@ -11,7 +11,7 @@ int main (int argc, char *argv[])
     UNUSED(argv);
 
     if (argc > 1) {
-        runes_die("runesd takes no arguments; pass them to runesc instead.\n");
+        runes_die("runesd takes no arguments; pass them to runesc instead.");
     }
 
     setlocale(LC_ALL, "");

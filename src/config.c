@@ -385,7 +385,7 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
         kend = kbegin + strcspn(kbegin, " \t=");
         vbegin = kend + strspn(kend, " \t");
         if (*vbegin != '=') {
-            runes_warn("couldn't parse line: '%s'\n", line);
+            runes_warn("couldn't parse line: '%s'", line);
         }
         vbegin++;
         vbegin = vbegin + strspn(vbegin, " \t");
@@ -409,11 +409,11 @@ static void runes_config_process_args(RunesTerm *t, int argc, char *argv[])
                 i++;
             }
             else {
-                runes_warn("option found with no argument: '%s'\n", argv[i]);
+                runes_warn("option found with no argument: '%s'", argv[i]);
             }
         }
         else {
-            runes_warn("unknown argument: '%s'\n", argv[i]);
+            runes_warn("unknown argument: '%s'", argv[i]);
         }
     }
 }
@@ -476,7 +476,7 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
 
         i = atoi(&key[5]);
         if (key[5] < '0' || key[5] > '9' || i < 0 || i > 255) {
-            runes_warn("unknown option: '%s'\n", key);
+            runes_warn("unknown option: '%s'", key);
             return;
         }
         newcolor = runes_config_parse_color(val);
@@ -501,7 +501,7 @@ static void runes_config_set(RunesTerm *t, char *key, char *val)
         config->cmd = runes_config_parse_string(val);
     }
     else {
-        runes_warn("unknown option: '%s'\n", key);
+        runes_warn("unknown option: '%s'", key);
     }
 }
 
@@ -514,7 +514,7 @@ static char runes_config_parse_bool(char *val)
         return 0;
     }
     else {
-        runes_warn("unknown boolean value: '%s'\n", val);
+        runes_warn("unknown boolean value: '%s'", val);
         return 0;
     }
 }
@@ -522,7 +522,7 @@ static char runes_config_parse_bool(char *val)
 static int runes_config_parse_uint(char *val)
 {
     if (strspn(val, "0123456789") != strlen(val)) {
-        runes_warn("unknown unsigned integer value: '%s'\n", val);
+        runes_warn("unknown unsigned integer value: '%s'", val);
     }
 
     return atoi(val);
@@ -538,7 +538,7 @@ static cairo_pattern_t *runes_config_parse_color(char *val)
     int r, g, b;
 
     if (strlen(val) != 7 || sscanf(val, "#%2x%2x%2x", &r, &g, &b) != 3) {
-        runes_warn("unknown color value: '%s'\n", val);
+        runes_warn("unknown color value: '%s'", val);
         return NULL;
     }
 
