@@ -248,7 +248,7 @@ void runes_window_backend_init_loop(RunesTerm *t)
         xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask);
     XSetICFocus(w->ic);
 
-    data = malloc(sizeof(RunesXlibLoopData));
+    data = malloc(sizeof(RunesLoopData));
     ((RunesLoopData *)data)->req.data = data;
     ((RunesLoopData *)data)->t = t;
 
@@ -352,18 +352,19 @@ void runes_window_backend_cleanup(RunesTerm *t)
 
 static void runes_window_backend_get_next_event(uv_work_t *req)
 {
-    RunesXlibLoopData *data;
+    RunesLoopData *data = req->data;
+    RunesTerm *t = data->t;
+    RunesWindowBackend *w = &t->w;
 
-    data = (RunesXlibLoopData *)req->data;
-    XNextEvent(data->data.t->w.dpy, &data->e);
+    XNextEvent(w->dpy, &w->event);
 }
 
 static void runes_window_backend_process_event(uv_work_t *req, int status)
 {
-    RunesXlibLoopData *data = req->data;
-    XEvent *e = &data->e;
-    RunesTerm *t = data->data.t;
+    RunesLoopData *data = req->data;
+    RunesTerm *t = data->t;
     RunesWindowBackend *w = &t->w;
+    XEvent *e = &w->event;
     int should_close = 0;
 
     UNUSED(status);

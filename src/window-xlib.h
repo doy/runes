@@ -24,6 +24,7 @@ struct runes_window {
     Window w;
     Window border_w;
     XIC ic;
+    XEvent event;
 
     cairo_t *backend_cr;
 
@@ -31,11 +32,6 @@ struct runes_window {
 
     char visual_bell_is_ringing: 1;
 };
-
-typedef struct {
-    RunesLoopData data;
-    XEvent e;
-} RunesXlibLoopData;
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[]);
 void runes_window_backend_init_loop(RunesTerm *t);
