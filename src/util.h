@@ -4,5 +4,6 @@
 #define UNUSED(x) ((void)x)
 
 void runes_warn(const char *fmt, ...);
+int sprintf_dup(char **out, const char *fmt, ...);
 
 #endif

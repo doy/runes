@@ -317,46 +317,42 @@ static void runes_config_set_defaults(RunesTerm *t)
 static FILE *runes_config_get_config_file()
 {
     char *home, *config_dir, *path;
-    size_t home_len, config_dir_len;
     FILE *file;
 
     home = getenv("HOME");
-    home_len = strlen(home);
 
     config_dir = getenv("XDG_CONFIG_HOME");
     if (config_dir) {
         config_dir = strdup(config_dir);
     }
     else {
-        config_dir = malloc(home_len + sizeof("/.config") + 1);
-        strcpy(config_dir, home);
-        strcpy(config_dir + home_len, "/.config");
+        sprintf_dup(&config_dir, "%s/.config", home);
     }
-    config_dir_len = strlen(config_dir);
 
-    path = malloc(config_dir_len + sizeof("/runes/runes.conf") + 1);
-    strcpy(path, config_dir);
-    strcpy(path + config_dir_len, "/runes/runes.conf");
+    sprintf_dup(&path, "%s/runes/runes.conf", config_dir);
     free(config_dir);
 
-    if ((file = fopen(path, "r"))) {
-        free(path);
+    file = fopen(path, "r");
+    free(path);
+
+    if (file) {
         return file;
     }
 
-    free(path);
-    path = malloc(home_len + sizeof("/.runesrc") + 1);
-    strcpy(path, home);
-    strcpy(path + home_len, "/.runesrc");
+    sprintf_dup(&path, "%s/.runesrc", home);
 
-    if ((file = fopen(path, "r"))) {
-        free(path);
+    file = fopen(path, "r");
+    free(path);
+
+    if (file) {
         return file;
     }
 
-    free(path);
+    path = "/etc/runesrc";
 
-    if ((file = fopen("/etc/runesrc", "r"))) {
+    file = fopen(path, "r");
+
+    if (file) {
         return file;
     }
 
