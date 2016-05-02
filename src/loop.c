@@ -17,13 +17,6 @@ void runes_loop_init(RunesLoop *loop)
     loop->loop = uv_default_loop();
 }
 
-void runes_loop_init_term(RunesLoop *loop, RunesTerm *t)
-{
-    t->loop = loop;
-    runes_window_backend_init_loop(t, loop);
-    runes_pty_backend_init_loop(t, loop);
-}
-
 void runes_loop_run(RunesLoop *loop)
 {
     uv_run(loop->loop, UV_RUN_DEFAULT);

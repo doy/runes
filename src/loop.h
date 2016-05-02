@@ -16,7 +16,6 @@ struct runes_loop_data {
 };
 
 void runes_loop_init(RunesLoop *loop);
-void runes_loop_init_term(RunesLoop *loop, RunesTerm *t);
 void runes_loop_run(RunesLoop *loop);
 void runes_loop_start_work(RunesLoop *loop, RunesTerm *t,
                            void (*work_cb)(RunesTerm*),

@@ -16,7 +16,9 @@ void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[])
     vt100_screen_set_scrollback_length(&t->scr, t->config.scrollback_length);
     runes_display_set_window_size(t);
 
-    runes_loop_init_term(loop, t);
+    t->loop = loop;
+    runes_window_backend_init_loop(t, loop);
+    runes_pty_backend_init_loop(t, loop);
 }
 
 void runes_term_cleanup(RunesTerm *t)
