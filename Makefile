@@ -31,7 +31,13 @@ ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
 
 MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
-build: $(OUT) $(DOUT) $(COUT)
+all: $(OUT) $(DOUT) $(COUT) ## Build all of the targets
+
+run: $(OUT) ## Build and run the standalone runes terminal
+	@./$(OUT)
+
+run-daemon: $(DOUT) $(COUT) ## Build and run the runes daemon
+	@./$(DOUT)
 
 $(OUT): $(OBJ) libvt100/libvt100.a
 	$(CC) $(ALLLDFLAGS) -o $@ $^
@@ -58,11 +64,14 @@ $(SRC)%.c: $(SRC)%.l
 $(SRC)%.h: $(SRC)%.l
 	$(LEX) --header-file=$(<:.l=.h) -o /dev/null $<
 
-clean:
+clean: ## Remove build files
 	cd libvt100 && make clean
 	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d) $(DOUT) $(DOBJ) $(DOBJ:$(BUILD)%.o=$(BUILD).%.d) $(COUT) $(COBJ) $(COBJ:$(BUILD)%.o=$(BUILD).%.d)
 	@rmdir -p $(BUILD) > /dev/null 2>&1
 
+help:
+	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-20s\033[0m %s\n", $$2, $$4}'
+
 -include $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
 
-.PHONY: build clean
+.PHONY: all run run-daemon clean help
