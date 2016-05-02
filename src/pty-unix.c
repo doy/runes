@@ -8,8 +8,8 @@
 
 #include "runes.h"
 
-static void runes_pty_backend_read(uv_work_t *req);
-static void runes_pty_backend_got_data(uv_work_t *req, int status);
+static void runes_pty_backend_read(RunesTerm *t);
+static int runes_pty_backend_got_data(RunesTerm *t);
 
 void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 {
@@ -86,15 +86,8 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 
 void runes_pty_backend_init_loop(RunesTerm *t)
 {
-    void *data;
-
-    data = malloc(sizeof(RunesLoopData));
-    ((RunesLoopData *)data)->req.data = data;
-    ((RunesLoopData *)data)->t = t;
-
-    uv_queue_work(
-        t->loop.loop, data, runes_pty_backend_read,
-        runes_pty_backend_got_data);
+    runes_loop_start_work(t, runes_pty_backend_read,
+                          runes_pty_backend_got_data);
 }
 
 void runes_pty_backend_set_window_size(RunesTerm *t)
@@ -132,10 +125,8 @@ void runes_pty_backend_cleanup(RunesTerm *t)
     close(pty->master);
 }
 
-static void runes_pty_backend_read(uv_work_t *req)
+static void runes_pty_backend_read(RunesTerm *t)
 {
-    RunesLoopData *data = req->data;
-    RunesTerm *t = data->t;
     RunesPtyBackend *pty = &t->pty;
 
     runes_window_backend_request_flush(t);
@@ -144,13 +135,9 @@ static void runes_pty_backend_read(uv_work_t *req)
         RUNES_READ_BUFFER_LENGTH - pty->remaininglen);
 }
 
-static void runes_pty_backend_got_data(uv_work_t *req, int status)
+static int runes_pty_backend_got_data(RunesTerm *t)
 {
-    RunesLoopData *data = req->data;
-    RunesTerm *t = data->t;
     RunesPtyBackend *pty = &t->pty;
-
-    UNUSED(status);
 
     if (pty->readlen > 0) {
         int to_process = pty->readlen + pty->remaininglen;
@@ -158,12 +145,12 @@ static void runes_pty_backend_got_data(uv_work_t *req, int status)
             &t->scr, pty->readbuf, to_process);
         pty->remaininglen = to_process - processed;
         memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
-        uv_queue_work(
-            t->loop.loop, req, runes_pty_backend_read,
-            runes_pty_backend_got_data);
+
+        return 1;
     }
     else {
         runes_window_backend_request_close(t);
-        free(req);
+
+        return 0;
     }
 }

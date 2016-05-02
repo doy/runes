@@ -76,8 +76,8 @@ static struct function_key application_cursor_keys[] = {
 };
 #undef RUNES_KEY
 
-static void runes_window_backend_get_next_event(uv_work_t *req);
-static void runes_window_backend_process_event(uv_work_t *req, int status);
+static void runes_window_backend_get_next_event(RunesTerm *t);
+static int runes_window_backend_process_event(RunesTerm *t);
 static Bool runes_window_backend_find_flush_events(
     Display *dpy, XEvent *e, XPointer arg);
 static void runes_window_backend_resize_window(
@@ -227,7 +227,6 @@ void runes_window_backend_init_loop(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
     unsigned long xim_mask, common_mask;
-    void *data;
 
     XGetICValues(w->ic, XNFilterEvents, &xim_mask, NULL);
     /* we always want to receive keyboard events, and enter/leave window events
@@ -248,14 +247,8 @@ void runes_window_backend_init_loop(RunesTerm *t)
         xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask);
     XSetICFocus(w->ic);
 
-    data = malloc(sizeof(RunesLoopData));
-    ((RunesLoopData *)data)->req.data = data;
-    ((RunesLoopData *)data)->t = t;
-
-    uv_queue_work(
-        t->loop.loop, data,
-        runes_window_backend_get_next_event,
-        runes_window_backend_process_event);
+    runes_loop_start_work(t, runes_window_backend_get_next_event,
+                          runes_window_backend_process_event);
 }
 
 void runes_window_backend_request_flush(RunesTerm *t)
@@ -350,24 +343,18 @@ void runes_window_backend_cleanup(RunesTerm *t)
     XCloseDisplay(w->dpy);
 }
 
-static void runes_window_backend_get_next_event(uv_work_t *req)
+static void runes_window_backend_get_next_event(RunesTerm *t)
 {
-    RunesLoopData *data = req->data;
-    RunesTerm *t = data->t;
     RunesWindowBackend *w = &t->w;
 
     XNextEvent(w->dpy, &w->event);
 }
 
-static void runes_window_backend_process_event(uv_work_t *req, int status)
+static int runes_window_backend_process_event(RunesTerm *t)
 {
-    RunesLoopData *data = req->data;
-    RunesTerm *t = data->t;
     RunesWindowBackend *w = &t->w;
     XEvent *e = &w->event;
     int should_close = 0;
-
-    UNUSED(status);
 
     if (!XFilterEvent(e, None)) {
         switch (e->type) {
@@ -434,15 +421,11 @@ static void runes_window_backend_process_event(uv_work_t *req, int status)
         }
     }
 
-    if (!should_close) {
-        uv_queue_work(
-            t->loop.loop, req, runes_window_backend_get_next_event,
-            runes_window_backend_process_event);
-    }
-    else {
+    if (should_close) {
         runes_pty_backend_request_close(t);
-        free(req);
     }
+
+    return !should_close;
 }
 
 static Bool runes_window_backend_find_flush_events(

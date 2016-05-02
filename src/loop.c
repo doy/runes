@@ -7,6 +7,8 @@ struct runes_loop_timer_data {
     void (*cb)(RunesTerm*);
 };
 
+static void runes_loop_do_work(uv_work_t *req);
+static void runes_loop_do_after_work(uv_work_t *req, int status);
 static void runes_loop_timer_cb(uv_timer_t *handle);
 static void runes_loop_free_handle(uv_handle_t *handle);
 
@@ -24,6 +26,21 @@ void runes_loop_run(RunesTerm *t)
     RunesLoop *loop = &t->loop;
 
     uv_run(loop->loop, UV_RUN_DEFAULT);
+}
+
+void runes_loop_start_work(RunesTerm *t, void (*work_cb)(RunesTerm*),
+                           int (*after_work_cb)(RunesTerm*))
+{
+    void *data;
+
+    data = malloc(sizeof(RunesLoopData));
+    ((RunesLoopData *)data)->req.data = data;
+    ((RunesLoopData *)data)->t = t;
+    ((RunesLoopData *)data)->work_cb = work_cb;
+    ((RunesLoopData *)data)->after_work_cb = after_work_cb;
+
+    uv_queue_work(
+        t->loop.loop, data, runes_loop_do_work, runes_loop_do_after_work);
 }
 
 void runes_loop_timer_set(RunesTerm *t, int timeout, int repeat,
@@ -47,6 +64,32 @@ void runes_loop_cleanup(RunesTerm *t)
     RunesLoop *loop = &t->loop;
 
     uv_loop_close(loop->loop);
+}
+
+static void runes_loop_do_work(uv_work_t *req)
+{
+    RunesLoopData *data = req->data;
+    RunesTerm *t = data->t;
+
+    data->work_cb(t);
+}
+
+static void runes_loop_do_after_work(uv_work_t *req, int status)
+{
+    RunesLoopData *data = req->data;
+    RunesTerm *t = data->t;
+    int loop = 0;
+
+    UNUSED(status);
+
+    loop = data->after_work_cb(t);
+    if (loop) {
+        uv_queue_work(
+            t->loop.loop, req, runes_loop_do_work, runes_loop_do_after_work);
+    }
+    else {
+        free(req);
+    }
 }
 
 static void runes_loop_timer_cb(uv_timer_t *handle)
