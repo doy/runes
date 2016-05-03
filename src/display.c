@@ -111,10 +111,17 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
     RunesDisplay *display = &t->display;
 
     if (!t->scr.hide_cursor) {
-        int row = t->scr.grid->cur.row, col = t->scr.grid->cur.col;
+        int row = t->scr.grid->cur.row, col = t->scr.grid->cur.col, width;
+        struct vt100_cell *cell;
 
         if (col >= t->scr.grid->max.col) {
             col = t->scr.grid->max.col - 1;
+        }
+
+        cell = &t->scr.grid->rows[t->scr.grid->row_top + row].cells[col];
+        width = display->fontx;
+        if (cell->is_wide) {
+            width *= 2;
         }
 
         cairo_save(cr);
@@ -125,17 +132,15 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
                 cr,
                 col * display->fontx + 0.5,
                 (row + display->row_visible_offset) * display->fonty + 0.5,
-                display->fontx - 1, display->fonty - 1);
+                width - 1, display->fonty - 1);
             cairo_stroke(cr);
         }
         else {
-            struct vt100_cell *cell = &t->scr.grid->rows[t->scr.grid->row_top + row].cells[col];
-
             cairo_rectangle(
                 cr,
                 col * display->fontx,
                 (row + display->row_visible_offset) * display->fonty,
-                display->fontx, display->fonty);
+                width, display->fonty);
             cairo_fill(cr);
             runes_display_draw_glyph(
                 t, cr, t->config.bgdefault, cell->attrs,
