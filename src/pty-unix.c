@@ -55,7 +55,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 
         /* XXX should use a different TERM value eventually, but for right now
          * screen is compatible enough */
-        setenv("TERM", "screen", 1);
+        setenv("TERM", "screen-256color", 1);
         /* gnome-terminal sets this, so avoid confusing applications which
          * introspect it. not setting it to something else because as far as i
          * can tell, it's not actually useful these days, given that terminfo
