@@ -902,11 +902,13 @@ static void runes_window_backend_handle_selection_request_event(
         }
 
         vt100_screen_get_string_plaintext(&t->scr, start, end, &contents, &len);
-        XChangeProperty(
-            w->dpy, e->requestor, e->property,
-            e->target, 8, PropModeReplace,
-            (unsigned char *)contents, len);
-        free(contents);
+        if (contents) {
+            XChangeProperty(
+                w->dpy, e->requestor, e->property,
+                e->target, 8, PropModeReplace,
+                (unsigned char *)contents, len);
+            free(contents);
+        }
     }
     else {
         selection.property = None;
