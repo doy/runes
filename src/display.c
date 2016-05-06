@@ -87,9 +87,10 @@ void runes_display_set_window_size(RunesTerm *t)
 
 void runes_display_draw_screen(RunesTerm *t)
 {
+    RunesDisplay *display = &t->display;
     int r, rows;
 
-    if (!t->scr.dirty) {
+    if (!t->scr.dirty && !display->dirty) {
         return;
     }
 
@@ -104,6 +105,7 @@ void runes_display_draw_screen(RunesTerm *t)
     }
 
     t->scr.dirty = 0;
+    display->dirty = 0;
 }
 
 void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)

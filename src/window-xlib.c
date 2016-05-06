@@ -522,7 +522,7 @@ static void runes_window_backend_visible_scroll(RunesTerm *t, int count)
         return;
     }
 
-    t->scr.dirty = 1;
+    t->display.dirty = 1;
     runes_window_backend_flush(t);
 }
 
@@ -611,7 +611,7 @@ static void runes_window_backend_start_selection(
     XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
     t->display.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
 
-    t->scr.dirty = 1;
+    t->display.dirty = 1;
     runes_window_backend_request_flush(t);
 }
 
@@ -628,7 +628,7 @@ static void runes_window_backend_update_selection(
     *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
 
     if (orig_end.row != end->row || orig_end.col != end->col) {
-        t->scr.dirty = 1;
+        t->display.dirty = 1;
         runes_window_backend_request_flush(t);
     }
 }
@@ -859,7 +859,7 @@ static void runes_window_backend_handle_selection_clear_event(
     UNUSED(e);
 
     t->display.has_selection = 0;
-    t->scr.dirty = 1;
+    t->display.dirty = 1;
     runes_window_backend_flush(t);
 }
 

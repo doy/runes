@@ -21,6 +21,7 @@ struct runes_display {
 
     char unfocused: 1;
     char has_selection: 1;
+    char dirty: 1;
 };
 
 void runes_display_init(RunesTerm *t);
