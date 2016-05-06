@@ -40,13 +40,13 @@ run-daemon: $(DOUT) $(COUT) ## Build and run the runes daemon
 	@./$(DOUT)
 
 $(OUT): $(OBJ) libvt100/libvt100.a
-	$(CC) $(ALLLDFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 $(DOUT): $(DOBJ) libvt100/libvt100.a
-	$(CC) $(ALLLDFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 $(COUT): $(COBJ)
-	$(CC) $(ALLLDFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 libvt100/libvt100.a:
 	cd libvt100 && make static
