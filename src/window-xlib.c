@@ -518,9 +518,14 @@ static int runes_window_backend_check_recent(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
     struct timespec now;
+    int rate = t->config.redraw_rate;
+
+    if (rate == 0) {
+        return 0;
+    }
 
     clock_gettime(CLOCK_REALTIME, &now);
-    now.tv_nsec -= 10000000;
+    now.tv_nsec -= rate * 1000000;
     if (now.tv_nsec < 0) {
         now.tv_sec -= 1;
         now.tv_nsec += 1000000000;
@@ -528,7 +533,7 @@ static int runes_window_backend_check_recent(RunesTerm *t)
     if (now.tv_sec < w->last_redraw.tv_sec || (now.tv_sec == w->last_redraw.tv_sec && now.tv_nsec < w->last_redraw.tv_nsec)) {
         if (!w->delaying) {
             runes_loop_timer_set(
-                t->loop, 10, 0, t, runes_window_backend_delay_cb);
+                t->loop, rate, 0, t, runes_window_backend_delay_cb);
             w->delaying = 1;
         }
         return 1;
