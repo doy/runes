@@ -25,6 +25,8 @@ struct runes_window {
     Window border_w;
     XIC ic;
     XEvent event;
+    char *selection_contents;
+    size_t selection_len;
 
     cairo_t *backend_cr;
 

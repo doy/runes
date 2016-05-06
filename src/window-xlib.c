@@ -618,6 +618,8 @@ static void runes_window_backend_start_selection(
 static void runes_window_backend_update_selection(
     RunesTerm *t, int xpixel, int ypixel)
 {
+    RunesWindowBackend *w = &t->w;
+    struct vt100_loc *start = &t->display.selection_start;
     struct vt100_loc *end = &t->display.selection_end;
     struct vt100_loc orig_end = *end;
 
@@ -628,6 +630,20 @@ static void runes_window_backend_update_selection(
     *end = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
 
     if (orig_end.row != end->row || orig_end.col != end->col) {
+        if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
+            struct vt100_loc *tmp;
+
+            tmp = start;
+            start = end;
+            end = tmp;
+        }
+
+        if (w->selection_contents) {
+            free(w->selection_contents);
+            w->selection_contents = NULL;
+        }
+        vt100_screen_get_string_plaintext(
+            &t->scr, start, end, &w->selection_contents, &w->selection_len);
         t->display.dirty = 1;
         runes_window_backend_request_flush(t);
     }
@@ -639,6 +655,10 @@ static void runes_window_backend_clear_selection(RunesTerm *t)
 
     XSetSelectionOwner(w->dpy, XA_PRIMARY, None, CurrentTime);
     t->display.has_selection = 0;
+    if (w->selection_contents) {
+        free(w->selection_contents);
+        w->selection_contents = NULL;
+    }
 }
 
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
@@ -888,26 +908,11 @@ static void runes_window_backend_handle_selection_request_event(
             (unsigned char *)&targets, 2);
     }
     else if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
-        char *contents;
-        size_t len;
-        struct vt100_loc *start = &t->display.selection_start;
-        struct vt100_loc *end   = &t->display.selection_end;
-
-        if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
-            struct vt100_loc *tmp;
-
-            tmp = start;
-            start = end;
-            end = tmp;
-        }
-
-        vt100_screen_get_string_plaintext(&t->scr, start, end, &contents, &len);
-        if (contents) {
+        if (w->selection_contents) {
             XChangeProperty(
                 w->dpy, e->requestor, e->property,
                 e->target, 8, PropModeReplace,
-                (unsigned char *)contents, len);
-            free(contents);
+                (unsigned char *)w->selection_contents, w->selection_len);
         }
     }
     else {
