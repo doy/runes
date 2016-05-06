@@ -1,5 +1,6 @@
 #include <cairo-xlib.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <X11/cursorfont.h>
 #include <X11/Xlib.h>
@@ -83,6 +84,8 @@ static Bool runes_window_backend_find_flush_events(
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
+static int runes_window_backend_check_recent(RunesTerm *t);
+static void runes_window_backend_delay_cb(RunesTerm *t);
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count);
 static void runes_window_backend_visual_bell(RunesTerm *t);
 static void runes_window_backend_reset_visual_bell(RunesTerm *t);
@@ -470,6 +473,10 @@ static void runes_window_backend_flush(RunesTerm *t)
 {
     RunesWindowBackend *w = &t->w;
 
+    if (runes_window_backend_check_recent(t)) {
+        return;
+    }
+
     if (t->scr.audible_bell) {
         runes_window_backend_audible_bell(t);
         t->scr.audible_bell = 0;
@@ -503,6 +510,41 @@ static void runes_window_backend_flush(RunesTerm *t)
     cairo_paint(w->backend_cr);
     runes_display_draw_cursor(t, w->backend_cr);
     cairo_surface_flush(cairo_get_target(w->backend_cr));
+
+    clock_gettime(CLOCK_REALTIME, &w->last_redraw);
+}
+
+static int runes_window_backend_check_recent(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+    struct timespec now;
+
+    clock_gettime(CLOCK_REALTIME, &now);
+    now.tv_nsec -= 10000000;
+    if (now.tv_nsec < 0) {
+        now.tv_sec -= 1;
+        now.tv_nsec += 1000000000;
+    }
+    if (now.tv_sec < w->last_redraw.tv_sec || (now.tv_sec == w->last_redraw.tv_sec && now.tv_nsec < w->last_redraw.tv_nsec)) {
+        if (!w->delaying) {
+            runes_loop_timer_set(
+                t->loop, 10, 0, t, runes_window_backend_delay_cb);
+            w->delaying = 1;
+        }
+        return 1;
+    }
+    else {
+        return 0;
+    }
+
+}
+
+static void runes_window_backend_delay_cb(RunesTerm *t)
+{
+    RunesWindowBackend *w = &t->w;
+
+    w->delaying = 0;
+    runes_window_backend_request_flush(t);
 }
 
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count)

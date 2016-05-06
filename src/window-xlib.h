@@ -2,6 +2,7 @@
 #define _RUNES_XLIB_H
 
 #include <cairo.h>
+#include <time.h>
 #include <X11/Xlib.h>
 
 enum runes_atoms {
@@ -27,12 +28,14 @@ struct runes_window {
     XEvent event;
     char *selection_contents;
     size_t selection_len;
+    struct timespec last_redraw;
 
     cairo_t *backend_cr;
 
     Atom atoms[RUNES_NUM_ATOMS];
 
     char visual_bell_is_ringing: 1;
+    char delaying: 1;
 };
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[]);
