@@ -94,6 +94,10 @@ void runes_display_draw_screen(RunesTerm *t)
         return;
     }
 
+    if (t->scr.dirty) {
+        display->has_selection = 0;
+    }
+
     /* XXX quite inefficient */
     rows = t->scr.grid->max.row;
     for (r = 0; r < rows; ++r) {
