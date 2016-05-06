@@ -23,8 +23,9 @@ DOBJ     = $(BUILD)runesd.o \
 COBJ     = $(BUILD)runesc.o \
 	   $(BUILD)util.o
 LIBS     = cairo cairo-xlib libuv pangocairo
-CFLAGS  ?= -g -Wall -Wextra -Werror
-LDFLAGS ?= -g -Wall -Wextra -Werror
+OPT     ?= -g
+CFLAGS  ?= $(OPT) -Wall -Wextra -Werror
+LDFLAGS ?= $(OPT) -Wall -Wextra -Werror
 
 ALLCFLAGS  = $(shell pkg-config --cflags $(LIBS)) -Ilibvt100/src $(CFLAGS)
 ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
