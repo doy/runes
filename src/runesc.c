@@ -40,6 +40,7 @@ int main (int argc, char *argv[])
     send(s, buf, offset, 0);
     free(buf);
     shutdown(s, SHUT_RDWR);
+    return 0;
 }
 
 static int runes_socket_open_client(char *name)
