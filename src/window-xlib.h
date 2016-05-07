@@ -38,6 +38,7 @@ struct runes_window {
     char delaying: 1;
 };
 
+void runes_window_backend_init(RunesWindowBackend *w);
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[]);
 void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop);
 void runes_window_backend_request_flush(RunesTerm *t);
@@ -47,6 +48,6 @@ void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel);
 void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len);
 void runes_window_backend_set_window_title(
     RunesTerm *t, char *name, size_t len);
-void runes_window_backend_cleanup(RunesTerm *t);
+void runes_window_backend_cleanup(RunesWindowBackend *w);
 
 #endif

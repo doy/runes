@@ -28,7 +28,7 @@ struct runes_config {
     char audible_bell: 1;
 };
 
-void runes_config_init(RunesTerm *t, int argc, char *argv[]);
-void runes_config_cleanup(RunesTerm *t);
+void runes_config_init(RunesConfig *config, int argc, char *argv[]);
+void runes_config_cleanup(RunesConfig *config);
 
 #endif

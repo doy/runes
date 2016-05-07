@@ -9,7 +9,11 @@
 
 #include "runes.h"
 #include "window-xlib.h"
+
+#include "config.h"
+#include "display.h"
 #include "loop.h"
+#include "pty-unix.h"
 
 static char *atom_names[RUNES_NUM_ATOMS] = {
     "WM_DELETE_WINDOW",
@@ -126,9 +130,17 @@ static struct function_key *runes_window_backend_find_key_sequence(
 static struct vt100_loc runes_window_backend_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel);
 
+void runes_window_backend_init(RunesWindowBackend *w)
+{
+    XInitThreads();
+    XSetLocaleModifiers("");
+    w->dpy = XOpenDisplay(NULL);
+    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
+}
+
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     pid_t pid;
     XClassHint class_hints = { "runes", "runes" };
     XWMHints wm_hints;
@@ -148,21 +160,18 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     normal_hints.flags = PMinSize | PResizeInc | PBaseSize;
 
-    normal_hints.min_width   = t->display.fontx + 4;
-    normal_hints.min_height  = t->display.fonty + 4;
-    normal_hints.width_inc   = t->display.fontx;
-    normal_hints.height_inc  = t->display.fonty;
-    normal_hints.base_width  = t->display.fontx * t->config.default_cols + 4;
-    normal_hints.base_height = t->display.fonty * t->config.default_rows + 4;
+    normal_hints.min_width   = t->display->fontx + 4;
+    normal_hints.min_height  = t->display->fonty + 4;
+    normal_hints.width_inc   = t->display->fontx;
+    normal_hints.height_inc  = t->display->fonty;
+    normal_hints.base_width  = t->display->fontx * t->config->default_cols + 4;
+    normal_hints.base_height = t->display->fonty * t->config->default_rows + 4;
 
-    cairo_pattern_get_rgba(t->config.bgdefault, &bg_r, &bg_g, &bg_b, NULL);
+    cairo_pattern_get_rgba(t->config->bgdefault, &bg_r, &bg_g, &bg_b, NULL);
     bgcolor.red   = bg_r * 65535;
     bgcolor.green = bg_g * 65535;
     bgcolor.blue  = bg_b * 65535;
 
-    XInitThreads();
-
-    w->dpy = XOpenDisplay(NULL);
     XAllocColor(
         w->dpy, DefaultColormap(w->dpy, DefaultScreen(w->dpy)), &bgcolor);
     w->border_w = XCreateSimpleWindow(
@@ -174,7 +183,6 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
         2, 2, normal_hints.base_width - 4, normal_hints.base_height - 4,
         0, bgcolor.pixel, bgcolor.pixel);
 
-    XSetLocaleModifiers("");
     im = XOpenIM(w->dpy, NULL, NULL, NULL);
     w->ic = XCreateIC(
         im,
@@ -187,7 +195,6 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
         runes_die("failed");
     }
 
-    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
     XSetWMProtocols(w->dpy, w->border_w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
 
     Xutf8SetWMProperties(
@@ -204,7 +211,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     cursor = XCreateFontCursor(w->dpy, XC_xterm);
     cairo_pattern_get_rgba(
-        t->config.mousecursorcolor, &mouse_r, &mouse_g, &mouse_b, NULL);
+        t->config->mousecursorcolor, &mouse_r, &mouse_g, &mouse_b, NULL);
     cursor_fg.red   = (unsigned short)(mouse_r * 65535);
     cursor_fg.green = (unsigned short)(mouse_g * 65535);
     cursor_fg.blue  = (unsigned short)(mouse_b * 65535);
@@ -229,7 +236,7 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
 void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     unsigned long xim_mask, common_mask;
 
     XGetICValues(w->ic, XNFilterEvents, &xim_mask, NULL);
@@ -260,14 +267,14 @@ void runes_window_backend_request_flush(RunesTerm *t)
     XEvent e;
 
     e.xclient.type = ClientMessage;
-    e.xclient.window = t->w.w;
+    e.xclient.window = t->w->w;
     e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_RUNES_FLUSH];
+    e.xclient.data.l[0] = t->w->atoms[RUNES_ATOM_RUNES_FLUSH];
 
-    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
-    XLockDisplay(t->w.dpy);
-    XFlush(t->w.dpy);
-    XUnlockDisplay(t->w.dpy);
+    XSendEvent(t->w->dpy, t->w->w, False, NoEventMask, &e);
+    XLockDisplay(t->w->dpy);
+    XFlush(t->w->dpy);
+    XUnlockDisplay(t->w->dpy);
 }
 
 void runes_window_backend_request_close(RunesTerm *t)
@@ -275,28 +282,28 @@ void runes_window_backend_request_close(RunesTerm *t)
     XEvent e;
 
     e.xclient.type = ClientMessage;
-    e.xclient.window = t->w.w;
-    e.xclient.message_type = t->w.atoms[RUNES_ATOM_WM_PROTOCOLS];
+    e.xclient.window = t->w->w;
+    e.xclient.message_type = t->w->atoms[RUNES_ATOM_WM_PROTOCOLS];
     e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w.atoms[RUNES_ATOM_WM_DELETE_WINDOW];
+    e.xclient.data.l[0] = t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW];
     e.xclient.data.l[1] = CurrentTime;
 
-    XSendEvent(t->w.dpy, t->w.w, False, NoEventMask, &e);
-    XLockDisplay(t->w.dpy);
-    XFlush(t->w.dpy);
-    XUnlockDisplay(t->w.dpy);
+    XSendEvent(t->w->dpy, t->w->w, False, NoEventMask, &e);
+    XLockDisplay(t->w->dpy);
+    XFlush(t->w->dpy);
+    XUnlockDisplay(t->w->dpy);
 }
 
 unsigned long runes_window_backend_get_window_id(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     return (unsigned long)w->w;
 }
 
 void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     cairo_surface_t *surface;
 
     surface = cairo_get_target(w->backend_cr);
@@ -306,7 +313,7 @@ void runes_window_backend_get_size(RunesTerm *t, int *xpixel, int *ypixel)
 
 void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     XChangeProperty(
         w->dpy, w->border_w, XA_WM_ICON_NAME,
@@ -321,7 +328,7 @@ void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
 void runes_window_backend_set_window_title(
     RunesTerm *t, char *name, size_t len)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     XChangeProperty(
         w->dpy, w->border_w, XA_WM_NAME,
@@ -333,9 +340,8 @@ void runes_window_backend_set_window_title(
         (unsigned char *)name, len);
 }
 
-void runes_window_backend_cleanup(RunesTerm *t)
+void runes_window_backend_cleanup(RunesWindowBackend *w)
 {
-    RunesWindowBackend *w = &t->w;
     XIM im;
 
     cairo_destroy(w->backend_cr);
@@ -349,14 +355,14 @@ void runes_window_backend_cleanup(RunesTerm *t)
 
 static void runes_window_backend_get_next_event(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     XNextEvent(w->dpy, &w->event);
 }
 
 static int runes_window_backend_process_event(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     XEvent *e = &w->event;
     int should_close = 0;
 
@@ -451,7 +457,7 @@ static Bool runes_window_backend_find_flush_events(
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     /* XXX no idea why shrinking the window dimensions to 0 makes xlib think
      * that the dimension is 65535 */
@@ -462,7 +468,7 @@ static void runes_window_backend_resize_window(
         height = 1;
     }
 
-    if (width != t->display.xpixel || height != t->display.ypixel) {
+    if (width != t->display->xpixel || height != t->display->ypixel) {
         int dwidth = width - 4, dheight = height - 4;
 
         XResizeWindow(w->dpy, w->w, dwidth, dheight);
@@ -475,32 +481,32 @@ static void runes_window_backend_resize_window(
 
 static void runes_window_backend_flush(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     if (runes_window_backend_check_recent(t)) {
         return;
     }
 
-    if (t->scr.audible_bell) {
+    if (t->scr->audible_bell) {
         runes_window_backend_audible_bell(t);
-        t->scr.audible_bell = 0;
+        t->scr->audible_bell = 0;
     }
 
-    if (t->scr.visual_bell) {
+    if (t->scr->visual_bell) {
         runes_window_backend_visual_bell(t);
-        t->scr.visual_bell = 0;
+        t->scr->visual_bell = 0;
     }
 
-    if (t->scr.update_title) {
+    if (t->scr->update_title) {
         runes_window_backend_set_window_title(
-            t, t->scr.title, t->scr.title_len);
-        t->scr.update_title = 0;
+            t, t->scr->title, t->scr->title_len);
+        t->scr->update_title = 0;
     }
 
-    if (t->scr.update_icon_name) {
+    if (t->scr->update_icon_name) {
         runes_window_backend_set_icon_name(
-            t, t->scr.icon_name, t->scr.icon_name_len);
-        t->scr.update_icon_name = 0;
+            t, t->scr->icon_name, t->scr->icon_name_len);
+        t->scr->update_icon_name = 0;
     }
 
     if (w->visual_bell_is_ringing) {
@@ -510,7 +516,7 @@ static void runes_window_backend_flush(RunesTerm *t)
     runes_display_draw_screen(t);
 
     cairo_set_source_surface(
-        w->backend_cr, cairo_get_target(t->display.cr), 0.0, 0.0);
+        w->backend_cr, cairo_get_target(t->display->cr), 0.0, 0.0);
     cairo_paint(w->backend_cr);
     runes_display_draw_cursor(t, w->backend_cr);
     cairo_surface_flush(cairo_get_target(w->backend_cr));
@@ -520,9 +526,9 @@ static void runes_window_backend_flush(RunesTerm *t)
 
 static int runes_window_backend_check_recent(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     struct timespec now;
-    int rate = t->config.redraw_rate;
+    int rate = t->config->redraw_rate;
 
     if (rate == 0) {
         return 0;
@@ -550,7 +556,7 @@ static int runes_window_backend_check_recent(RunesTerm *t)
 
 static void runes_window_backend_delay_cb(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     w->delaying = 0;
     runes_window_backend_request_flush(t);
@@ -558,36 +564,36 @@ static void runes_window_backend_delay_cb(RunesTerm *t)
 
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count)
 {
-    int min = 0, max = t->scr.grid->row_count - t->scr.grid->max.row;
-    int old_offset = t->display.row_visible_offset;
+    int min = 0, max = t->scr->grid->row_count - t->scr->grid->max.row;
+    int old_offset = t->display->row_visible_offset;
 
-    t->display.row_visible_offset += count;
-    if (t->display.row_visible_offset < min) {
-        t->display.row_visible_offset = min;
+    t->display->row_visible_offset += count;
+    if (t->display->row_visible_offset < min) {
+        t->display->row_visible_offset = min;
     }
-    if (t->display.row_visible_offset > max) {
-        t->display.row_visible_offset = max;
+    if (t->display->row_visible_offset > max) {
+        t->display->row_visible_offset = max;
     }
 
-    if (t->display.row_visible_offset == old_offset) {
+    if (t->display->row_visible_offset == old_offset) {
         return;
     }
 
-    t->display.dirty = 1;
+    t->display->dirty = 1;
     runes_window_backend_flush(t);
 }
 
 static void runes_window_backend_visual_bell(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
-    if (t->config.bell_is_urgent) {
+    if (t->config->bell_is_urgent) {
         runes_window_backend_set_urgent(t);
     }
 
     if (!w->visual_bell_is_ringing) {
         w->visual_bell_is_ringing = 1;
-        cairo_set_source(w->backend_cr, t->config.fgdefault);
+        cairo_set_source(w->backend_cr, t->config->fgdefault);
         cairo_paint(w->backend_cr);
         cairo_surface_flush(cairo_get_target(w->backend_cr));
         XFlush(w->dpy);
@@ -599,7 +605,7 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
 
 static void runes_window_backend_reset_visual_bell(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     runes_window_backend_request_flush(t);
     w->visual_bell_is_ringing = 0;
@@ -607,10 +613,10 @@ static void runes_window_backend_reset_visual_bell(RunesTerm *t)
 
 static void runes_window_backend_audible_bell(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
-    if (t->config.audible_bell) {
-        if (t->config.bell_is_urgent) {
+    if (t->config->audible_bell) {
+        if (t->config->bell_is_urgent) {
             runes_window_backend_set_urgent(t);
         }
         XBell(w->dpy, 0);
@@ -624,9 +630,9 @@ static void runes_window_backend_set_urgent(RunesTerm *t)
 {
     XWMHints *hints;
 
-    hints = XGetWMHints(t->w.dpy, t->w.border_w);
+    hints = XGetWMHints(t->w->dpy, t->w->border_w);
     hints->flags |= XUrgencyHint;
-    XSetWMHints(t->w.dpy, t->w.border_w, hints);
+    XSetWMHints(t->w->dpy, t->w->border_w, hints);
     XFree(hints);
 }
 
@@ -634,15 +640,15 @@ static void runes_window_backend_clear_urgent(RunesTerm *t)
 {
     XWMHints *hints;
 
-    hints = XGetWMHints(t->w.dpy, t->w.border_w);
+    hints = XGetWMHints(t->w->dpy, t->w->border_w);
     hints->flags &= ~XUrgencyHint;
-    XSetWMHints(t->w.dpy, t->w.border_w, hints);
+    XSetWMHints(t->w->dpy, t->w->border_w, hints);
     XFree(hints);
 }
 
 static void runes_window_backend_paste(RunesTerm *t, Time time)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     XConvertSelection(
         w->dpy, XA_PRIMARY, w->atoms[RUNES_ATOM_UTF8_STRING],
@@ -652,29 +658,29 @@ static void runes_window_backend_paste(RunesTerm *t, Time time)
 static void runes_window_backend_start_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time)
 {
-    RunesWindowBackend *w = &t->w;
-    struct vt100_loc *start = &t->display.selection_start;
-    struct vt100_loc *end   = &t->display.selection_end;
+    RunesWindowBackend *w = t->w;
+    struct vt100_loc *start = &t->display->selection_start;
+    struct vt100_loc *end   = &t->display->selection_end;
 
     *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
     *end   = *start;
 
     XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
-    t->display.has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+    t->display->has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
 
-    t->display.dirty = 1;
+    t->display->dirty = 1;
     runes_window_backend_request_flush(t);
 }
 
 static void runes_window_backend_update_selection(
     RunesTerm *t, int xpixel, int ypixel)
 {
-    RunesWindowBackend *w = &t->w;
-    struct vt100_loc *start = &t->display.selection_start;
-    struct vt100_loc *end = &t->display.selection_end;
+    RunesWindowBackend *w = t->w;
+    struct vt100_loc *start = &t->display->selection_start;
+    struct vt100_loc *end = &t->display->selection_end;
     struct vt100_loc orig_end = *end;
 
-    if (!t->display.has_selection) {
+    if (!t->display->has_selection) {
         return;
     }
 
@@ -694,18 +700,18 @@ static void runes_window_backend_update_selection(
             w->selection_contents = NULL;
         }
         vt100_screen_get_string_plaintext(
-            &t->scr, start, end, &w->selection_contents, &w->selection_len);
-        t->display.dirty = 1;
+            t->scr, start, end, &w->selection_contents, &w->selection_len);
+        t->display->dirty = 1;
         runes_window_backend_request_flush(t);
     }
 }
 
 static void runes_window_backend_clear_selection(RunesTerm *t)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     XSetSelectionOwner(w->dpy, XA_PRIMARY, None, CurrentTime);
-    t->display.has_selection = 0;
+    t->display->has_selection = 0;
     if (w->selection_contents) {
         free(w->selection_contents);
         w->selection_contents = NULL;
@@ -714,7 +720,7 @@ static void runes_window_backend_clear_selection(RunesTerm *t)
 
 static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     char *buf;
     size_t len = 8;
     KeySym sym;
@@ -770,7 +776,7 @@ static void runes_window_backend_handle_button_event(
         }
     }
 
-    if (t->scr.mouse_reporting_press_release) {
+    if (t->scr->mouse_reporting_press_release) {
         char response[7];
         char status = 0;
         struct vt100_loc loc;
@@ -818,7 +824,7 @@ static void runes_window_backend_handle_button_event(
             ' ' + (status), ' ' + loc.col + 1, ' ' + loc.row + 1);
         runes_pty_backend_write(t, response, 6);
     }
-    else if (t->scr.mouse_reporting_press && e->type == ButtonPress) {
+    else if (t->scr->mouse_reporting_press && e->type == ButtonPress) {
         char response[7];
         struct vt100_loc loc;
 
@@ -854,7 +860,7 @@ static void runes_window_backend_handle_expose_event(
 static void runes_window_backend_handle_configure_event(
     RunesTerm *t, XConfigureEvent *e)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     if (e->window != w->border_w) {
         return;
@@ -875,19 +881,19 @@ static void runes_window_backend_handle_focus_event(
         return;
     }
 
-    if (e->type == FocusIn && !t->display.unfocused) {
+    if (e->type == FocusIn && !t->display->unfocused) {
         return;
     }
-    if (e->type == FocusOut && t->display.unfocused) {
+    if (e->type == FocusOut && t->display->unfocused) {
         return;
     }
 
     runes_window_backend_clear_urgent(t);
     if (e->type == FocusIn) {
-        t->display.unfocused = 0;
+        t->display->unfocused = 0;
     }
     else {
-        t->display.unfocused = 1;
+        t->display->unfocused = 1;
     }
     runes_window_backend_flush(t);
 }
@@ -895,7 +901,7 @@ static void runes_window_backend_handle_focus_event(
 static void runes_window_backend_handle_selection_notify_event(
     RunesTerm *t, XSelectionEvent *e)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
 
     if (e->property == None) {
         if (e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
@@ -913,11 +919,11 @@ static void runes_window_backend_handle_selection_notify_event(
         XGetWindowProperty(
             w->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
             AnyPropertyType, &type, &format, &nitems, &left, &buf);
-        if (t->scr.bracketed_paste) {
+        if (t->scr->bracketed_paste) {
             runes_pty_backend_write(t, "\e[200~", 6);
         }
         runes_pty_backend_write(t, (char *)buf, nitems);
-        if (t->scr.bracketed_paste) {
+        if (t->scr->bracketed_paste) {
             runes_pty_backend_write(t, "\e[201~", 6);
         }
         XFree(buf);
@@ -929,15 +935,15 @@ static void runes_window_backend_handle_selection_clear_event(
 {
     UNUSED(e);
 
-    t->display.has_selection = 0;
-    t->display.dirty = 1;
+    t->display->has_selection = 0;
+    t->display->dirty = 1;
     runes_window_backend_flush(t);
 }
 
 static void runes_window_backend_handle_selection_request_event(
     RunesTerm *t, XSelectionRequestEvent *e)
 {
-    RunesWindowBackend *w = &t->w;
+    RunesWindowBackend *w = t->w;
     XSelectionEvent selection;
 
     selection.type       = SelectionNotify;
@@ -986,14 +992,14 @@ static int runes_window_backend_handle_builtin_keypress(
     case XK_Page_Up:
         if (e->state & ShiftMask) {
             runes_window_backend_visible_scroll(
-                t, t->scr.grid->max.row - 1);
+                t, t->scr->grid->max.row - 1);
             return 1;
         }
         break;
     case XK_Page_Down:
         if (e->state & ShiftMask) {
             runes_window_backend_visible_scroll(
-                t, -(t->scr.grid->max.row - 1));
+                t, -(t->scr->grid->max.row - 1));
             return 1;
         }
         break;
@@ -1018,11 +1024,11 @@ static int runes_window_backend_handle_builtin_button_press(
             return 1;
             break;
         case Button4:
-            runes_window_backend_visible_scroll(t, t->config.scroll_lines);
+            runes_window_backend_visible_scroll(t, t->config->scroll_lines);
             return 1;
             break;
         case Button5:
-            runes_window_backend_visible_scroll(t, -t->config.scroll_lines);
+            runes_window_backend_visible_scroll(t, -t->config->scroll_lines);
             return 1;
             break;
         default:
@@ -1038,8 +1044,8 @@ static struct function_key *runes_window_backend_find_key_sequence(
 {
     struct function_key *key;
 
-    if (t->scr.application_keypad) {
-        if (t->scr.application_cursor) {
+    if (t->scr->application_keypad) {
+        if (t->scr->application_cursor) {
             key = &application_cursor_keys[0];
             while (key->sym != XK_VoidSymbol) {
                 if (key->sym == sym) {
@@ -1072,17 +1078,17 @@ static struct vt100_loc runes_window_backend_get_mouse_position(
 {
     struct vt100_loc ret;
 
-    ret.row = ypixel / t->display.fonty;
-    ret.col = xpixel / t->display.fontx;
+    ret.row = ypixel / t->display->fonty;
+    ret.col = xpixel / t->display->fontx;
 
-    ret.row = ret.row < 0                        ? 0
-            : ret.row > t->scr.grid->max.row - 1 ? t->scr.grid->max.row - 1
-            :                                      ret.row;
-    ret.col = ret.col < 0                    ? 0
-            : ret.col > t->scr.grid->max.col ? t->scr.grid->max.col
-            :                                  ret.col;
+    ret.row = ret.row < 0                         ? 0
+            : ret.row > t->scr->grid->max.row - 1 ? t->scr->grid->max.row - 1
+            :                                       ret.row;
+    ret.col = ret.col < 0                     ? 0
+            : ret.col > t->scr->grid->max.col ? t->scr->grid->max.col
+            :                                   ret.col;
 
-    ret.row = ret.row - t->display.row_visible_offset + t->scr.grid->row_count - t->scr.grid->max.row;
+    ret.row = ret.row - t->display->row_visible_offset + t->scr->grid->row_count - t->scr->grid->max.row;
 
     return ret;
 }

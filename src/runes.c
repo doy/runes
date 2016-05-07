@@ -1,6 +1,7 @@
 #include <locale.h>
 
 #include "runes.h"
+
 #include "loop.h"
 #include "term.h"
 

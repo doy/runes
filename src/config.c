@@ -5,41 +5,41 @@
 #include "runes.h"
 #include "config.h"
 
-static void runes_config_set_defaults(RunesTerm *t);
+static void runes_config_set_defaults(RunesConfig *config);
 static FILE *runes_config_get_config_file();
-static void runes_config_process_config_file(RunesTerm *t, FILE *config_file);
-static void runes_config_process_args(RunesTerm *t, int argc, char *argv[]);
-static void runes_config_set(RunesTerm *t, char *key, char *value);
+static void runes_config_process_config_file(
+    RunesConfig *config, FILE *config_file);
+static void runes_config_process_args(
+    RunesConfig *config, int argc, char *argv[]);
+static void runes_config_set(RunesConfig *config, char *key, char *value);
 static char runes_config_parse_bool(char *val);
 static int runes_config_parse_uint(char *val);
 static char *runes_config_parse_string(char *val);
 static cairo_pattern_t *runes_config_parse_color(char *val);
 
-void runes_config_init(RunesTerm *t, int argc, char *argv[])
+void runes_config_init(RunesConfig *config, int argc, char *argv[])
 {
-    runes_config_set_defaults(t);
-    runes_config_process_config_file(t, runes_config_get_config_file());
-    runes_config_process_args(t, argc, argv);
+    runes_config_set_defaults(config);
+    runes_config_process_config_file(config, runes_config_get_config_file());
+    runes_config_process_args(config, argc, argv);
 }
 
-void runes_config_cleanup(RunesTerm *t)
+void runes_config_cleanup(RunesConfig *config)
 {
     int i;
 
-    free(t->config.font_name);
-    cairo_pattern_destroy(t->config.cursorcolor);
-    cairo_pattern_destroy(t->config.mousecursorcolor);
-    cairo_pattern_destroy(t->config.fgdefault);
-    cairo_pattern_destroy(t->config.bgdefault);
+    free(config->font_name);
+    cairo_pattern_destroy(config->cursorcolor);
+    cairo_pattern_destroy(config->mousecursorcolor);
+    cairo_pattern_destroy(config->fgdefault);
+    cairo_pattern_destroy(config->bgdefault);
     for (i = 0; i < 256; ++i) {
-        cairo_pattern_destroy(t->config.colors[i]);
+        cairo_pattern_destroy(config->colors[i]);
     }
 }
 
-static void runes_config_set_defaults(RunesTerm *t)
+static void runes_config_set_defaults(RunesConfig *config)
 {
-    RunesConfig *config = &t->config;
-
     config->font_name      = strdup("monospace 10");
     config->bold_is_bright = 1;
     config->bold_is_bold   = 1;
@@ -363,7 +363,8 @@ static FILE *runes_config_get_config_file()
     return NULL;
 }
 
-static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
+static void runes_config_process_config_file(
+    RunesConfig *config, FILE *config_file)
 {
     char line[1024];
 
@@ -398,18 +399,18 @@ static void runes_config_process_config_file(RunesTerm *t, FILE *config_file)
         *kend = '\0';
         *vend = '\0';
 
-        runes_config_set(t, kbegin, vbegin);
+        runes_config_set(config, kbegin, vbegin);
     }
 }
 
-static void runes_config_process_args(RunesTerm *t, int argc, char *argv[])
+static void runes_config_process_args(RunesConfig *config, int argc, char *argv[])
 {
     int i;
 
     for (i = 1; i < argc; ++i) {
         if (!strncmp(argv[i], "--", 2)) {
             if (i + 1 < argc) {
-                runes_config_set(t, &argv[i][2], argv[i + 1]);
+                runes_config_set(config, &argv[i][2], argv[i + 1]);
                 i++;
             }
             else {
@@ -422,10 +423,8 @@ static void runes_config_process_args(RunesTerm *t, int argc, char *argv[])
     }
 }
 
-static void runes_config_set(RunesTerm *t, char *key, char *val)
+static void runes_config_set(RunesConfig *config, char *key, char *val)
 {
-    RunesConfig *config = &t->config;
-
     if (!strcmp(key, "font")) {
         free(config->font_name);
         config->font_name = runes_config_parse_string(val);

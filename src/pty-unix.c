@@ -9,18 +9,26 @@
 
 #include "runes.h"
 #include "pty-unix.h"
+
+#include "config.h"
+#include "display.h"
 #include "loop.h"
+#include "window-xlib.h"
 
 static void runes_pty_backend_read(RunesTerm *t);
 static int runes_pty_backend_got_data(RunesTerm *t);
 
-void runes_pty_backend_spawn_subprocess(RunesTerm *t)
+void runes_pty_backend_init(RunesPtyBackend *pty)
 {
-    RunesPtyBackend *pty = &t->pty;
-
     pty->master = posix_openpt(O_RDWR);
     grantpt(pty->master);
     unlockpt(pty->master);
+}
+
+void runes_pty_backend_spawn_subprocess(RunesTerm *t)
+{
+    RunesPtyBackend *pty = t->pty;
+
     pty->slave = open(ptsname(pty->master), O_RDWR);
 
     pty->child_pid = fork();
@@ -48,7 +56,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
 
         close(pty->slave);
 
-        cmd = t->config.cmd;
+        cmd = t->config->cmd;
         if (!cmd) {
             cmd = getenv("SHELL");
         }
@@ -102,36 +110,34 @@ void runes_pty_backend_set_window_size(RunesTerm *t, int row, int col,
     size.ws_col = col;
     size.ws_xpixel = xpixel;
     size.ws_ypixel = ypixel;
-    ioctl(t->pty.master, TIOCSWINSZ, &size);
+    ioctl(t->pty->master, TIOCSWINSZ, &size);
 }
 
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
 {
-    write(t->pty.master, buf, len);
-    if (t->display.row_visible_offset != 0) {
-        t->display.row_visible_offset = 0;
-        t->scr.dirty = 1;
+    write(t->pty->master, buf, len);
+    if (t->display->row_visible_offset != 0) {
+        t->display->row_visible_offset = 0;
+        t->scr->dirty = 1;
         runes_window_backend_request_flush(t);
     }
 }
 
 void runes_pty_backend_request_close(RunesTerm *t)
 {
-    RunesPtyBackend *pty = &t->pty;
+    RunesPtyBackend *pty = t->pty;
 
     kill(pty->child_pid, SIGHUP);
 }
 
-void runes_pty_backend_cleanup(RunesTerm *t)
+void runes_pty_backend_cleanup(RunesPtyBackend *pty)
 {
-    RunesPtyBackend *pty = &t->pty;
-
     close(pty->master);
 }
 
 static void runes_pty_backend_read(RunesTerm *t)
 {
-    RunesPtyBackend *pty = &t->pty;
+    RunesPtyBackend *pty = t->pty;
 
     runes_window_backend_request_flush(t);
     pty->readlen = read(
@@ -141,12 +147,12 @@ static void runes_pty_backend_read(RunesTerm *t)
 
 static int runes_pty_backend_got_data(RunesTerm *t)
 {
-    RunesPtyBackend *pty = &t->pty;
+    RunesPtyBackend *pty = t->pty;
 
     if (pty->readlen > 0) {
         int to_process = pty->readlen + pty->remaininglen;
         int processed = vt100_screen_process_string(
-            &t->scr, pty->readbuf, to_process);
+            t->scr, pty->readbuf, to_process);
         pty->remaininglen = to_process - processed;
         memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
 

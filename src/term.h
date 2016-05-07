@@ -1,19 +1,15 @@
 #ifndef _RUNES_TERM_H
 #define _RUNES_TERM_H
 
-#include <vt100.h>
-
-#include "config.h"
-#include "display.h"
-#include "pty-unix.h"
-#include "window-xlib.h"
+struct vt100_screen;
+typedef struct vt100_screen VT100Screen;
 
 struct runes_term {
-    RunesWindowBackend w;
-    RunesPtyBackend pty;
-    VT100Screen scr;
-    RunesConfig config;
-    RunesDisplay display;
+    RunesConfig *config;
+    RunesDisplay *display;
+    RunesWindowBackend *w;
+    RunesPtyBackend *pty;
+    VT100Screen *scr;
     RunesLoop *loop;
 };
 

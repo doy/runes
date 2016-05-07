@@ -8,6 +8,7 @@
 
 #include "runes.h"
 #include "socket.h"
+
 #include "loop.h"
 
 static int runes_socket_open(RunesSocket *sock);

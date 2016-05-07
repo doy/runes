@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -7,6 +8,7 @@
 #include <sys/un.h>
 
 #include "runes.h"
+
 #include "socket.h"
 
 static int runes_socket_open_client(char *name);

@@ -4,7 +4,10 @@
 #include "runes.h"
 #include "display.h"
 
-static void runes_display_recalculate_font_metrics(RunesTerm *t);
+#include "config.h"
+
+static void runes_display_recalculate_font_metrics(
+    RunesDisplay *display, char *font_name);
 static int runes_display_draw_cell(RunesTerm *t, int row, int col);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
@@ -13,14 +16,14 @@ static void runes_display_draw_glyph(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col);
 
-void runes_display_init(RunesTerm *t)
+void runes_display_init(RunesDisplay *display, char *font_name)
 {
-    runes_display_recalculate_font_metrics(t);
+    runes_display_recalculate_font_metrics(display, font_name);
 }
 
 void runes_display_set_window_size(RunesTerm *t, int width, int height)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
     cairo_t *old_cr = NULL;
     cairo_surface_t *surface;
 
@@ -50,7 +53,7 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
         PangoFontDescription *font_desc;
 
         attrs = pango_attr_list_new();
-        font_desc = pango_font_description_from_string(t->config.font_name);
+        font_desc = pango_font_description_from_string(t->config->font_name);
 
         display->layout = pango_cairo_create_layout(display->cr);
         pango_layout_set_attributes(display->layout, attrs);
@@ -67,7 +70,7 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
             display->cr, cairo_get_target(old_cr), 0.0, 0.0);
     }
     else {
-        cairo_set_source(display->cr, t->config.bgdefault);
+        cairo_set_source(display->cr, t->config->bgdefault);
     }
 
     cairo_paint(display->cr);
@@ -81,51 +84,51 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
 
 void runes_display_draw_screen(RunesTerm *t)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
     int r, rows;
 
-    if (!t->scr.dirty && !display->dirty) {
+    if (!t->scr->dirty && !display->dirty) {
         return;
     }
 
-    if (t->scr.dirty) {
+    if (t->scr->dirty) {
         display->has_selection = 0;
     }
 
     /* XXX quite inefficient */
-    rows = t->scr.grid->max.row;
+    rows = t->scr->grid->max.row;
     for (r = 0; r < rows; ++r) {
-        int c = 0, cols = t->scr.grid->max.col;
+        int c = 0, cols = t->scr->grid->max.col;
 
         while (c < cols) {
             c += runes_display_draw_cell(t, r, c);
         }
     }
 
-    t->scr.dirty = 0;
+    t->scr->dirty = 0;
     display->dirty = 0;
 }
 
 void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
 
-    if (!t->scr.hide_cursor) {
-        int row = t->scr.grid->cur.row, col = t->scr.grid->cur.col, width;
+    if (!t->scr->hide_cursor) {
+        int row = t->scr->grid->cur.row, col = t->scr->grid->cur.col, width;
         struct vt100_cell *cell;
 
-        if (col >= t->scr.grid->max.col) {
-            col = t->scr.grid->max.col - 1;
+        if (col >= t->scr->grid->max.col) {
+            col = t->scr->grid->max.col - 1;
         }
 
-        cell = &t->scr.grid->rows[t->scr.grid->row_top + row].cells[col];
+        cell = &t->scr->grid->rows[t->scr->grid->row_top + row].cells[col];
         width = display->fontx;
         if (cell->is_wide) {
             width *= 2;
         }
 
         cairo_save(cr);
-        cairo_set_source(cr, t->config.cursorcolor);
+        cairo_set_source(cr, t->config->cursorcolor);
         if (display->unfocused) {
             cairo_set_line_width(cr, 1);
             cairo_rectangle(
@@ -143,7 +146,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
                 width, display->fonty);
             cairo_fill(cr);
             runes_display_draw_glyph(
-                t, cr, t->config.bgdefault, cell->attrs,
+                t, cr, t->config->bgdefault, cell->attrs,
                 cell->contents, cell->len,
                 row + display->row_visible_offset, col);
         }
@@ -153,7 +156,7 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
 
 int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
     struct vt100_loc start = display->selection_start;
     struct vt100_loc end = display->selection_end;
 
@@ -164,18 +167,18 @@ int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc)
     if (loc.row == start.row) {
         int start_max_col;
 
-        start_max_col = vt100_screen_row_max_col(&t->scr, start.row);
+        start_max_col = vt100_screen_row_max_col(t->scr, start.row);
         if (start.col > start_max_col) {
-            start.col = t->scr.grid->max.col;
+            start.col = t->scr->grid->max.col;
         }
     }
 
     if (loc.row == end.row) {
         int end_max_col;
 
-        end_max_col = vt100_screen_row_max_col(&t->scr, end.row);
+        end_max_col = vt100_screen_row_max_col(t->scr, end.row);
         if (end.col > end_max_col) {
-            end.col = t->scr.grid->max.col;
+            end.col = t->scr->grid->max.col;
         }
     }
 
@@ -211,17 +214,15 @@ int runes_display_loc_is_between(
     return 1;
 }
 
-void runes_display_cleanup(RunesTerm *t)
+void runes_display_cleanup(RunesDisplay *display)
 {
-    RunesDisplay *display = &t->display;
-
     g_object_unref(display->layout);
     cairo_destroy(display->cr);
 }
 
-static void runes_display_recalculate_font_metrics(RunesTerm *t)
+static void runes_display_recalculate_font_metrics(
+    RunesDisplay *display, char *font_name)
 {
-    RunesDisplay *display = &t->display;
     PangoFontDescription *desc;
     PangoContext *context;
     PangoFontMetrics *metrics;
@@ -233,7 +234,7 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
         context = pango_layout_get_context(display->layout);
     }
     else {
-        desc = pango_font_description_from_string(t->config.font_name);
+        desc = pango_font_description_from_string(font_name);
         context = pango_font_map_create_context(
             pango_cairo_font_map_get_default());
     }
@@ -255,10 +256,10 @@ static void runes_display_recalculate_font_metrics(RunesTerm *t)
 
 static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
     struct vt100_loc loc = {
-        row + t->scr.grid->row_top - display->row_visible_offset, col };
-    struct vt100_cell *cell = &t->scr.grid->rows[loc.row].cells[loc.col];
+        row + t->scr->grid->row_top - display->row_visible_offset, col };
+    struct vt100_cell *cell = &t->scr->grid->rows[loc.row].cells[loc.col];
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
     int selected;
@@ -267,10 +268,10 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     switch (cell->attrs.bgcolor.type) {
     case VT100_COLOR_DEFAULT:
-        bg = t->config.bgdefault;
+        bg = t->config->bgdefault;
         break;
     case VT100_COLOR_IDX:
-        bg = t->config.colors[cell->attrs.bgcolor.idx];
+        bg = t->config->colors[cell->attrs.bgcolor.idx];
         break;
     case VT100_COLOR_RGB:
         bg = cairo_pattern_create_rgb(
@@ -283,15 +284,15 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     switch (cell->attrs.fgcolor.type) {
     case VT100_COLOR_DEFAULT:
-        fg = t->config.fgdefault;
+        fg = t->config->fgdefault;
         break;
     case VT100_COLOR_IDX: {
         unsigned char idx = cell->attrs.fgcolor.idx;
 
-        if (t->config.bold_is_bright && cell->attrs.bold && idx < 8) {
+        if (t->config->bold_is_bright && cell->attrs.bold && idx < 8) {
             idx += 8;
         }
-        fg = t->config.colors[idx];
+        fg = t->config->colors[idx];
         break;
     }
     case VT100_COLOR_RGB:
@@ -305,8 +306,8 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     if (cell->attrs.inverse ^ selected) {
         if (cell->attrs.fgcolor.id == cell->attrs.bgcolor.id) {
-            fg = t->config.bgdefault;
-            bg = t->config.fgdefault;
+            fg = t->config->bgdefault;
+            bg = t->config->fgdefault;
         }
         else {
             cairo_pattern_t *tmp = fg;
@@ -339,7 +340,7 @@ static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
 
     cairo_save(cr);
     cairo_set_source(cr, pattern);
@@ -354,11 +355,11 @@ static void runes_display_draw_glyph(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col)
 {
-    RunesDisplay *display = &t->display;
+    RunesDisplay *display = t->display;
     PangoAttrList *pango_attrs;
 
     pango_attrs = pango_layout_get_attributes(display->layout);
-    if (t->config.bold_is_bold) {
+    if (t->config->bold_is_bold) {
         pango_attr_list_change(
             pango_attrs, pango_attr_weight_new(
                 attrs.bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL));
