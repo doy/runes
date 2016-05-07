@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "runes.h"
+#include "term.h"
 
 #include "config.h"
 #include "display.h"

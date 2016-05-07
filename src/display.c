@@ -5,6 +5,7 @@
 #include "display.h"
 
 #include "config.h"
+#include "term.h"
 
 static void runes_display_recalculate_font_metrics(
     RunesDisplay *display, char *font_name);

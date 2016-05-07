@@ -13,6 +13,7 @@
 
 #include "config.h"
 #include "loop.h"
+#include "term.h"
 #include "window-xlib.h"
 
 static void runes_pty_backend_read(RunesTerm *t);

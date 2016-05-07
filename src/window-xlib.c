@@ -14,6 +14,7 @@
 #include "display.h"
 #include "loop.h"
 #include "pty-unix.h"
+#include "term.h"
 
 static char *atom_names[RUNES_NUM_ATOMS] = {
     "WM_DELETE_WINDOW",

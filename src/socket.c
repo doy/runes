@@ -10,6 +10,7 @@
 #include "socket.h"
 
 #include "loop.h"
+#include "term.h"
 
 static int runes_socket_open(RunesSocket *sock);
 static void runes_socket_close(RunesSocket *sock);

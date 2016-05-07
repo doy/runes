@@ -18,6 +18,5 @@ typedef struct runes_loop RunesLoop;
 typedef struct runes_socket RunesSocket;
 
 #include "util.h"
-#include "term.h"
 
 #endif
