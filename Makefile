@@ -34,6 +34,11 @@ MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
 all: $(OUT) $(DOUT) $(COUT) ## Build all of the targets
 
+release: ## Build optimized binaries
+	$(MAKE) clean
+	$(MAKE) OPT=-O2
+	strip $(OUT) $(DOUT) $(COUT)
+
 run: $(OUT) ## Build and run the standalone runes terminal
 	@./$(OUT)
 
