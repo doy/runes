@@ -1,7 +1,9 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "runes.h"
+#include "config.h"
 
 static void runes_config_set_defaults(RunesTerm *t);
 static FILE *runes_config_get_config_file();

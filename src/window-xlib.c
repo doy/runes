@@ -8,6 +8,8 @@
 #include <X11/Xutil.h>
 
 #include "runes.h"
+#include "window-xlib.h"
+#include "loop.h"
 
 static char *atom_names[RUNES_NUM_ATOMS] = {
     "WM_DELETE_WINDOW",

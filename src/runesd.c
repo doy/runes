@@ -1,6 +1,7 @@
 #include <locale.h>
 
 #include "runes.h"
+#include "loop.h"
 #include "socket.h"
 
 int main (int argc, char *argv[])

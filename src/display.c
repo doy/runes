@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "runes.h"
+#include "display.h"
 
 static void runes_display_recalculate_font_metrics(RunesTerm *t);
 static int runes_display_draw_cell(RunesTerm *t, int row, int col);

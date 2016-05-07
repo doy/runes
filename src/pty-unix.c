@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 #include "runes.h"
+#include "pty-unix.h"
+#include "loop.h"
 
 static void runes_pty_backend_read(RunesTerm *t);
 static int runes_pty_backend_got_data(RunesTerm *t);

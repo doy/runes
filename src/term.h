@@ -3,6 +3,11 @@
 
 #include <vt100.h>
 
+#include "config.h"
+#include "display.h"
+#include "pty-unix.h"
+#include "window-xlib.h"
+
 struct runes_term {
     RunesWindowBackend w;
     RunesPtyBackend pty;

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 
 #include "runes.h"
+#include "loop.h"
 
 struct runes_loop_data {
     uv_work_t req;
