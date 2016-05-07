@@ -9,11 +9,11 @@ struct runes_loop {
 
 void runes_loop_init(RunesLoop *loop);
 void runes_loop_run(RunesLoop *loop);
-void runes_loop_start_work(RunesLoop *loop, RunesTerm *t,
-                           void (*work_cb)(RunesTerm*),
-                           int (*after_work_cb)(RunesTerm*));
+void runes_loop_start_work(RunesLoop *loop, void *t,
+                           void (*work_cb)(void*),
+                           int (*after_work_cb)(void*));
 void runes_loop_timer_set(RunesLoop *loop, int timeout, int repeat,
-                          RunesTerm *t, void (*cb)(RunesTerm*));
+                          void *t, void (*cb)(void*));
 void runes_loop_cleanup(RunesLoop *loop);
 
 #endif

@@ -16,8 +16,8 @@
 #include "term.h"
 #include "window-xlib.h"
 
-static void runes_pty_backend_read(RunesTerm *t);
-static int runes_pty_backend_got_data(RunesTerm *t);
+static void runes_pty_backend_read(void *t);
+static int runes_pty_backend_got_data(void *t);
 
 void runes_pty_backend_init(RunesPtyBackend *pty)
 {
@@ -131,9 +131,9 @@ void runes_pty_backend_cleanup(RunesPtyBackend *pty)
     close(pty->master);
 }
 
-static void runes_pty_backend_read(RunesTerm *t)
+static void runes_pty_backend_read(void *t)
 {
-    RunesPtyBackend *pty = t->pty;
+    RunesPtyBackend *pty = ((RunesTerm *)t)->pty;
 
     runes_window_backend_request_flush(t);
     pty->readlen = read(
@@ -141,14 +141,14 @@ static void runes_pty_backend_read(RunesTerm *t)
         RUNES_READ_BUFFER_LENGTH - pty->remaininglen);
 }
 
-static int runes_pty_backend_got_data(RunesTerm *t)
+static int runes_pty_backend_got_data(void *t)
 {
-    RunesPtyBackend *pty = t->pty;
+    RunesPtyBackend *pty = ((RunesTerm *)t)->pty;
 
     if (pty->readlen > 0) {
         int to_process = pty->readlen + pty->remaininglen;
         int processed = vt100_screen_process_string(
-            t->scr, pty->readbuf, to_process);
+            ((RunesTerm *)t)->scr, pty->readbuf, to_process);
         pty->remaininglen = to_process - processed;
         memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
 

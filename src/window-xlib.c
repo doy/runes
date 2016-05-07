@@ -84,8 +84,8 @@ static struct function_key application_cursor_keys[] = {
 };
 #undef RUNES_KEY
 
-static void runes_window_backend_get_next_event(RunesTerm *t);
-static int runes_window_backend_process_event(RunesTerm *t);
+static void runes_window_backend_get_next_event(void *t);
+static int runes_window_backend_process_event(void *t);
 static Bool runes_window_backend_find_flush_events(
     Display *dpy, XEvent *e, XPointer arg);
 static void runes_window_backend_resize_window(
@@ -94,10 +94,10 @@ static void runes_window_backend_flush(RunesTerm *t);
 static void runes_window_backend_write_to_pty(
     RunesTerm *t, char *buf, size_t len);
 static int runes_window_backend_check_recent(RunesTerm *t);
-static void runes_window_backend_delay_cb(RunesTerm *t);
+static void runes_window_backend_delay_cb(void *t);
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count);
 static void runes_window_backend_visual_bell(RunesTerm *t);
-static void runes_window_backend_reset_visual_bell(RunesTerm *t);
+static void runes_window_backend_reset_visual_bell(void *t);
 static void runes_window_backend_audible_bell(RunesTerm *t);
 static void runes_window_backend_set_urgent(RunesTerm *t);
 static void runes_window_backend_clear_urgent(RunesTerm *t);
@@ -356,16 +356,16 @@ void runes_window_backend_cleanup(RunesWindowBackend *w)
     XCloseDisplay(w->dpy);
 }
 
-static void runes_window_backend_get_next_event(RunesTerm *t)
+static void runes_window_backend_get_next_event(void *t)
 {
-    RunesWindowBackend *w = t->w;
+    RunesWindowBackend *w = ((RunesTerm *)t)->w;
 
     XNextEvent(w->dpy, &w->event);
 }
 
-static int runes_window_backend_process_event(RunesTerm *t)
+static int runes_window_backend_process_event(void *t)
 {
-    RunesWindowBackend *w = t->w;
+    RunesWindowBackend *w = ((RunesTerm *)t)->w;
     XEvent *e = &w->event;
     int should_close = 0;
 
@@ -568,9 +568,9 @@ static int runes_window_backend_check_recent(RunesTerm *t)
 
 }
 
-static void runes_window_backend_delay_cb(RunesTerm *t)
+static void runes_window_backend_delay_cb(void *t)
 {
-    RunesWindowBackend *w = t->w;
+    RunesWindowBackend *w = ((RunesTerm *)t)->w;
 
     w->delaying = 0;
     runes_window_backend_request_flush(t);
@@ -617,9 +617,9 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
     }
 }
 
-static void runes_window_backend_reset_visual_bell(RunesTerm *t)
+static void runes_window_backend_reset_visual_bell(void *t)
 {
-    RunesWindowBackend *w = t->w;
+    RunesWindowBackend *w = ((RunesTerm *)t)->w;
 
     runes_window_backend_request_flush(t);
     w->visual_bell_is_ringing = 0;

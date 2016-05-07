@@ -14,8 +14,8 @@
 
 static int runes_socket_open(RunesSocket *sock);
 static void runes_socket_close(RunesSocket *sock);
-static void runes_socket_accept(RunesTerm *t);
-static int runes_socket_handle_request(RunesTerm *t);
+static void runes_socket_accept(void *t);
+static int runes_socket_handle_request(void *t);
 
 void runes_socket_init(RunesSocket *sock, RunesLoop *loop)
 {
@@ -89,7 +89,7 @@ static void runes_socket_close(RunesSocket *sock)
     unlink(sock->name);
 }
 
-static void runes_socket_accept(RunesTerm *t)
+static void runes_socket_accept(void *t)
 {
     RunesSocket *sock = (RunesSocket *)t;
     struct sockaddr_un client;
@@ -98,7 +98,7 @@ static void runes_socket_accept(RunesTerm *t)
     sock->client_sock = accept(sock->sock, (struct sockaddr*)(&client), &len);
 }
 
-static int runes_socket_handle_request(RunesTerm *t)
+static int runes_socket_handle_request(void *t)
 {
     RunesSocket *sock = (RunesSocket *)t;
     ssize_t bytes;
