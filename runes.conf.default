@@ -1,0 +1,58 @@
+# runes looks for a configuration file in the following places:
+# - $XDG_CONFIG_HOME/runes/runes.conf (if $XDG_CONFIG is set) or $HOME/.config/runes/runes.conf
+# - $HOME/.runesrc
+# - /etc/runesrc
+
+# Geometry configuration
+
+# cols = 80
+# rows = 24
+
+
+# Font configuration
+
+# font = monospace 10
+# bold_is_bold = true
+# bold_is_bright = true
+
+
+# Miscellaneous configuration
+
+# audible_bell = true
+# bell_is_urgent = true
+# scroll_lines = 3
+# scrollback_length = 4096
+
+# while "command" is not set by default, it will default to $SHELL if possible and to /bin/sh
+# if $SHELL is not set.
+# command = /bin/sh
+
+
+# Color configuration
+# fgcolor = #d2d2d2
+# bgcolor = #000000
+# cursorcolor = #00ff00
+# mousecursorcolor = #ffffff
+# color0 = #000000
+# color1 = #cd0000
+# color2 = #00cd00
+# color3 = #cdcd00
+# color4 = #0000cd
+# color5 = #cd00cd
+# color6 = #00cdcd
+# color7 = #e4e4e4
+# color8 = #4d4d4d
+# color9 = #ff0000
+# color10 = #00ff00
+# color11 = #ffff00
+# color12 = #0000ff
+# color13 = #ff00ff
+# color14 = #00ffff
+# color15 = #ffffff
+# color16 = #000000
+# color17 = #00005f
+# color18 = #000086
+# color19 = #0000ae
+# color20 = #0000d6
+# color21 = #0000ff
+# (and so on through color255)
