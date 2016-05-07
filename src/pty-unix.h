@@ -1,6 +1,8 @@
 #ifndef _RUNES_PTY_H
 #define _RUNES_PTY_H
 
+#define RUNES_READ_BUFFER_LENGTH 4096
+
 struct runes_pty {
     int master;
     int slave;
