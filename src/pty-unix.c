@@ -6,12 +6,12 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <vt100.h>
 
 #include "runes.h"
 #include "pty-unix.h"
 
 #include "config.h"
-#include "display.h"
 #include "loop.h"
 #include "window-xlib.h"
 
@@ -116,11 +116,6 @@ void runes_pty_backend_set_window_size(RunesTerm *t, int row, int col,
 void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
 {
     write(t->pty->master, buf, len);
-    if (t->display->row_visible_offset != 0) {
-        t->display->row_visible_offset = 0;
-        t->scr->dirty = 1;
-        runes_window_backend_request_flush(t);
-    }
 }
 
 void runes_pty_backend_request_close(RunesTerm *t)

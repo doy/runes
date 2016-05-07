@@ -90,6 +90,8 @@ static Bool runes_window_backend_find_flush_events(
 static void runes_window_backend_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_backend_flush(RunesTerm *t);
+static void runes_window_backend_write_to_pty(
+    RunesTerm *t, char *buf, size_t len);
 static int runes_window_backend_check_recent(RunesTerm *t);
 static void runes_window_backend_delay_cb(RunesTerm *t);
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count);
@@ -524,6 +526,17 @@ static void runes_window_backend_flush(RunesTerm *t)
     clock_gettime(CLOCK_REALTIME, &w->last_redraw);
 }
 
+static void runes_window_backend_write_to_pty(
+    RunesTerm *t, char *buf, size_t len)
+{
+    runes_pty_backend_write(t, buf, len);
+    if (t->display->row_visible_offset != 0) {
+        t->display->row_visible_offset = 0;
+        t->display->dirty = 1;
+        runes_window_backend_request_flush(t);
+    }
+}
+
 static int runes_window_backend_check_recent(RunesTerm *t)
 {
     RunesWindowBackend *w = t->w;
@@ -747,9 +760,9 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
     case XLookupChars:
     case XLookupBoth:
         if (e->state & Mod1Mask) {
-            runes_pty_backend_write(t, "\e", 1);
+            runes_window_backend_write_to_pty(t, "\e", 1);
         }
-        runes_pty_backend_write(t, buf, chars);
+        runes_window_backend_write_to_pty(t, buf, chars);
         break;
     case XLookupKeySym:
         if (!runes_window_backend_handle_builtin_keypress(t, sym, e)) {
@@ -757,7 +770,7 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
 
             key = runes_window_backend_find_key_sequence(t, sym);
             if (key->sym != XK_VoidSymbol) {
-                runes_pty_backend_write(t, key->str, key->len);
+                runes_window_backend_write_to_pty(t, key->str, key->len);
             }
         }
         break;
@@ -822,7 +835,7 @@ static void runes_window_backend_handle_button_event(
         sprintf(
             response, "\e[M%c%c%c",
             ' ' + (status), ' ' + loc.col + 1, ' ' + loc.row + 1);
-        runes_pty_backend_write(t, response, 6);
+        runes_window_backend_write_to_pty(t, response, 6);
     }
     else if (t->scr->mouse_reporting_press && e->type == ButtonPress) {
         char response[7];
@@ -832,7 +845,7 @@ static void runes_window_backend_handle_button_event(
         sprintf(
             response, "\e[M%c%c%c",
             ' ' + (e->button - 1), ' ' + loc.col + 1, ' ' + loc.row + 1);
-        runes_pty_backend_write(t, response, 6);
+        runes_window_backend_write_to_pty(t, response, 6);
     }
     else {
         runes_window_backend_handle_builtin_button_press(t, e);
@@ -920,11 +933,11 @@ static void runes_window_backend_handle_selection_notify_event(
             w->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
             AnyPropertyType, &type, &format, &nitems, &left, &buf);
         if (t->scr->bracketed_paste) {
-            runes_pty_backend_write(t, "\e[200~", 6);
+            runes_window_backend_write_to_pty(t, "\e[200~", 6);
         }
-        runes_pty_backend_write(t, (char *)buf, nitems);
+        runes_window_backend_write_to_pty(t, (char *)buf, nitems);
         if (t->scr->bracketed_paste) {
-            runes_pty_backend_write(t, "\e[201~", 6);
+            runes_window_backend_write_to_pty(t, "\e[201~", 6);
         }
         XFree(buf);
     }
