@@ -25,7 +25,7 @@ struct runes_display {
 };
 
 void runes_display_init(RunesTerm *t);
-void runes_display_set_window_size(RunesTerm *t);
+void runes_display_set_window_size(RunesTerm *t, int width, int height);
 void runes_display_draw_screen(RunesTerm *t);
 void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr);
 int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc);

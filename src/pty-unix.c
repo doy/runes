@@ -91,14 +91,15 @@ void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop)
                           runes_pty_backend_got_data);
 }
 
-void runes_pty_backend_set_window_size(RunesTerm *t)
+void runes_pty_backend_set_window_size(RunesTerm *t, int row, int col,
+                                       int xpixel, int ypixel)
 {
     struct winsize size;
 
-    size.ws_row = t->scr.grid->max.row;
-    size.ws_col = t->scr.grid->max.col;
-    size.ws_xpixel = t->display.xpixel;
-    size.ws_ypixel = t->display.ypixel;
+    size.ws_row = row;
+    size.ws_col = col;
+    size.ws_xpixel = xpixel;
+    size.ws_ypixel = ypixel;
     ioctl(t->pty.master, TIOCSWINSZ, &size);
 }
 

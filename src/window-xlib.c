@@ -461,10 +461,12 @@ static void runes_window_backend_resize_window(
     }
 
     if (width != t->display.xpixel || height != t->display.ypixel) {
-        XResizeWindow(w->dpy, w->w, width - 4, height - 4);
+        int dwidth = width - 4, dheight = height - 4;
+
+        XResizeWindow(w->dpy, w->w, dwidth, dheight);
         cairo_xlib_surface_set_size(
-            cairo_get_target(w->backend_cr), width - 4, height - 4);
-        runes_display_set_window_size(t);
+            cairo_get_target(w->backend_cr), dwidth, dheight);
+        runes_term_set_window_size(t, dwidth, dheight);
         runes_window_backend_clear_selection(t);
     }
 }

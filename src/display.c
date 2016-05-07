@@ -17,14 +17,11 @@ void runes_display_init(RunesTerm *t)
     runes_display_recalculate_font_metrics(t);
 }
 
-void runes_display_set_window_size(RunesTerm *t)
+void runes_display_set_window_size(RunesTerm *t, int width, int height)
 {
     RunesDisplay *display = &t->display;
-    int width, height;
     cairo_t *old_cr = NULL;
     cairo_surface_t *surface;
-
-    runes_window_backend_get_size(t, &width, &height);
 
     if (width == display->xpixel && height == display->ypixel) {
         return;
@@ -79,10 +76,6 @@ void runes_display_set_window_size(RunesTerm *t)
     if (old_cr) {
         cairo_destroy(old_cr);
     }
-
-    vt100_screen_set_window_size(&t->scr,
-        height / t->display.fonty, width / t->display.fontx);
-    runes_pty_backend_set_window_size(t);
 }
 
 void runes_display_draw_screen(RunesTerm *t)

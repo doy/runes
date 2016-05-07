@@ -13,6 +13,7 @@ struct runes_term {
 };
 
 void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[]);
+void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel);
 void runes_term_cleanup(RunesTerm *t);
 
 #endif
