@@ -1,5 +1,5 @@
 #ifndef _RUNES_WINDOW_XLIB_H
-#define _RUNES_XLIB_H
+#define _RUNES_WINDOW_XLIB_H
 
 #include <cairo.h>
 #include <time.h>
