@@ -22,30 +22,11 @@ void runes_display_init(RunesDisplay *display, char *font_name)
     runes_display_recalculate_font_metrics(display, font_name);
 }
 
-void runes_display_set_window_size(RunesTerm *t, int width, int height)
+void runes_display_set_context(RunesTerm *t, cairo_t *cr)
 {
     RunesDisplay *display = t->display;
-    cairo_t *old_cr = NULL;
-    cairo_surface_t *surface;
 
-    if (width == display->xpixel && height == display->ypixel) {
-        return;
-    }
-
-    display->xpixel = width;
-    display->ypixel = height;
-
-    old_cr = display->cr;
-
-    /* XXX this should really use cairo_surface_create_similar_image, but when
-     * i did that, drawing calls would occasionally block until an X event
-     * occurred for some reason. should look into this, because i think
-     * create_similar_image does things that are more efficient (using some
-     * xlib shm stuff) */
-    surface = cairo_image_surface_create(
-        CAIRO_FORMAT_RGB24, display->xpixel, display->ypixel);
-    display->cr = cairo_create(surface);
-    cairo_surface_destroy(surface);
+    display->cr = cr;
     if (display->layout) {
         pango_cairo_update_layout(display->cr, display->layout);
     }
@@ -63,24 +44,6 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
         pango_attr_list_unref(attrs);
         pango_font_description_free(font_desc);
     }
-
-    cairo_save(display->cr);
-
-    if (old_cr) {
-        cairo_set_source_surface(
-            display->cr, cairo_get_target(old_cr), 0.0, 0.0);
-    }
-    else {
-        cairo_set_source(display->cr, t->config->bgdefault);
-    }
-
-    cairo_paint(display->cr);
-
-    cairo_restore(display->cr);
-
-    if (old_cr) {
-        cairo_destroy(old_cr);
-    }
 }
 
 void runes_display_draw_screen(RunesTerm *t)
@@ -96,6 +59,8 @@ void runes_display_draw_screen(RunesTerm *t)
         display->has_selection = 0;
     }
 
+    cairo_push_group(display->cr);
+
     /* XXX quite inefficient */
     rows = t->scr->grid->max.row;
     for (r = 0; r < rows; ++r) {
@@ -106,11 +71,14 @@ void runes_display_draw_screen(RunesTerm *t)
         }
     }
 
+    cairo_pop_group_to_source(display->cr);
+    cairo_paint(display->cr);
+
     t->scr->dirty = 0;
     display->dirty = 0;
 }
 
-void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
+void runes_display_draw_cursor(RunesTerm *t)
 {
     RunesDisplay *display = t->display;
 
@@ -128,30 +96,31 @@ void runes_display_draw_cursor(RunesTerm *t, cairo_t *cr)
             width *= 2;
         }
 
-        cairo_save(cr);
-        cairo_set_source(cr, t->config->cursorcolor);
+        cairo_push_group(display->cr);
+        cairo_set_source(display->cr, t->config->cursorcolor);
         if (display->unfocused) {
-            cairo_set_line_width(cr, 1);
+            cairo_set_line_width(display->cr, 1);
             cairo_rectangle(
-                cr,
+                display->cr,
                 col * display->fontx + 0.5,
                 (row + display->row_visible_offset) * display->fonty + 0.5,
                 width - 1, display->fonty - 1);
-            cairo_stroke(cr);
+            cairo_stroke(display->cr);
         }
         else {
             cairo_rectangle(
-                cr,
+                display->cr,
                 col * display->fontx,
                 (row + display->row_visible_offset) * display->fonty,
                 width, display->fonty);
-            cairo_fill(cr);
+            cairo_fill(display->cr);
             runes_display_draw_glyph(
-                t, cr, t->config->bgdefault, cell->attrs,
+                t, display->cr, t->config->bgdefault, cell->attrs,
                 cell->contents, cell->len,
                 row + display->row_visible_offset, col);
         }
-        cairo_restore(cr);
+        cairo_pop_group_to_source(display->cr);
+        cairo_paint(display->cr);
     }
 }
 
@@ -218,7 +187,6 @@ int runes_display_loc_is_between(
 void runes_display_cleanup(RunesDisplay *display)
 {
     g_object_unref(display->layout);
-    cairo_destroy(display->cr);
 }
 
 static void runes_display_recalculate_font_metrics(

@@ -519,11 +519,7 @@ static void runes_window_backend_flush(RunesTerm *t)
     }
 
     runes_display_draw_screen(t);
-
-    cairo_set_source_surface(
-        w->backend_cr, cairo_get_target(t->display->cr), 0.0, 0.0);
-    cairo_paint(w->backend_cr);
-    runes_display_draw_cursor(t, w->backend_cr);
+    runes_display_draw_cursor(t);
     cairo_surface_flush(cairo_get_target(w->backend_cr));
 
     clock_gettime(CLOCK_REALTIME, &w->last_redraw);
@@ -879,6 +875,7 @@ static void runes_window_backend_handle_expose_event(
 {
     UNUSED(e);
 
+    t->display->dirty = 1;
     runes_window_backend_flush(t);
 }
 
