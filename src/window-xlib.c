@@ -550,6 +550,10 @@ static int runes_window_backend_check_recent(RunesTerm *t)
         return 0;
     }
 
+    if (w->delaying) {
+        return 1;
+    }
+
     clock_gettime(CLOCK_REALTIME, &now);
     while (rate >= 1000) {
         now.tv_sec -= 1;
@@ -561,11 +565,9 @@ static int runes_window_backend_check_recent(RunesTerm *t)
         now.tv_nsec += 1000000000;
     }
     if (now.tv_sec < w->last_redraw.tv_sec || (now.tv_sec == w->last_redraw.tv_sec && now.tv_nsec < w->last_redraw.tv_nsec)) {
-        if (!w->delaying) {
-            runes_loop_timer_set(
-                t->loop, rate, 0, t, runes_window_backend_delay_cb);
-            w->delaying = 1;
-        }
+        runes_loop_timer_set(
+            t->loop, rate, 0, t, runes_window_backend_delay_cb);
+        w->delaying = 1;
         return 1;
     }
     else {
