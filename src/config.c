@@ -46,7 +46,7 @@ static void runes_config_set_defaults(RunesConfig *config)
     config->audible_bell   = 1;
     config->bell_is_urgent = 1;
 
-    config->redraw_rate = 5;
+    config->redraw_rate = 20;
 
     config->cursorcolor      = cairo_pattern_create_rgb(0.0, 1.0, 0.0);
     config->mousecursorcolor = cairo_pattern_create_rgb(1.0, 1.0, 1.0);
