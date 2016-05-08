@@ -9,6 +9,7 @@
 
 static void runes_display_recalculate_font_metrics(
     RunesDisplay *display, char *font_name);
+static void runes_display_repaint_screen(RunesTerm *t);
 static int runes_display_draw_cell(RunesTerm *t, int row, int col);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
@@ -52,6 +53,7 @@ void runes_display_draw_screen(RunesTerm *t)
     int r, rows;
 
     if (!t->scr->dirty && !display->dirty) {
+        runes_display_repaint_screen(t);
         return;
     }
 
@@ -71,8 +73,9 @@ void runes_display_draw_screen(RunesTerm *t)
         }
     }
 
-    cairo_pop_group_to_source(display->cr);
-    cairo_paint(display->cr);
+    cairo_pattern_destroy(display->buffer);
+    display->buffer = cairo_pop_group(display->cr);
+    runes_display_repaint_screen(t);
 
     t->scr->dirty = 0;
     display->dirty = 0;
@@ -186,6 +189,7 @@ int runes_display_loc_is_between(
 
 void runes_display_cleanup(RunesDisplay *display)
 {
+    cairo_pattern_destroy(display->buffer);
     g_object_unref(display->layout);
 }
 
@@ -220,6 +224,16 @@ static void runes_display_recalculate_font_metrics(
     if (!display->layout) {
         pango_font_description_free(desc);
         g_object_unref(context);
+    }
+}
+
+static void runes_display_repaint_screen(RunesTerm *t)
+{
+    RunesDisplay *display = t->display;
+
+    if (display->buffer) {
+        cairo_set_source(display->cr, display->buffer);
+        cairo_paint(display->cr);
     }
 }
 

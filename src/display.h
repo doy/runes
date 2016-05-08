@@ -7,6 +7,7 @@
 
 struct runes_display {
     cairo_t *cr;
+    cairo_pattern_t *buffer;
     PangoLayout *layout;
 
     int row_visible_offset;
