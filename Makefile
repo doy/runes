@@ -75,7 +75,7 @@ $(SRC)%.h: $(SRC)%.l
 clean: ## Remove build files
 	cd libvt100 && make clean
 	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d) $(DOUT) $(DOBJ) $(DOBJ:$(BUILD)%.o=$(BUILD).%.d) $(COUT) $(COBJ) $(COBJ:$(BUILD)%.o=$(BUILD).%.d)
-	@rmdir -p $(BUILD) > /dev/null 2>&1
+	@rmdir -p $(BUILD) > /dev/null 2>&1 || true
 
 help:
 	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-20s\033[0m %s\n", $$2, $$4}'
