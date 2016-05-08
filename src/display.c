@@ -9,7 +9,7 @@
 
 static void runes_display_recalculate_font_metrics(
     RunesDisplay *display, char *font_name);
-static int runes_display_draw_cell(RunesTerm *t, int row, int col);
+static void runes_display_draw_cell(RunesTerm *t, int row, int col);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height);
@@ -86,24 +86,33 @@ void runes_display_set_window_size(RunesTerm *t, int width, int height)
 void runes_display_draw_screen(RunesTerm *t)
 {
     RunesDisplay *display = t->display;
-    int r, rows;
-
-    if (!t->scr->dirty && !display->dirty) {
-        return;
-    }
-
-    if (t->scr->dirty) {
-        display->has_selection = 0;
-    }
+    int r, vr, rows;
 
     /* XXX quite inefficient */
     rows = t->scr->grid->max.row;
     for (r = 0; r < rows; ++r) {
         int c = 0, cols = t->scr->grid->max.col;
+        struct vt100_row *row;
+
+        vr = r + t->scr->grid->row_top - display->row_visible_offset;
+        row = &t->scr->grid->rows[vr];
 
         while (c < cols) {
-            c += runes_display_draw_cell(t, r, c);
+            struct vt100_cell *cell = &row->cells[c];
+
+            if (t->scr->dirty || row->dirty || cell->dirty || display->dirty) {
+                runes_display_draw_cell(t, r, c);
+            }
+
+            cell->dirty = 0;
+            c++;
+            if (cell->is_wide) {
+                row->cells[c].dirty = 0;
+                c++;
+            }
         }
+
+        row->dirty = 0;
     }
 
     t->scr->dirty = 0;
@@ -255,7 +264,7 @@ static void runes_display_recalculate_font_metrics(
     }
 }
 
-static int runes_display_draw_cell(RunesTerm *t, int row, int col)
+static void runes_display_draw_cell(RunesTerm *t, int row, int col)
 {
     RunesDisplay *display = t->display;
     struct vt100_loc loc = {
@@ -333,8 +342,6 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
     if (fg_is_custom) {
         cairo_pattern_destroy(fg);
     }
-
-    return cell->is_wide ? 2 : 1;
 }
 
 static void runes_display_paint_rectangle(
