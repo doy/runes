@@ -9,7 +9,8 @@
 
 #include "runes.h"
 
-#include "socket.h"
+#define MAX_SOCKET_PATH_LEN \
+    (sizeof(struct sockaddr_un) - offsetof(struct sockaddr_un, sun_path))
 
 static int runes_socket_open_client(char *name);
 
