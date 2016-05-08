@@ -65,6 +65,8 @@ static struct function_key keys[] = {
     RUNES_KEY(XK_F18,        "\e[32~"),
     RUNES_KEY(XK_F19,        "\e[33~"),
     RUNES_KEY(XK_F20,        "\e[34~"),
+    RUNES_KEY(XK_BackSpace,  "\x7f"),
+    RUNES_KEY(XK_Delete,     "\e[3~"),
     /* XXX keypad keys need to go here too */
     RUNES_KEY(XK_VoidSymbol, "")
 };
@@ -762,13 +764,7 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
     }
 
     switch (s) {
-    case XLookupChars:
     case XLookupBoth:
-        if (e->state & Mod1Mask) {
-            runes_window_backend_write_to_pty(t, "\e", 1);
-        }
-        runes_window_backend_write_to_pty(t, buf, chars);
-        break;
     case XLookupKeySym:
         if (!runes_window_backend_handle_builtin_keypress(t, sym, e)) {
             struct function_key *key;
@@ -776,8 +772,17 @@ static void runes_window_backend_handle_key_event(RunesTerm *t, XKeyEvent *e)
             key = runes_window_backend_find_key_sequence(t, sym);
             if (key->sym != XK_VoidSymbol) {
                 runes_window_backend_write_to_pty(t, key->str, key->len);
+                break;
             }
         }
+        if (s == XLookupKeySym) {
+            break;
+        }
+    case XLookupChars:
+        if (e->state & Mod1Mask) {
+            runes_window_backend_write_to_pty(t, "\e", 1);
+        }
+        runes_window_backend_write_to_pty(t, buf, chars);
         break;
     default:
         break;
