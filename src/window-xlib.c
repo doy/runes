@@ -549,8 +549,12 @@ static int runes_window_backend_check_recent(RunesTerm *t)
     }
 
     clock_gettime(CLOCK_REALTIME, &now);
+    while (rate >= 1000) {
+        now.tv_sec -= 1;
+        rate -= 1000;
+    }
     now.tv_nsec -= rate * 1000000;
-    if (now.tv_nsec < 0) {
+    while (now.tv_nsec < 0) {
         now.tv_sec -= 1;
         now.tv_nsec += 1000000000;
     }
