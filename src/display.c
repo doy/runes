@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "runes.h"
 #include "display.h"
@@ -10,13 +11,17 @@
 static void runes_display_recalculate_font_metrics(
     RunesDisplay *display, char *font_name);
 static void runes_display_repaint_screen(RunesTerm *t);
-static int runes_display_draw_cell(RunesTerm *t, int row, int col);
+static int runes_display_continue_string(
+    struct vt100_cell *old, struct vt100_cell *new);
+static void runes_display_draw_string(
+    RunesTerm *t, int row, int col, int width, struct vt100_cell **cells,
+    size_t len);
 static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height);
-static void runes_display_draw_glyph(
-    RunesTerm *t, cairo_pattern_t *pattern,
-    struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col);
+static void runes_display_draw_glyphs(
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
+    size_t len, int row, int col);
 
 void runes_display_init(RunesDisplay *display, char *font_name)
 {
@@ -63,10 +68,33 @@ void runes_display_draw_screen(RunesTerm *t)
         rows = t->scr->grid->max.row;
         for (r = 0; r < rows; ++r) {
             int c = 0, cols = t->scr->grid->max.col;
+            int vr = r + t->scr->grid->row_top - display->row_visible_offset;
+            int start = c;
+            struct vt100_cell *cell = NULL, *prev_cell = NULL;
+            GPtrArray *cells;
+
+            cells = g_ptr_array_new();
 
             while (c < cols) {
-                c += runes_display_draw_cell(t, r, c);
+                cell = &t->scr->grid->rows[vr].cells[c];
+
+                if (!runes_display_continue_string(prev_cell, cell)) {
+                    runes_display_draw_string(
+                        t, r, start, c - start,
+                        (struct vt100_cell **)cells->pdata, cells->len);
+                    g_ptr_array_set_size(cells, 0);
+                    start = c;
+                }
+                g_ptr_array_add(cells, cell);
+
+                c += cell->is_wide ? 2 : 1;
+                prev_cell = cell;
             }
+            runes_display_draw_string(
+                t, r, start, cols - start,
+                (struct vt100_cell **)cells->pdata, cells->len);
+
+            g_ptr_array_unref(cells);
         }
 
         cairo_pattern_destroy(display->buffer);
@@ -115,9 +143,8 @@ void runes_display_draw_cursor(RunesTerm *t)
                 (row + display->row_visible_offset) * display->fonty,
                 width, display->fonty);
             cairo_fill(display->cr);
-            runes_display_draw_glyph(
-                t, t->config->bgdefault, cell->attrs,
-                cell->contents, cell->len,
+            runes_display_draw_glyphs(
+                t, t->config->bgdefault, &cell, 1,
                 row + display->row_visible_offset, col);
         }
         cairo_pop_group_to_source(display->cr);
@@ -235,42 +262,72 @@ static void runes_display_repaint_screen(RunesTerm *t)
     }
 }
 
-static int runes_display_draw_cell(RunesTerm *t, int row, int col)
+static int runes_display_continue_string(
+    struct vt100_cell *old, struct vt100_cell *new)
+{
+    if (!old) {
+        return 1;
+    }
+    if (!old->len || !new->len) {
+        return 0;
+    }
+    if (old->attrs.fgcolor.id != new->attrs.fgcolor.id) {
+        return 0;
+    }
+    if (old->attrs.bgcolor.id != new->attrs.bgcolor.id) {
+        return 0;
+    }
+    if (old->attrs.attrs != new->attrs.attrs) {
+        return 0;
+    }
+    return 1;
+}
+
+static void runes_display_draw_string(
+    RunesTerm *t, int row, int col, int width, struct vt100_cell **cells,
+    size_t len)
 {
     RunesDisplay *display = t->display;
     struct vt100_loc loc = {
         row + t->scr->grid->row_top - display->row_visible_offset, col };
-    struct vt100_cell *cell = &t->scr->grid->rows[loc.row].cells[loc.col];
+    struct vt100_cell_attrs *attrs;
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
     int selected;
 
+    if (!width) {
+        return;
+    }
+
+    attrs = &cells[0]->attrs;
+
+    /* XXX */
     selected = runes_display_loc_is_selected(t, loc);
 
-    switch (cell->attrs.bgcolor.type) {
+    switch (attrs->bgcolor.type) {
     case VT100_COLOR_DEFAULT:
         bg = t->config->bgdefault;
         break;
     case VT100_COLOR_IDX:
-        bg = t->config->colors[cell->attrs.bgcolor.idx];
+        bg = t->config->colors[attrs->bgcolor.idx];
         break;
     case VT100_COLOR_RGB:
         bg = cairo_pattern_create_rgb(
-            cell->attrs.bgcolor.r / 255.0,
-            cell->attrs.bgcolor.g / 255.0,
-            cell->attrs.bgcolor.b / 255.0);
+            attrs->bgcolor.r / 255.0,
+            attrs->bgcolor.g / 255.0,
+            attrs->bgcolor.b / 255.0);
         bg_is_custom = 1;
         break;
     }
 
-    switch (cell->attrs.fgcolor.type) {
+    switch (attrs->fgcolor.type) {
     case VT100_COLOR_DEFAULT:
         fg = t->config->fgdefault;
         break;
     case VT100_COLOR_IDX: {
-        unsigned char idx = cell->attrs.fgcolor.idx;
+        unsigned char idx = attrs->fgcolor.idx;
 
-        if (t->config->bold_is_bright && cell->attrs.bold && idx < 8) {
+        if (t->config->bold_is_bright && attrs->bold && idx < 8) {
             idx += 8;
         }
         fg = t->config->colors[idx];
@@ -278,15 +335,15 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
     }
     case VT100_COLOR_RGB:
         fg = cairo_pattern_create_rgb(
-            cell->attrs.fgcolor.r / 255.0,
-            cell->attrs.fgcolor.g / 255.0,
-            cell->attrs.fgcolor.b / 255.0);
+            attrs->fgcolor.r / 255.0,
+            attrs->fgcolor.g / 255.0,
+            attrs->fgcolor.b / 255.0);
         fg_is_custom = 1;
         break;
     }
 
-    if (cell->attrs.inverse ^ selected) {
-        if (cell->attrs.fgcolor.id == cell->attrs.bgcolor.id) {
+    if (attrs->inverse ^ selected) {
+        if (attrs->fgcolor.id == attrs->bgcolor.id) {
             fg = t->config->bgdefault;
             bg = t->config->fgdefault;
         }
@@ -297,12 +354,9 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
         }
     }
 
-    runes_display_paint_rectangle(
-        t, display->cr, bg, row, col, cell->is_wide ? 2 : 1, 1);
-
-    if (cell->len) {
-        runes_display_draw_glyph(
-            t, fg, cell->attrs, cell->contents, cell->len, row, col);
+    runes_display_paint_rectangle(t, display->cr, bg, row, col, width, 1);
+    if (len) {
+        runes_display_draw_glyphs(t, fg, cells, len, row, col);
     }
 
     if (bg_is_custom) {
@@ -312,8 +366,6 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
     if (fg_is_custom) {
         cairo_pattern_destroy(fg);
     }
-
-    return cell->is_wide ? 2 : 1;
 }
 
 static void runes_display_paint_rectangle(
@@ -331,31 +383,53 @@ static void runes_display_paint_rectangle(
     cairo_restore(cr);
 }
 
-static void runes_display_draw_glyph(
-    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell_attrs attrs,
-    char *buf, size_t len, int row, int col)
+static void runes_display_draw_glyphs(
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
+    size_t len, int row, int col)
 {
     RunesDisplay *display = t->display;
+    struct vt100_cell_attrs *attrs = &cells[0]->attrs;
     PangoAttrList *pango_attrs;
+    char *buf;
+    size_t buflen = 0, i;
 
-    pango_attrs = pango_layout_get_attributes(display->layout);
-    if (t->config->bold_is_bold) {
-        pango_attr_list_change(
-            pango_attrs, pango_attr_weight_new(
-                attrs.bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL));
+    for (i = 0; i < len; ++i) {
+        buflen += cells[i]->len;
     }
-    pango_attr_list_change(
-        pango_attrs, pango_attr_style_new(
-            attrs.italic ? PANGO_STYLE_ITALIC : PANGO_STYLE_NORMAL));
-    pango_attr_list_change(
-        pango_attrs, pango_attr_underline_new(
-            attrs.underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE));
+    buf = malloc(buflen);
+    buflen = 0;
+    for (i = 0; i < len; ++i) {
+        memcpy(&buf[buflen], cells[i]->contents, cells[i]->len);
+        buflen += cells[i]->len;
+    }
 
-    cairo_save(display->cr);
-    cairo_move_to(display->cr, col * display->fontx, row * display->fonty);
-    cairo_set_source(display->cr, pattern);
-    pango_layout_set_text(display->layout, buf, len);
-    pango_cairo_update_layout(display->cr, display->layout);
-    pango_cairo_show_layout(display->cr, display->layout);
-    cairo_restore(display->cr);
+    pango_layout_set_text(display->layout, buf, buflen);
+    if (len > 1 && pango_layout_get_unknown_glyphs_count(display->layout)) {
+        int c = col;
+        for (i = 0; i < len; ++i) {
+            runes_display_draw_glyphs(t, pattern, &cells[i], 1, row, c);
+            c += cells[i]->is_wide ? 2 : 1;
+        }
+    }
+    else {
+        pango_attrs = pango_layout_get_attributes(display->layout);
+        if (t->config->bold_is_bold) {
+            pango_attr_list_change(
+                pango_attrs, pango_attr_weight_new(
+                    attrs->bold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL));
+        }
+        pango_attr_list_change(
+            pango_attrs, pango_attr_style_new(
+                attrs->italic ? PANGO_STYLE_ITALIC : PANGO_STYLE_NORMAL));
+        pango_attr_list_change(
+            pango_attrs, pango_attr_underline_new(
+                attrs->underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE));
+
+        cairo_save(display->cr);
+        cairo_move_to(display->cr, col * display->fontx, row * display->fonty);
+        cairo_set_source(display->cr, pattern);
+        pango_cairo_update_layout(display->cr, display->layout);
+        pango_cairo_show_layout(display->cr, display->layout);
+        cairo_restore(display->cr);
+    }
 }
