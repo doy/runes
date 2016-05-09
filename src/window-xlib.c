@@ -875,7 +875,6 @@ static void runes_window_backend_handle_expose_event(
 {
     UNUSED(e);
 
-    t->display->dirty = 1;
     runes_window_backend_flush(t);
 }
 
