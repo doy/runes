@@ -17,8 +17,10 @@ int main (int argc, char *argv[])
 
     runes_loop_run(&loop);
 
+#ifdef RUNES_VALGRIND
     runes_term_cleanup(&t);
     runes_loop_cleanup(&loop);
+#endif
 
     return 0;
 }
