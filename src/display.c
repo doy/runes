@@ -52,29 +52,27 @@ void runes_display_draw_screen(RunesTerm *t)
     RunesDisplay *display = t->display;
     int r, rows;
 
-    if (!t->scr->dirty && !display->dirty) {
-        runes_display_repaint_screen(t);
-        return;
-    }
-
-    if (t->scr->dirty) {
-        display->has_selection = 0;
-    }
-
-    cairo_push_group(display->cr);
-
-    /* XXX quite inefficient */
-    rows = t->scr->grid->max.row;
-    for (r = 0; r < rows; ++r) {
-        int c = 0, cols = t->scr->grid->max.col;
-
-        while (c < cols) {
-            c += runes_display_draw_cell(t, r, c);
+    if (t->scr->dirty || display->dirty) {
+        if (t->scr->dirty) {
+            display->has_selection = 0;
         }
+
+        cairo_push_group(display->cr);
+
+        /* XXX quite inefficient */
+        rows = t->scr->grid->max.row;
+        for (r = 0; r < rows; ++r) {
+            int c = 0, cols = t->scr->grid->max.col;
+
+            while (c < cols) {
+                c += runes_display_draw_cell(t, r, c);
+            }
+        }
+
+        cairo_pattern_destroy(display->buffer);
+        display->buffer = cairo_pop_group(display->cr);
     }
 
-    cairo_pattern_destroy(display->buffer);
-    display->buffer = cairo_pop_group(display->cr);
     runes_display_repaint_screen(t);
 
     t->scr->dirty = 0;
