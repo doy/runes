@@ -15,7 +15,7 @@ static void runes_display_paint_rectangle(
     RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
     int row, int col, int width, int height);
 static void runes_display_draw_glyph(
-    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
+    RunesTerm *t, cairo_pattern_t *pattern,
     struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col);
 
 void runes_display_init(RunesDisplay *display, char *font_name)
@@ -116,7 +116,7 @@ void runes_display_draw_cursor(RunesTerm *t)
                 width, display->fonty);
             cairo_fill(display->cr);
             runes_display_draw_glyph(
-                t, display->cr, t->config->bgdefault, cell->attrs,
+                t, t->config->bgdefault, cell->attrs,
                 cell->contents, cell->len,
                 row + display->row_visible_offset, col);
         }
@@ -302,8 +302,7 @@ static int runes_display_draw_cell(RunesTerm *t, int row, int col)
 
     if (cell->len) {
         runes_display_draw_glyph(
-            t, display->cr, fg, cell->attrs, cell->contents, cell->len,
-            row, col);
+            t, fg, cell->attrs, cell->contents, cell->len, row, col);
     }
 
     if (bg_is_custom) {
@@ -333,8 +332,8 @@ static void runes_display_paint_rectangle(
 }
 
 static void runes_display_draw_glyph(
-    RunesTerm *t, cairo_t *cr, cairo_pattern_t *pattern,
-    struct vt100_cell_attrs attrs, char *buf, size_t len, int row, int col)
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell_attrs attrs,
+    char *buf, size_t len, int row, int col)
 {
     RunesDisplay *display = t->display;
     PangoAttrList *pango_attrs;
@@ -352,11 +351,11 @@ static void runes_display_draw_glyph(
         pango_attrs, pango_attr_underline_new(
             attrs.underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE));
 
-    cairo_save(cr);
-    cairo_move_to(cr, col * display->fontx, row * display->fonty);
-    cairo_set_source(cr, pattern);
+    cairo_save(display->cr);
+    cairo_move_to(display->cr, col * display->fontx, row * display->fonty);
+    cairo_set_source(display->cr, pattern);
     pango_layout_set_text(display->layout, buf, len);
-    pango_cairo_update_layout(cr, display->layout);
-    pango_cairo_show_layout(cr, display->layout);
-    cairo_restore(cr);
+    pango_cairo_update_layout(display->cr, display->layout);
+    pango_cairo_show_layout(display->cr, display->layout);
+    cairo_restore(display->cr);
 }
