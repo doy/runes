@@ -413,7 +413,10 @@ static int runes_display_glyphs_are_monospace(RunesTerm *t, int width)
         return 0;
     }
     pango_layout_get_pixel_size(display->layout, &w, &h);
-    if (w > display->fontx * width) {
+    if (w != display->fontx * width) {
+        return 0;
+    }
+    if (h != display->fonty) {
         return 0;
     }
     return 1;
