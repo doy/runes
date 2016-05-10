@@ -19,7 +19,7 @@ DOBJ     = $(BUILD)runesd.o \
 	   $(BUILD)pty-unix.o \
 	   $(BUILD)loop.o \
 	   $(BUILD)util.o \
-	   $(BUILD)socket.o
+	   $(BUILD)daemon.o
 COBJ     = $(BUILD)runesc.o \
 	   $(BUILD)util.o
 LIBS     = cairo cairo-xlib libuv pangocairo

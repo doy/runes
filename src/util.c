@@ -27,7 +27,7 @@ void runes_die(const char *fmt, ...)
     exit(1);
 }
 
-char *runes_get_socket_name()
+char *runes_get_daemon_socket_name()
 {
     char *home, *runtime_dir, *socket_dir, *socket_file;
 

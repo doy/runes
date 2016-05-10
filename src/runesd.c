@@ -3,13 +3,13 @@
 #include "runes.h"
 
 #include "loop.h"
-#include "socket.h"
+#include "daemon.h"
 #include "window-xlib.h"
 
 int main (int argc, char *argv[])
 {
     RunesLoop *loop;
-    RunesSocket *socket;
+    RunesDaemon *daemon;
     RunesWindowBackendGlobal *wg;
 
     UNUSED(argv);
@@ -22,8 +22,8 @@ int main (int argc, char *argv[])
 
     loop = runes_loop_new();
     wg = runes_window_backend_global_init();
-    socket = runes_socket_new(loop, wg);
-    UNUSED(socket);
+    daemon = runes_daemon_new(loop, wg);
+    UNUSED(daemon);
 
     runes_loop_run(loop);
 

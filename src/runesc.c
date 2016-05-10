@@ -21,7 +21,7 @@ int main (int argc, char *argv[])
     size_t len, offset;
     uint32_t argc32 = argc, argv_len;
 
-    name = runes_get_socket_name();
+    name = runes_get_daemon_socket_name();
     s = runes_socket_open_client(name);
 
     len = sizeof(argc32) + sizeof(argv_len);
