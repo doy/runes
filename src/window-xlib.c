@@ -257,8 +257,6 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     XMapWindow(w->wg->dpy, w->w);
     XMapWindow(w->wg->dpy, w->border_w);
-
-    runes_term_refcnt_inc(t);
 }
 
 void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
@@ -285,6 +283,7 @@ void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
         xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask);
     XSetICFocus(w->ic);
 
+    runes_term_refcnt_inc(t);
     runes_loop_start_work(loop, t, runes_window_backend_get_next_event,
                           runes_window_backend_process_event);
 }
@@ -604,6 +603,7 @@ static int runes_window_backend_check_recent(RunesTerm *t)
         now.tv_nsec += 1000000000;
     }
     if (now.tv_sec < w->last_redraw.tv_sec || (now.tv_sec == w->last_redraw.tv_sec && now.tv_nsec < w->last_redraw.tv_nsec)) {
+        runes_term_refcnt_inc(t);
         runes_loop_timer_set(
             t->loop, rate, 0, t, runes_window_backend_delay_cb);
         w->delaying = 1;
@@ -621,6 +621,7 @@ static void runes_window_backend_delay_cb(void *t)
 
     w->delaying = 0;
     runes_window_backend_request_flush(t);
+    runes_term_refcnt_dec((RunesTerm*)t);
 }
 
 static void runes_window_backend_visible_scroll(RunesTerm *t, int count)
@@ -659,6 +660,7 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
         cairo_surface_flush(cairo_get_target(w->backend_cr));
         XFlush(w->wg->dpy);
 
+        runes_term_refcnt_inc(t);
         runes_loop_timer_set(t->loop, 20, 0, t,
                              runes_window_backend_reset_visual_bell);
     }
@@ -673,6 +675,7 @@ static void runes_window_backend_reset_visual_bell(void *t)
     cairo_surface_flush(cairo_get_target(w->backend_cr));
     runes_window_backend_request_flush(t);
     w->visual_bell_is_ringing = 0;
+    runes_term_refcnt_dec(t);
 }
 
 static void runes_window_backend_audible_bell(RunesTerm *t)
