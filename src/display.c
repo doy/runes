@@ -234,7 +234,11 @@ static void runes_display_draw_string(
 {
     RunesDisplay *display = t->display;
     struct vt100_loc loc = {
-        row + t->scr->grid->row_top - display->row_visible_offset, col };
+        row + t->scr->grid->row_top - display->row_visible_offset,
+        col };
+    struct vt100_loc eloc = {
+        row + t->scr->grid->row_top - display->row_visible_offset,
+        col + width };
     struct vt100_cell_attrs *attrs;
     cairo_pattern_t *bg = NULL, *fg = NULL;
     int bg_is_custom = 0, fg_is_custom = 0;
@@ -246,7 +250,26 @@ static void runes_display_draw_string(
 
     attrs = &cells[0]->attrs;
 
-    /* XXX */
+    if (len > 1
+        && display->has_selection
+        && (display->selection_start.row != display->selection_end.row
+            || display->selection_start.col != display->selection_end.col)
+        && (runes_display_loc_is_between(
+                display->selection_start, loc, eloc)
+            || runes_display_loc_is_between(
+                display->selection_end, loc, eloc))) {
+        size_t i;
+        int c = col;
+
+        for (i = 0; i < len; ++i) {
+            int width = cells[i]->is_wide ? 2 : 1;
+
+            runes_display_draw_string(t, row, c, width, &cells[i], 1);
+            c += width;
+        }
+        return;
+    }
+
     selected = runes_display_loc_is_selected(t, loc);
 
     switch (attrs->bgcolor.type) {
