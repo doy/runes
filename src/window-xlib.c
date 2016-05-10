@@ -87,6 +87,8 @@ static struct function_key application_cursor_keys[] = {
 #undef RUNES_KEY
 
 static void runes_window_backend_get_next_event(void *t);
+static Bool runes_window_backend_wants_event(
+    Display *dpy, XEvent *event, XPointer arg);
 static int runes_window_backend_process_event(void *t);
 static Bool runes_window_backend_find_flush_events(
     Display *dpy, XEvent *e, XPointer arg);
@@ -391,7 +393,18 @@ static void runes_window_backend_get_next_event(void *t)
 {
     RunesWindowBackend *w = ((RunesTerm *)t)->w;
 
-    XNextEvent(w->wg->dpy, &w->event);
+    XIfEvent(w->wg->dpy, &w->event, runes_window_backend_wants_event, t);
+}
+
+static Bool runes_window_backend_wants_event(
+    Display *dpy, XEvent *event, XPointer arg)
+{
+    RunesWindowBackend *w = ((RunesTerm *)arg)->w;
+    Window event_window = ((XAnyEvent*)event)->window;
+
+    UNUSED(dpy);
+
+    return event_window == w->w || event_window == w->border_w;
 }
 
 static int runes_window_backend_process_event(void *t)
