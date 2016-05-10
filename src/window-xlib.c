@@ -237,6 +237,8 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
 
     XMapWindow(w->dpy, w->w);
     XMapWindow(w->dpy, w->border_w);
+
+    runes_term_refcnt_inc(t);
 }
 
 void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
@@ -437,7 +439,10 @@ static int runes_window_backend_process_event(void *t)
     }
 
     if (should_close) {
+        runes_window_backend_cleanup(w);
+        free(w);
         runes_pty_backend_request_close(t);
+        runes_term_refcnt_dec(t);
     }
 
     return !should_close;

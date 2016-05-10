@@ -11,10 +11,14 @@ struct runes_term {
     RunesPtyBackend *pty;
     VT100Screen *scr;
     RunesLoop *loop;
+
+    int refcnt;
 };
 
 void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[]);
 void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel);
+void runes_term_refcnt_inc(RunesTerm *t);
+void runes_term_refcnt_dec(RunesTerm *t);
 void runes_term_cleanup(RunesTerm *t);
 
 #endif

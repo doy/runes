@@ -42,6 +42,20 @@ void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[])
     runes_term_init_loop(t, loop);
 }
 
+void runes_term_refcnt_inc(RunesTerm *t)
+{
+    t->refcnt++;
+}
+
+void runes_term_refcnt_dec(RunesTerm *t)
+{
+    t->refcnt--;
+    if (t->refcnt <= 0) {
+        runes_term_cleanup(t);
+        free(t);
+    }
+}
+
 void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel)
 {
     int row = ypixel / t->display->fonty, col = xpixel / t->display->fontx;
@@ -54,12 +68,6 @@ void runes_term_cleanup(RunesTerm *t)
 {
     vt100_screen_cleanup(t->scr);
     free(t->scr);
-
-    runes_pty_backend_cleanup(t->pty);
-    free(t->pty);
-
-    runes_window_backend_cleanup(t->w);
-    free(t->w);
 
     runes_display_cleanup(t->display);
     free(t->display);

@@ -94,6 +94,8 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         fprintf(old_stderr, "Couldn't run %s: %s\n", cmd, strerror(errno));
         exit(1);
     }
+
+    runes_term_refcnt_inc(t);
 }
 
 void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop)
@@ -155,7 +157,10 @@ static int runes_pty_backend_got_data(void *t)
         return 1;
     }
     else {
+        runes_pty_backend_cleanup(pty);
+        free(pty);
         runes_window_backend_request_close(t);
+        runes_term_refcnt_dec(t);
 
         return 0;
     }
