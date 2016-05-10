@@ -22,6 +22,7 @@ static void runes_display_paint_rectangle(
 static void runes_display_draw_glyphs(
     RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
     size_t len, int row, int col);
+static int runes_display_glyphs_are_monospace(RunesTerm *t, int width);
 
 void runes_display_init(RunesDisplay *display, char *font_name)
 {
@@ -392,6 +393,7 @@ static void runes_display_draw_glyphs(
     PangoAttrList *pango_attrs;
     char *buf;
     size_t buflen = 0, i;
+    int width = 0;
 
     for (i = 0; i < len; ++i) {
         buflen += cells[i]->len;
@@ -401,10 +403,11 @@ static void runes_display_draw_glyphs(
     for (i = 0; i < len; ++i) {
         memcpy(&buf[buflen], cells[i]->contents, cells[i]->len);
         buflen += cells[i]->len;
+        width += cells[i]->is_wide ? 2 : 1;
     }
 
     pango_layout_set_text(display->layout, buf, buflen);
-    if (len > 1 && pango_layout_get_unknown_glyphs_count(display->layout)) {
+    if (len > 1 && !runes_display_glyphs_are_monospace(t, width)) {
         int c = col;
         for (i = 0; i < len; ++i) {
             runes_display_draw_glyphs(t, pattern, &cells[i], 1, row, c);
@@ -432,4 +435,19 @@ static void runes_display_draw_glyphs(
         pango_cairo_show_layout(display->cr, display->layout);
         cairo_restore(display->cr);
     }
+}
+
+static int runes_display_glyphs_are_monospace(RunesTerm *t, int width)
+{
+    RunesDisplay *display = t->display;
+    int w, h;
+
+    if (pango_layout_get_unknown_glyphs_count(display->layout) > 0) {
+        return 0;
+    }
+    pango_layout_get_pixel_size(display->layout, &w, &h);
+    if (w > display->fontx * width) {
+        return 0;
+    }
+    return 1;
 }
