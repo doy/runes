@@ -409,6 +409,8 @@ static void runes_display_draw_glyphs(
         pango_cairo_show_layout(display->cr, display->layout);
         cairo_restore(display->cr);
     }
+
+    free(buf);
 }
 
 static int runes_display_glyphs_are_monospace(RunesTerm *t, int width)
