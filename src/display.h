@@ -29,10 +29,6 @@ void runes_display_init(RunesDisplay *display, char *font_name);
 void runes_display_set_context(RunesTerm *t, cairo_t *cr);
 void runes_display_draw_screen(RunesTerm *t);
 void runes_display_draw_cursor(RunesTerm *t);
-int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc);
-int runes_display_loc_is_between(
-    RunesTerm *t, struct vt100_loc loc,
-    struct vt100_loc start, struct vt100_loc end);
 void runes_display_cleanup(RunesDisplay *display);
 
 #endif

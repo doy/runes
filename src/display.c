@@ -23,6 +23,10 @@ static void runes_display_draw_glyphs(
     RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
     size_t len, int row, int col);
 static int runes_display_glyphs_are_monospace(RunesTerm *t, int width);
+static int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc);
+static int runes_display_loc_is_between(
+     struct vt100_loc loc,
+     struct vt100_loc start, struct vt100_loc end);
 
 void runes_display_init(RunesDisplay *display, char *font_name)
 {
@@ -151,66 +155,6 @@ void runes_display_draw_cursor(RunesTerm *t)
         cairo_pop_group_to_source(display->cr);
         cairo_paint(display->cr);
     }
-}
-
-int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc)
-{
-    RunesDisplay *display = t->display;
-    struct vt100_loc start = display->selection_start;
-    struct vt100_loc end = display->selection_end;
-
-    if (!display->has_selection) {
-        return 0;
-    }
-
-    if (loc.row == start.row) {
-        int start_max_col;
-
-        start_max_col = vt100_screen_row_max_col(t->scr, start.row);
-        if (start.col > start_max_col) {
-            start.col = t->scr->grid->max.col;
-        }
-    }
-
-    if (loc.row == end.row) {
-        int end_max_col;
-
-        end_max_col = vt100_screen_row_max_col(t->scr, end.row);
-        if (end.col > end_max_col) {
-            end.col = t->scr->grid->max.col;
-        }
-    }
-
-    return runes_display_loc_is_between(t, loc, start, end);
-}
-
-int runes_display_loc_is_between(
-     RunesTerm *t, struct vt100_loc loc,
-     struct vt100_loc start, struct vt100_loc end)
-{
-    UNUSED(t);
-
-    if (end.row < start.row || (end.row == start.row && end.col < start.col)) {
-        struct vt100_loc tmp;
-
-        tmp = start;
-        start = end;
-        end = tmp;
-    }
-
-    if (loc.row < start.row || loc.row > end.row) {
-        return 0;
-    }
-
-    if (loc.row == start.row && loc.col < start.col) {
-        return 0;
-    }
-
-    if (loc.row == end.row && loc.col >= end.col) {
-        return 0;
-    }
-
-    return 1;
 }
 
 void runes_display_cleanup(RunesDisplay *display)
@@ -449,5 +393,63 @@ static int runes_display_glyphs_are_monospace(RunesTerm *t, int width)
     if (w > display->fontx * width) {
         return 0;
     }
+    return 1;
+}
+
+static int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc)
+{
+    RunesDisplay *display = t->display;
+    struct vt100_loc start = display->selection_start;
+    struct vt100_loc end = display->selection_end;
+
+    if (!display->has_selection) {
+        return 0;
+    }
+
+    if (loc.row == start.row) {
+        int start_max_col;
+
+        start_max_col = vt100_screen_row_max_col(t->scr, start.row);
+        if (start.col > start_max_col) {
+            start.col = t->scr->grid->max.col;
+        }
+    }
+
+    if (loc.row == end.row) {
+        int end_max_col;
+
+        end_max_col = vt100_screen_row_max_col(t->scr, end.row);
+        if (end.col > end_max_col) {
+            end.col = t->scr->grid->max.col;
+        }
+    }
+
+    return runes_display_loc_is_between(loc, start, end);
+}
+
+static int runes_display_loc_is_between(
+     struct vt100_loc loc,
+     struct vt100_loc start, struct vt100_loc end)
+{
+    if (end.row < start.row || (end.row == start.row && end.col < start.col)) {
+        struct vt100_loc tmp;
+
+        tmp = start;
+        start = end;
+        end = tmp;
+    }
+
+    if (loc.row < start.row || loc.row > end.row) {
+        return 0;
+    }
+
+    if (loc.row == start.row && loc.col < start.col) {
+        return 0;
+    }
+
+    if (loc.row == end.row && loc.col >= end.col) {
+        return 0;
+    }
+
     return 1;
 }
