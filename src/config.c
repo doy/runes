@@ -17,14 +17,19 @@ static int runes_config_parse_uint(char *val);
 static char *runes_config_parse_string(char *val);
 static cairo_pattern_t *runes_config_parse_color(char *val);
 
-void runes_config_init(RunesConfig *config, int argc, char *argv[])
+RunesConfig *runes_config_new(int argc, char *argv[])
 {
+    RunesConfig *config;
+
+    config = calloc(1, sizeof(RunesConfig));
     runes_config_set_defaults(config);
     runes_config_process_config_file(config, runes_config_get_config_file());
     runes_config_process_args(config, argc, argv);
+
+    return config;
 }
 
-void runes_config_cleanup(RunesConfig *config)
+void runes_config_delete(RunesConfig *config)
 {
     int i;
 
@@ -36,6 +41,8 @@ void runes_config_cleanup(RunesConfig *config)
     for (i = 0; i < 256; ++i) {
         cairo_pattern_destroy(config->colors[i]);
     }
+
+    free(config);
 }
 
 static void runes_config_set_defaults(RunesConfig *config)

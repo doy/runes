@@ -19,11 +19,16 @@
 static void runes_pty_backend_read(void *t);
 static int runes_pty_backend_got_data(void *t);
 
-void runes_pty_backend_init(RunesPtyBackend *pty)
+RunesPtyBackend *runes_pty_backend_new()
 {
+    RunesPtyBackend *pty;
+
+    pty = calloc(1, sizeof(RunesPtyBackend));
     pty->master = posix_openpt(O_RDWR);
     grantpt(pty->master);
     unlockpt(pty->master);
+
+    return pty;
 }
 
 void runes_pty_backend_spawn_subprocess(RunesTerm *t)
@@ -94,12 +99,11 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         fprintf(old_stderr, "Couldn't run %s: %s\n", cmd, strerror(errno));
         exit(1);
     }
-
-    runes_term_refcnt_inc(t);
 }
 
 void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop)
 {
+    runes_term_refcnt_inc(t);
     runes_loop_start_work(loop, t, runes_pty_backend_read,
                           runes_pty_backend_got_data);
 }
@@ -128,9 +132,11 @@ void runes_pty_backend_request_close(RunesTerm *t)
     kill(pty->child_pid, SIGHUP);
 }
 
-void runes_pty_backend_cleanup(RunesPtyBackend *pty)
+void runes_pty_backend_delete(RunesPtyBackend *pty)
 {
     close(pty->master);
+
+    free(pty);
 }
 
 static void runes_pty_backend_read(void *t)
@@ -157,8 +163,6 @@ static int runes_pty_backend_got_data(void *t)
         return 1;
     }
     else {
-        runes_pty_backend_cleanup(pty);
-        free(pty);
         runes_window_backend_request_close(t);
         runes_term_refcnt_dec(t);
 

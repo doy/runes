@@ -11,6 +11,7 @@ struct runes_socket;
 
 typedef struct runes_term RunesTerm;
 typedef struct runes_window RunesWindowBackend;
+typedef struct runes_window_global RunesWindowBackendGlobal;
 typedef struct runes_pty RunesPtyBackend;
 typedef struct runes_config RunesConfig;
 typedef struct runes_display RunesDisplay;

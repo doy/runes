@@ -15,10 +15,11 @@ struct runes_term {
     int refcnt;
 };
 
-void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[]);
+RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackendGlobal *wg);
+void runes_term_register_with_loop(RunesTerm *t, RunesLoop *loop);
 void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel);
 void runes_term_refcnt_inc(RunesTerm *t);
 void runes_term_refcnt_dec(RunesTerm *t);
-void runes_term_cleanup(RunesTerm *t);
+void runes_term_delete(RunesTerm *t);
 
 #endif

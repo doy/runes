@@ -17,24 +17,32 @@ static void runes_socket_close(RunesSocket *sock);
 static void runes_socket_accept(void *t);
 static int runes_socket_handle_request(void *t);
 
-void runes_socket_init(RunesSocket *sock, RunesLoop *loop)
+RunesSocket *runes_socket_new(RunesLoop *loop, RunesWindowBackendGlobal *wg)
 {
+    RunesSocket *sock;
+
+    sock = calloc(1, sizeof(RunesSocket));
     sock->loop = loop;
+    sock->wg = wg;
     sock->name = runes_get_socket_name();
     sock->sock = runes_socket_open(sock);
     runes_socket_init_loop(sock, loop);
+
+    return sock;
 }
 
 void runes_socket_init_loop(RunesSocket *sock, RunesLoop *loop)
 {
-    runes_loop_start_work(loop, (RunesTerm *)sock, runes_socket_accept,
+    runes_loop_start_work(loop, sock, runes_socket_accept,
                           runes_socket_handle_request);
 }
 
-void runes_socket_cleanup(RunesSocket *sock)
+void runes_socket_delete(RunesSocket *sock)
 {
     runes_socket_close(sock);
     free(sock->name);
+
+    free(sock);
 }
 
 static int runes_socket_open(RunesSocket *sock)
@@ -160,7 +168,6 @@ static int runes_socket_handle_request(void *t)
     if (argc > 0) {
         size_t offset = 0;
         int i;
-        RunesTerm *t;
 
         for (i = 0; i < (int)argc; ++i) {
             char *next_null;
@@ -176,8 +183,8 @@ static int runes_socket_handle_request(void *t)
             offset = next_null - argv_buf + 1;
         }
 
-        t = calloc(1, sizeof(RunesTerm));
-        runes_term_init(t, sock->loop, argc, argv);
+        runes_term_register_with_loop(
+            runes_term_new(argc, argv, sock->wg), sock->loop);
     }
 
     free(argv);

@@ -135,12 +135,27 @@ static struct function_key *runes_window_backend_find_key_sequence(
 static struct vt100_loc runes_window_backend_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel);
 
-void runes_window_backend_init(RunesWindowBackend *w)
+RunesWindowBackendGlobal *runes_window_backend_global_init()
 {
+    RunesWindowBackendGlobal *wg;
+
+    wg = calloc(1, sizeof(RunesWindowBackendGlobal));
     XInitThreads();
     XSetLocaleModifiers("");
-    w->dpy = XOpenDisplay(NULL);
-    XInternAtoms(w->dpy, atom_names, RUNES_NUM_ATOMS, False, w->atoms);
+    wg->dpy = XOpenDisplay(NULL);
+    XInternAtoms(wg->dpy, atom_names, RUNES_NUM_ATOMS, False, wg->atoms);
+
+    return wg;
+}
+
+RunesWindowBackend *runes_window_backend_new(RunesWindowBackendGlobal *wg)
+{
+    RunesWindowBackend *w;
+
+    w = calloc(1, sizeof(RunesWindowBackend));
+    w->wg = wg;
+
+    return w;
 }
 
 void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
@@ -178,17 +193,18 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     bgcolor.blue  = bg_b * 65535;
 
     XAllocColor(
-        w->dpy, DefaultColormap(w->dpy, DefaultScreen(w->dpy)), &bgcolor);
+        w->wg->dpy, DefaultColormap(w->wg->dpy, DefaultScreen(w->wg->dpy)),
+        &bgcolor);
     w->border_w = XCreateSimpleWindow(
-        w->dpy, DefaultRootWindow(w->dpy),
+        w->wg->dpy, DefaultRootWindow(w->wg->dpy),
         0, 0, normal_hints.base_width, normal_hints.base_height,
         0, bgcolor.pixel, bgcolor.pixel);
     w->w = XCreateSimpleWindow(
-        w->dpy, w->border_w,
+        w->wg->dpy, w->border_w,
         2, 2, normal_hints.base_width - 4, normal_hints.base_height - 4,
         0, bgcolor.pixel, bgcolor.pixel);
 
-    im = XOpenIM(w->dpy, NULL, NULL, NULL);
+    im = XOpenIM(w->wg->dpy, NULL, NULL, NULL);
     w->ic = XCreateIC(
         im,
         XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
@@ -200,21 +216,22 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
         runes_die("failed");
     }
 
-    XSetWMProtocols(w->dpy, w->border_w, w->atoms, RUNES_NUM_PROTOCOL_ATOMS);
+    XSetWMProtocols(
+        w->wg->dpy, w->border_w, w->wg->atoms, RUNES_NUM_PROTOCOL_ATOMS);
 
     Xutf8SetWMProperties(
-        w->dpy, w->border_w, "runes", "runes", argv, argc,
+        w->wg->dpy, w->border_w, "runes", "runes", argv, argc,
         &normal_hints, &wm_hints, &class_hints);
 
     pid = getpid();
     XChangeProperty(
-        w->dpy, w->border_w, w->atoms[RUNES_ATOM_NET_WM_PID],
+        w->wg->dpy, w->border_w, w->wg->atoms[RUNES_ATOM_NET_WM_PID],
         XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
 
     runes_window_backend_set_icon_name(t, "runes", 5);
     runes_window_backend_set_window_title(t, "runes", 5);
 
-    cursor = XCreateFontCursor(w->dpy, XC_xterm);
+    cursor = XCreateFontCursor(w->wg->dpy, XC_xterm);
     cairo_pattern_get_rgba(
         t->config->mousecursorcolor, &mouse_r, &mouse_g, &mouse_b, NULL);
     cursor_fg.red   = (unsigned short)(mouse_r * 65535);
@@ -226,17 +243,18 @@ void runes_window_backend_create_window(RunesTerm *t, int argc, char *argv[])
     else {
         cursor_bg.red = cursor_bg.green = cursor_bg.blue = 65535;
     }
-    XRecolorCursor(w->dpy, cursor, &cursor_fg, &cursor_bg);
-    XDefineCursor(w->dpy, w->w, cursor);
+    XRecolorCursor(w->wg->dpy, cursor, &cursor_fg, &cursor_bg);
+    XDefineCursor(w->wg->dpy, w->w, cursor);
 
-    vis = DefaultVisual(w->dpy, DefaultScreen(w->dpy));
+    vis = DefaultVisual(w->wg->dpy, DefaultScreen(w->wg->dpy));
     surface = cairo_xlib_surface_create(
-        w->dpy, w->w, vis, normal_hints.base_width, normal_hints.base_height);
+        w->wg->dpy, w->w, vis, normal_hints.base_width,
+        normal_hints.base_height);
     w->backend_cr = cairo_create(surface);
     cairo_surface_destroy(surface);
 
-    XMapWindow(w->dpy, w->w);
-    XMapWindow(w->dpy, w->border_w);
+    XMapWindow(w->wg->dpy, w->w);
+    XMapWindow(w->wg->dpy, w->border_w);
 
     runes_term_refcnt_inc(t);
 }
@@ -255,13 +273,13 @@ void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
     /* the top level window is the only one that needs to worry about window
      * size and focus changes */
     XSelectInput(
-        w->dpy, w->border_w,
+        w->wg->dpy, w->border_w,
         xim_mask|common_mask|StructureNotifyMask|FocusChangeMask);
     /* we only care about mouse events if they are over the actual terminal
      * area, and the terminal area is the only area we need to redraw, so it's
      * the only thing we care about exposure events for */
     XSelectInput(
-        w->dpy, w->w,
+        w->wg->dpy, w->w,
         xim_mask|common_mask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ExposureMask);
     XSetICFocus(w->ic);
 
@@ -271,34 +289,36 @@ void runes_window_backend_init_loop(RunesTerm *t, RunesLoop *loop)
 
 void runes_window_backend_request_flush(RunesTerm *t)
 {
+    RunesWindowBackend *w = t->w;
     XEvent e;
 
     e.xclient.type = ClientMessage;
-    e.xclient.window = t->w->w;
+    e.xclient.window = w->w;
     e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w->atoms[RUNES_ATOM_RUNES_FLUSH];
+    e.xclient.data.l[0] = w->wg->atoms[RUNES_ATOM_RUNES_FLUSH];
 
-    XSendEvent(t->w->dpy, t->w->w, False, NoEventMask, &e);
-    XLockDisplay(t->w->dpy);
-    XFlush(t->w->dpy);
-    XUnlockDisplay(t->w->dpy);
+    XSendEvent(w->wg->dpy, w->w, False, NoEventMask, &e);
+    XLockDisplay(w->wg->dpy);
+    XFlush(w->wg->dpy);
+    XUnlockDisplay(w->wg->dpy);
 }
 
 void runes_window_backend_request_close(RunesTerm *t)
 {
+    RunesWindowBackend *w = t->w;
     XEvent e;
 
     e.xclient.type = ClientMessage;
-    e.xclient.window = t->w->w;
-    e.xclient.message_type = t->w->atoms[RUNES_ATOM_WM_PROTOCOLS];
+    e.xclient.window = w->w;
+    e.xclient.message_type = w->wg->atoms[RUNES_ATOM_WM_PROTOCOLS];
     e.xclient.format = 32;
-    e.xclient.data.l[0] = t->w->atoms[RUNES_ATOM_WM_DELETE_WINDOW];
+    e.xclient.data.l[0] = w->wg->atoms[RUNES_ATOM_WM_DELETE_WINDOW];
     e.xclient.data.l[1] = CurrentTime;
 
-    XSendEvent(t->w->dpy, t->w->w, False, NoEventMask, &e);
-    XLockDisplay(t->w->dpy);
-    XFlush(t->w->dpy);
-    XUnlockDisplay(t->w->dpy);
+    XSendEvent(w->wg->dpy, w->w, False, NoEventMask, &e);
+    XLockDisplay(w->wg->dpy);
+    XFlush(w->wg->dpy);
+    XUnlockDisplay(w->wg->dpy);
 }
 
 unsigned long runes_window_backend_get_window_id(RunesTerm *t)
@@ -323,12 +343,12 @@ void runes_window_backend_set_icon_name(RunesTerm *t, char *name, size_t len)
     RunesWindowBackend *w = t->w;
 
     XChangeProperty(
-        w->dpy, w->border_w, XA_WM_ICON_NAME,
-        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        w->wg->dpy, w->border_w, XA_WM_ICON_NAME,
+        w->wg->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
     XChangeProperty(
-        w->dpy, w->border_w, w->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
-        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        w->wg->dpy, w->border_w, w->wg->atoms[RUNES_ATOM_NET_WM_ICON_NAME],
+        w->wg->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
 }
 
@@ -338,16 +358,16 @@ void runes_window_backend_set_window_title(
     RunesWindowBackend *w = t->w;
 
     XChangeProperty(
-        w->dpy, w->border_w, XA_WM_NAME,
-        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        w->wg->dpy, w->border_w, XA_WM_NAME,
+        w->wg->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
     XChangeProperty(
-        w->dpy, w->border_w, w->atoms[RUNES_ATOM_NET_WM_NAME],
-        w->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
+        w->wg->dpy, w->border_w, w->wg->atoms[RUNES_ATOM_NET_WM_NAME],
+        w->wg->atoms[RUNES_ATOM_UTF8_STRING], 8, PropModeReplace,
         (unsigned char *)name, len);
 }
 
-void runes_window_backend_cleanup(RunesWindowBackend *w)
+void runes_window_backend_delete(RunesWindowBackend *w)
 {
     XIM im;
 
@@ -355,16 +375,23 @@ void runes_window_backend_cleanup(RunesWindowBackend *w)
     im = XIMOfIC(w->ic);
     XDestroyIC(w->ic);
     XCloseIM(im);
-    XDestroyWindow(w->dpy, w->w);
-    XDestroyWindow(w->dpy, w->border_w);
-    XCloseDisplay(w->dpy);
+    XDestroyWindow(w->wg->dpy, w->w);
+    XDestroyWindow(w->wg->dpy, w->border_w);
+
+    free(w);
+}
+
+void runes_window_backend_global_cleanup(RunesWindowBackendGlobal *wg)
+{
+    XCloseDisplay(wg->dpy);
+    free(wg);
 }
 
 static void runes_window_backend_get_next_event(void *t)
 {
     RunesWindowBackend *w = ((RunesTerm *)t)->w;
 
-    XNextEvent(w->dpy, &w->event);
+    XNextEvent(w->wg->dpy, &w->event);
 }
 
 static int runes_window_backend_process_event(void *t)
@@ -410,23 +437,23 @@ static int runes_window_backend_process_event(void *t)
             break;
         case ClientMessage: {
             Atom a = e->xclient.data.l[0];
-            if (a == w->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
+            if (a == w->wg->atoms[RUNES_ATOM_WM_DELETE_WINDOW]) {
                 should_close = 1;
             }
-            else if (a == w->atoms[RUNES_ATOM_NET_WM_PING]) {
-                e->xclient.window = DefaultRootWindow(w->dpy);
+            else if (a == w->wg->atoms[RUNES_ATOM_NET_WM_PING]) {
+                e->xclient.window = DefaultRootWindow(w->wg->dpy);
                 XSendEvent(
-                    w->dpy, e->xclient.window, False,
+                    w->wg->dpy, e->xclient.window, False,
                     SubstructureNotifyMask | SubstructureRedirectMask,
                     e
                 );
             }
-            else if (a == w->atoms[RUNES_ATOM_RUNES_FLUSH]) {
+            else if (a == w->wg->atoms[RUNES_ATOM_RUNES_FLUSH]) {
                 Bool res = True;
 
                 while (res) {
                     res = XCheckIfEvent(
-                        w->dpy, e, runes_window_backend_find_flush_events,
+                        w->wg->dpy, e, runes_window_backend_find_flush_events,
                         (XPointer)w);
                 }
                 runes_window_backend_flush(t);
@@ -439,8 +466,6 @@ static int runes_window_backend_process_event(void *t)
     }
 
     if (should_close) {
-        runes_window_backend_cleanup(w);
-        free(w);
         runes_pty_backend_request_close(t);
         runes_term_refcnt_dec(t);
     }
@@ -457,7 +482,7 @@ static Bool runes_window_backend_find_flush_events(
 
     if (e->type == ClientMessage) {
         Atom a = e->xclient.data.l[0];
-        return a == w->atoms[RUNES_ATOM_RUNES_FLUSH] ? True : False;
+        return a == w->wg->atoms[RUNES_ATOM_RUNES_FLUSH] ? True : False;
     }
     else {
         return False;
@@ -481,7 +506,7 @@ static void runes_window_backend_resize_window(
     if (width != t->display->xpixel || height != t->display->ypixel) {
         int dwidth = width - 4, dheight = height - 4;
 
-        XResizeWindow(w->dpy, w->w, dwidth, dheight);
+        XResizeWindow(w->wg->dpy, w->w, dwidth, dheight);
         cairo_xlib_surface_set_size(
             cairo_get_target(w->backend_cr), dwidth, dheight);
         runes_term_set_window_size(t, dwidth, dheight);
@@ -619,7 +644,7 @@ static void runes_window_backend_visual_bell(RunesTerm *t)
         cairo_set_source(w->backend_cr, t->config->fgdefault);
         cairo_paint(w->backend_cr);
         cairo_surface_flush(cairo_get_target(w->backend_cr));
-        XFlush(w->dpy);
+        XFlush(w->wg->dpy);
 
         runes_loop_timer_set(t->loop, 20, 0, t,
                              runes_window_backend_reset_visual_bell);
@@ -645,7 +670,7 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
         if (t->config->bell_is_urgent) {
             runes_window_backend_set_urgent(t);
         }
-        XBell(w->dpy, 0);
+        XBell(w->wg->dpy, 0);
     }
     else {
         runes_window_backend_visual_bell(t);
@@ -654,21 +679,23 @@ static void runes_window_backend_audible_bell(RunesTerm *t)
 
 static void runes_window_backend_set_urgent(RunesTerm *t)
 {
+    RunesWindowBackend *w = t->w;
     XWMHints *hints;
 
-    hints = XGetWMHints(t->w->dpy, t->w->border_w);
+    hints = XGetWMHints(w->wg->dpy, w->border_w);
     hints->flags |= XUrgencyHint;
-    XSetWMHints(t->w->dpy, t->w->border_w, hints);
+    XSetWMHints(w->wg->dpy, w->border_w, hints);
     XFree(hints);
 }
 
 static void runes_window_backend_clear_urgent(RunesTerm *t)
 {
+    RunesWindowBackend *w = t->w;
     XWMHints *hints;
 
-    hints = XGetWMHints(t->w->dpy, t->w->border_w);
+    hints = XGetWMHints(w->wg->dpy, t->w->border_w);
     hints->flags &= ~XUrgencyHint;
-    XSetWMHints(t->w->dpy, t->w->border_w, hints);
+    XSetWMHints(w->wg->dpy, t->w->border_w, hints);
     XFree(hints);
 }
 
@@ -677,8 +704,8 @@ static void runes_window_backend_paste(RunesTerm *t, Time time)
     RunesWindowBackend *w = t->w;
 
     XConvertSelection(
-        w->dpy, XA_PRIMARY, w->atoms[RUNES_ATOM_UTF8_STRING],
-        w->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, time);
+        w->wg->dpy, XA_PRIMARY, w->wg->atoms[RUNES_ATOM_UTF8_STRING],
+        w->wg->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, time);
 }
 
 static void runes_window_backend_start_selection(
@@ -691,8 +718,8 @@ static void runes_window_backend_start_selection(
     *start = runes_window_backend_get_mouse_position(t, xpixel, ypixel);
     *end   = *start;
 
-    XSetSelectionOwner(w->dpy, XA_PRIMARY, w->w, time);
-    t->display->has_selection = (XGetSelectionOwner(w->dpy, XA_PRIMARY) == w->w);
+    XSetSelectionOwner(w->wg->dpy, XA_PRIMARY, w->w, time);
+    t->display->has_selection = (XGetSelectionOwner(w->wg->dpy, XA_PRIMARY) == w->w);
 
     t->display->dirty = 1;
     runes_window_backend_request_flush(t);
@@ -736,7 +763,7 @@ static void runes_window_backend_clear_selection(RunesTerm *t)
 {
     RunesWindowBackend *w = t->w;
 
-    XSetSelectionOwner(w->dpy, XA_PRIMARY, None, CurrentTime);
+    XSetSelectionOwner(w->wg->dpy, XA_PRIMARY, None, CurrentTime);
     t->display->has_selection = 0;
     if (w->selection_contents) {
         free(w->selection_contents);
@@ -896,7 +923,7 @@ static void runes_window_backend_handle_configure_event(
     }
 
     while (XCheckTypedWindowEvent(
-        w->dpy, w->border_w, ConfigureNotify, (XEvent *)e));
+        w->wg->dpy, w->border_w, ConfigureNotify, (XEvent *)e));
     runes_window_backend_resize_window(t, e->width, e->height);
 }
 
@@ -933,10 +960,10 @@ static void runes_window_backend_handle_selection_notify_event(
     RunesWindowBackend *w = t->w;
 
     if (e->property == None) {
-        if (e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
+        if (e->target == w->wg->atoms[RUNES_ATOM_UTF8_STRING]) {
             XConvertSelection(
-                w->dpy, XA_PRIMARY, XA_STRING,
-                w->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, e->time);
+                w->wg->dpy, XA_PRIMARY, XA_STRING,
+                w->wg->atoms[RUNES_ATOM_RUNES_SELECTION], w->w, e->time);
         }
     }
     else {
@@ -946,7 +973,7 @@ static void runes_window_backend_handle_selection_notify_event(
         unsigned char *buf;
 
         XGetWindowProperty(
-            w->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
+            w->wg->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
             AnyPropertyType, &type, &format, &nitems, &left, &buf);
         if (t->scr->bracketed_paste) {
             runes_window_backend_write_to_pty(t, "\e[200~", 6);
@@ -985,18 +1012,19 @@ static void runes_window_backend_handle_selection_request_event(
     selection.property   = e->property;
     selection.time       = e->time;
 
-    if (e->target == w->atoms[RUNES_ATOM_TARGETS]) {
-        Atom targets[2] = { XA_STRING, w->atoms[RUNES_ATOM_UTF8_STRING] };
+    if (e->target == w->wg->atoms[RUNES_ATOM_TARGETS]) {
+        Atom targets[2] = { XA_STRING, w->wg->atoms[RUNES_ATOM_UTF8_STRING] };
 
         XChangeProperty(
-            w->dpy, e->requestor, e->property,
+            w->wg->dpy, e->requestor, e->property,
             XA_ATOM, 32, PropModeReplace,
             (unsigned char *)&targets, 2);
     }
-    else if (e->target == XA_STRING || e->target == w->atoms[RUNES_ATOM_UTF8_STRING]) {
+    else if (e->target == XA_STRING
+             || e->target == w->wg->atoms[RUNES_ATOM_UTF8_STRING]) {
         if (w->selection_contents) {
             XChangeProperty(
-                w->dpy, e->requestor, e->property,
+                w->wg->dpy, e->requestor, e->property,
                 e->target, 8, PropModeReplace,
                 (unsigned char *)w->selection_contents, w->selection_len);
         }
@@ -1005,7 +1033,8 @@ static void runes_window_backend_handle_selection_request_event(
         selection.property = None;
     }
 
-    XSendEvent(w->dpy, e->requestor, False, NoEventMask, (XEvent *)&selection);
+    XSendEvent(
+        w->wg->dpy, e->requestor, False, NoEventMask, (XEvent *)&selection);
 }
 
 static int runes_window_backend_handle_builtin_keypress(

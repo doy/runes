@@ -21,9 +21,14 @@ static void runes_loop_do_after_work(uv_work_t *req, int status);
 static void runes_loop_timer_cb(uv_timer_t *handle);
 static void runes_loop_free_handle(uv_handle_t *handle);
 
-void runes_loop_init(RunesLoop *loop)
+RunesLoop *runes_loop_new()
 {
+    RunesLoop *loop;
+
+    loop = calloc(1, sizeof(RunesLoop));
     loop->loop = uv_default_loop();
+
+    return loop;
 }
 
 void runes_loop_run(RunesLoop *loop)
@@ -63,9 +68,11 @@ void runes_loop_timer_set(RunesLoop *loop, int timeout, int repeat,
     uv_timer_start(timer_req, runes_loop_timer_cb, timeout, repeat);
 }
 
-void runes_loop_cleanup(RunesLoop *loop)
+void runes_loop_delete(RunesLoop *loop)
 {
     uv_loop_close(loop->loop);
+
+    free(loop);
 }
 
 static void runes_loop_do_work(uv_work_t *req)

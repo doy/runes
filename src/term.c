@@ -9,26 +9,18 @@
 #include "pty-unix.h"
 #include "window-xlib.h"
 
-static void runes_term_init_loop(RunesTerm *t, RunesLoop *loop);
-
-void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[])
+RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackendGlobal *wg)
 {
+    RunesTerm *t;
     int width, height;
 
-    t->config = calloc(1, sizeof(RunesConfig));
-    runes_config_init(t->config, argc, argv);
+    t = calloc(1, sizeof(RunesTerm));
 
-    t->display = calloc(1, sizeof(RunesDisplay));
-    runes_display_init(t->display, t->config->font_name);
-
-    t->w = calloc(1, sizeof(RunesWindowBackend));
-    runes_window_backend_init(t->w);
-
-    t->pty = calloc(1, sizeof(RunesPtyBackend));
-    runes_pty_backend_init(t->pty);
-
-    t->scr = calloc(1, sizeof(VT100Screen));
-    vt100_screen_init(t->scr);
+    t->config = runes_config_new(argc, argv);
+    t->display = runes_display_new(t->config->font_name);
+    t->w = runes_window_backend_new(wg);
+    t->pty = runes_pty_backend_new();
+    t->scr = vt100_screen_new(t->config->default_cols, t->config->default_rows);
 
     vt100_screen_set_scrollback_length(t->scr, t->config->scrollback_length);
     runes_window_backend_create_window(t, argc, argv);
@@ -38,8 +30,22 @@ void runes_term_init(RunesTerm *t, RunesLoop *loop, int argc, char *argv[])
     runes_window_backend_get_size(t, &width, &height);
     runes_term_set_window_size(t, width, height);
 
+    return t;
+}
+
+void runes_term_register_with_loop(RunesTerm *t, RunesLoop *loop)
+{
     t->loop = loop;
-    runes_term_init_loop(t, loop);
+    runes_window_backend_init_loop(t, loop);
+    runes_pty_backend_init_loop(t, loop);
+}
+
+void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel)
+{
+    int row = ypixel / t->display->fonty, col = xpixel / t->display->fontx;
+
+    runes_pty_backend_set_window_size(t, row, col, xpixel, ypixel);
+    vt100_screen_set_window_size(t->scr, row, col);
 }
 
 void runes_term_refcnt_inc(RunesTerm *t)
@@ -51,33 +57,17 @@ void runes_term_refcnt_dec(RunesTerm *t)
 {
     t->refcnt--;
     if (t->refcnt <= 0) {
-        runes_term_cleanup(t);
-        free(t);
+        runes_term_delete(t);
     }
 }
 
-void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel)
+void runes_term_delete(RunesTerm *t)
 {
-    int row = ypixel / t->display->fonty, col = xpixel / t->display->fontx;
+    vt100_screen_delete(t->scr);
+    runes_pty_backend_delete(t->pty);
+    runes_window_backend_delete(t->w);
+    runes_display_delete(t->display);
+    runes_config_delete(t->config);
 
-    runes_pty_backend_set_window_size(t, row, col, xpixel, ypixel);
-    vt100_screen_set_window_size(t->scr, row, col);
-}
-
-void runes_term_cleanup(RunesTerm *t)
-{
-    vt100_screen_cleanup(t->scr);
-    free(t->scr);
-
-    runes_display_cleanup(t->display);
-    free(t->display);
-
-    runes_config_cleanup(t->config);
-    free(t->config);
-}
-
-static void runes_term_init_loop(RunesTerm *t, RunesLoop *loop)
-{
-    runes_window_backend_init_loop(t, loop);
-    runes_pty_backend_init_loop(t, loop);
+    free(t);
 }

@@ -28,9 +28,14 @@ static int runes_display_loc_is_between(
      struct vt100_loc loc,
      struct vt100_loc start, struct vt100_loc end);
 
-void runes_display_init(RunesDisplay *display, char *font_name)
+RunesDisplay *runes_display_new(char *font_name)
 {
+    RunesDisplay *display;
+
+    display = calloc(1, sizeof(RunesDisplay));
     runes_display_recalculate_font_metrics(display, font_name);
+
+    return display;
 }
 
 void runes_display_set_context(RunesTerm *t, cairo_t *cr)
@@ -157,10 +162,12 @@ void runes_display_draw_cursor(RunesTerm *t)
     }
 }
 
-void runes_display_cleanup(RunesDisplay *display)
+void runes_display_delete(RunesDisplay *display)
 {
     cairo_pattern_destroy(display->buffer);
     g_object_unref(display->layout);
+
+    free(display);
 }
 
 static void runes_display_recalculate_font_metrics(

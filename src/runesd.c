@@ -4,11 +4,13 @@
 
 #include "loop.h"
 #include "socket.h"
+#include "window-xlib.h"
 
 int main (int argc, char *argv[])
 {
-    RunesLoop loop;
-    RunesSocket socket;
+    RunesLoop *loop;
+    RunesSocket *socket;
+    RunesWindowBackendGlobal *wg;
 
     UNUSED(argv);
 
@@ -18,13 +20,18 @@ int main (int argc, char *argv[])
 
     setlocale(LC_ALL, "");
 
-    runes_loop_init(&loop);
-    runes_socket_init(&socket, &loop);
+    loop = runes_loop_new();
+    wg = runes_window_backend_global_init();
+    socket = runes_socket_new(loop, wg);
+    UNUSED(socket);
 
-    runes_loop_run(&loop);
+    runes_loop_run(loop);
 
-    runes_socket_cleanup(&socket);
-    runes_loop_cleanup(&loop);
+#ifdef RUNES_VALGRIND
+    runes_socket_delete(socket);
+    runes_window_backend_global_cleanup(wg);
+    runes_loop_delete(loop);
+#endif
 
     return 0;
 }

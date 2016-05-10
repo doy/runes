@@ -25,10 +25,10 @@ struct runes_display {
     char dirty: 1;
 };
 
-void runes_display_init(RunesDisplay *display, char *font_name);
+RunesDisplay *runes_display_new(char *font_name);
 void runes_display_set_context(RunesTerm *t, cairo_t *cr);
 void runes_display_draw_screen(RunesTerm *t);
 void runes_display_draw_cursor(RunesTerm *t);
-void runes_display_cleanup(RunesDisplay *display);
+void runes_display_delete(RunesDisplay *display);
 
 #endif
