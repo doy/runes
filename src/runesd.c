@@ -29,7 +29,7 @@ int main (int argc, char *argv[])
 
 #ifdef RUNES_VALGRIND
     runes_socket_delete(socket);
-    runes_window_backend_global_cleanup(wg);
+    runes_window_backend_delete(wb);
     runes_loop_delete(loop);
 #endif
 

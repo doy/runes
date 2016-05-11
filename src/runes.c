@@ -21,7 +21,7 @@ int main (int argc, char *argv[])
 
 #ifdef RUNES_VALGRIND
     runes_loop_cleanup(loop);
-    runes_window_backend_global_cleanup(wg);
+    runes_window_backend_delete(wb);
 #endif
 
     return 0;
