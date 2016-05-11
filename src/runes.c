@@ -4,18 +4,18 @@
 
 #include "loop.h"
 #include "term.h"
-#include "window-xlib.h"
+#include "window-backend-xlib.h"
 
 int main (int argc, char *argv[])
 {
     RunesLoop *loop;
-    RunesWindowBackendGlobal *wg;
+    RunesWindowBackend *wb;
 
     setlocale(LC_ALL, "");
 
     loop = runes_loop_new();
-    wg = runes_window_backend_global_init();
-    runes_term_register_with_loop(runes_term_new(argc, argv, wg), loop);
+    wb = runes_window_backend_new();
+    runes_term_register_with_loop(runes_term_new(argc, argv, wb), loop);
 
     runes_loop_run(loop);
 

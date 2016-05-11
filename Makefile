@@ -8,6 +8,7 @@ OBJ      = $(BUILD)runes.o \
 	   $(BUILD)term.o \
 	   $(BUILD)config.o \
 	   $(BUILD)window-xlib.o \
+	   $(BUILD)window-backend-xlib.o \
 	   $(BUILD)pty-unix.o \
 	   $(BUILD)loop.o \
 	   $(BUILD)util.o
@@ -16,6 +17,7 @@ DOBJ     = $(BUILD)runesd.o \
 	   $(BUILD)term.o \
 	   $(BUILD)config.o \
 	   $(BUILD)window-xlib.o \
+	   $(BUILD)window-backend-xlib.o \
 	   $(BUILD)pty-unix.o \
 	   $(BUILD)loop.o \
 	   $(BUILD)util.o \

@@ -17,13 +17,13 @@ static void runes_daemon_close_socket(RunesDaemon *sock);
 static void runes_daemon_socket_accept(void *t);
 static int runes_daemon_handle_request(void *t);
 
-RunesDaemon *runes_daemon_new(RunesLoop *loop, RunesWindowBackendGlobal *wg)
+RunesDaemon *runes_daemon_new(RunesLoop *loop, RunesWindowBackend *wb)
 {
     RunesDaemon *daemon;
 
     daemon = calloc(1, sizeof(RunesDaemon));
     daemon->loop = loop;
-    daemon->wg = wg;
+    daemon->wb = wb;
     daemon->sock_name = runes_get_daemon_socket_name();
     daemon->sock = runes_daemon_open_socket(daemon->sock_name);
     runes_daemon_init_loop(daemon, loop);
@@ -185,7 +185,7 @@ static int runes_daemon_handle_request(void *t)
         }
 
         runes_term_register_with_loop(
-            runes_term_new(argc, argv, daemon->wg), daemon->loop);
+            runes_term_new(argc, argv, daemon->wb), daemon->loop);
     }
 
     free(argv);

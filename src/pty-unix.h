@@ -13,13 +13,13 @@ struct runes_pty {
     int remaininglen;
 };
 
-RunesPtyBackend *runes_pty_backend_new();
-void runes_pty_backend_spawn_subprocess(RunesTerm *t);
-void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop);
-void runes_pty_backend_set_window_size(RunesTerm *t, int row, int col,
-                                       int xpixel, int ypixel);
-void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len);
-void runes_pty_backend_request_close(RunesTerm *t);
-void runes_pty_backend_delete(RunesPtyBackend *pty);
+RunesPty *runes_pty_new();
+void runes_pty_spawn_subprocess(RunesTerm *t);
+void runes_pty_init_loop(RunesTerm *t, RunesLoop *loop);
+void runes_pty_set_window_size(
+    RunesTerm *t, int row, int col, int xpixel, int ypixel);
+void runes_pty_write(RunesTerm *t, char *buf, size_t len);
+void runes_pty_request_close(RunesTerm *t);
+void runes_pty_delete(RunesPty *pty);
 
 #endif

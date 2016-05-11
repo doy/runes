@@ -4,13 +4,13 @@
 
 #include "loop.h"
 #include "daemon.h"
-#include "window-xlib.h"
+#include "window-backend-xlib.h"
 
 int main (int argc, char *argv[])
 {
     RunesLoop *loop;
     RunesDaemon *daemon;
-    RunesWindowBackendGlobal *wg;
+    RunesWindowBackend *wb;
 
     UNUSED(argv);
 
@@ -21,8 +21,8 @@ int main (int argc, char *argv[])
     setlocale(LC_ALL, "");
 
     loop = runes_loop_new();
-    wg = runes_window_backend_global_init();
-    daemon = runes_daemon_new(loop, wg);
+    wb = runes_window_backend_new();
+    daemon = runes_daemon_new(loop, wb);
     UNUSED(daemon);
 
     runes_loop_run(loop);

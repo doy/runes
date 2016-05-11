@@ -16,14 +16,14 @@
 #include "term.h"
 #include "window-xlib.h"
 
-static void runes_pty_backend_read(void *t);
-static int runes_pty_backend_got_data(void *t);
+static void runes_pty_read(void *t);
+static int runes_pty_got_data(void *t);
 
-RunesPtyBackend *runes_pty_backend_new()
+RunesPty *runes_pty_new()
 {
-    RunesPtyBackend *pty;
+    RunesPty *pty;
 
-    pty = calloc(1, sizeof(RunesPtyBackend));
+    pty = calloc(1, sizeof(RunesPty));
     pty->master = posix_openpt(O_RDWR);
     grantpt(pty->master);
     unlockpt(pty->master);
@@ -31,9 +31,9 @@ RunesPtyBackend *runes_pty_backend_new()
     return pty;
 }
 
-void runes_pty_backend_spawn_subprocess(RunesTerm *t)
+void runes_pty_spawn_subprocess(RunesTerm *t)
 {
-    RunesPtyBackend *pty = t->pty;
+    RunesPty *pty = t->pty;
 
     pty->slave = open(ptsname(pty->master), O_RDWR);
 
@@ -83,7 +83,7 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
         unsetenv("COLORFGBG");
 
         /* this is used by, for instance, w3m */
-        sprintf(window_id, "%lu", runes_window_backend_get_window_id(t));
+        sprintf(window_id, "%lu", runes_window_get_window_id(t));
         setenv("WINDOWID", window_id, 1);
 
         unsetenv("LINES");
@@ -101,15 +101,15 @@ void runes_pty_backend_spawn_subprocess(RunesTerm *t)
     }
 }
 
-void runes_pty_backend_init_loop(RunesTerm *t, RunesLoop *loop)
+void runes_pty_init_loop(RunesTerm *t, RunesLoop *loop)
 {
     runes_term_refcnt_inc(t);
-    runes_loop_start_work(loop, t, runes_pty_backend_read,
-                          runes_pty_backend_got_data);
+    runes_loop_start_work(
+        loop, t, runes_pty_read, runes_pty_got_data);
 }
 
-void runes_pty_backend_set_window_size(RunesTerm *t, int row, int col,
-                                       int xpixel, int ypixel)
+void runes_pty_set_window_size(
+    RunesTerm *t, int row, int col, int xpixel, int ypixel)
 {
     struct winsize size;
 
@@ -120,38 +120,38 @@ void runes_pty_backend_set_window_size(RunesTerm *t, int row, int col,
     ioctl(t->pty->master, TIOCSWINSZ, &size);
 }
 
-void runes_pty_backend_write(RunesTerm *t, char *buf, size_t len)
+void runes_pty_write(RunesTerm *t, char *buf, size_t len)
 {
     write(t->pty->master, buf, len);
 }
 
-void runes_pty_backend_request_close(RunesTerm *t)
+void runes_pty_request_close(RunesTerm *t)
 {
-    RunesPtyBackend *pty = t->pty;
+    RunesPty *pty = t->pty;
 
     kill(pty->child_pid, SIGHUP);
 }
 
-void runes_pty_backend_delete(RunesPtyBackend *pty)
+void runes_pty_delete(RunesPty *pty)
 {
     close(pty->master);
 
     free(pty);
 }
 
-static void runes_pty_backend_read(void *t)
+static void runes_pty_read(void *t)
 {
-    RunesPtyBackend *pty = ((RunesTerm *)t)->pty;
+    RunesPty *pty = ((RunesTerm *)t)->pty;
 
-    runes_window_backend_request_flush(t);
+    runes_window_request_flush(t);
     pty->readlen = read(
         pty->master, pty->readbuf + pty->remaininglen,
         RUNES_READ_BUFFER_LENGTH - pty->remaininglen);
 }
 
-static int runes_pty_backend_got_data(void *t)
+static int runes_pty_got_data(void *t)
 {
-    RunesPtyBackend *pty = ((RunesTerm *)t)->pty;
+    RunesPty *pty = ((RunesTerm *)t)->pty;
 
     if (pty->readlen > 0) {
         int to_process = pty->readlen + pty->remaininglen;
@@ -163,7 +163,7 @@ static int runes_pty_backend_got_data(void *t)
         return 1;
     }
     else {
-        runes_window_backend_request_close(t);
+        runes_window_request_close(t);
         runes_term_refcnt_dec(t);
 
         return 0;

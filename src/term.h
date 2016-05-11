@@ -7,15 +7,15 @@ typedef struct vt100_screen VT100Screen;
 struct runes_term {
     RunesConfig *config;
     RunesDisplay *display;
-    RunesWindowBackend *w;
-    RunesPtyBackend *pty;
+    RunesWindow *w;
+    RunesPty *pty;
     VT100Screen *scr;
     RunesLoop *loop;
 
     int refcnt;
 };
 
-RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackendGlobal *wg);
+RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackend *wb);
 void runes_term_register_with_loop(RunesTerm *t, RunesLoop *loop);
 void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel);
 void runes_term_refcnt_inc(RunesTerm *t);
