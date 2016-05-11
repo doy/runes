@@ -28,7 +28,7 @@ int main (int argc, char *argv[])
     runes_loop_run(loop);
 
 #ifdef RUNES_VALGRIND
-    runes_socket_delete(socket);
+    runes_daemon_delete(daemon);
     runes_window_backend_delete(wb);
     runes_loop_delete(loop);
 #endif

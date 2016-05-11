@@ -20,7 +20,7 @@ int main (int argc, char *argv[])
     runes_loop_run(loop);
 
 #ifdef RUNES_VALGRIND
-    runes_loop_cleanup(loop);
+    runes_loop_delete(loop);
     runes_window_backend_delete(wb);
 #endif
 
