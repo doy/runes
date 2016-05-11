@@ -1,5 +1,3 @@
-#include <locale.h>
-
 #include "runes.h"
 
 #include "loop.h"
@@ -17,8 +15,6 @@ int main (int argc, char *argv[])
     if (argc > 1) {
         runes_die("runesd takes no arguments; pass them to runesc instead.");
     }
-
-    setlocale(LC_ALL, "");
 
     loop = runes_loop_new();
     wb = runes_window_backend_new();

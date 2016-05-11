@@ -1,5 +1,3 @@
-#include <locale.h>
-
 #include "runes.h"
 
 #include "loop.h"
@@ -10,8 +8,6 @@ int main (int argc, char *argv[])
 {
     RunesLoop *loop;
     RunesWindowBackend *wb;
-
-    setlocale(LC_ALL, "");
 
     loop = runes_loop_new();
     wb = runes_window_backend_new();

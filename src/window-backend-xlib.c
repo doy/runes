@@ -1,3 +1,4 @@
+#include <locale.h>
 #include <stdlib.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -29,6 +30,8 @@ RunesWindowBackend *runes_window_backend_new()
     RunesWindowBackend *wb;
 
     XInitThreads();
+
+    setlocale(LC_ALL, "");
     XSetLocaleModifiers("");
 
     wb = calloc(1, sizeof(RunesWindowBackend));
