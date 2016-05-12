@@ -23,7 +23,7 @@ struct runes_window_backend {
     Atom atoms[RUNES_NUM_ATOMS];
 };
 
-RunesWindowBackend *runes_window_backend_new();
+RunesWindowBackend *runes_window_backend_new(void);
 void runes_window_backend_delete(RunesWindowBackend *wb);
 
 #endif

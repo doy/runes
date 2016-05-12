@@ -21,7 +21,7 @@ struct runes_window {
     char delaying: 1;
 };
 
-RunesWindow *runes_window_new();
+RunesWindow *runes_window_new(RunesWindowBackend *wb);
 void runes_window_create_window(RunesTerm *t, int argc, char *argv[]);
 void runes_window_init_loop(RunesTerm *t, RunesLoop *loop);
 void runes_window_request_flush(RunesTerm *t);

@@ -13,7 +13,7 @@ struct runes_pty {
     int remaininglen;
 };
 
-RunesPty *runes_pty_new();
+RunesPty *runes_pty_new(void);
 void runes_pty_spawn_subprocess(RunesTerm *t);
 void runes_pty_init_loop(RunesTerm *t, RunesLoop *loop);
 void runes_pty_set_window_size(

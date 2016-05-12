@@ -7,7 +7,7 @@ struct runes_loop {
     uv_loop_t *loop;
 };
 
-RunesLoop *runes_loop_new();
+RunesLoop *runes_loop_new(void);
 void runes_loop_run(RunesLoop *loop);
 void runes_loop_start_work(RunesLoop *loop, void *t,
                            void (*work_cb)(void*),
