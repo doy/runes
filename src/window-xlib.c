@@ -571,7 +571,6 @@ static int runes_window_check_recent(RunesTerm *t)
     }
     if (now.tv_sec < w->last_redraw.tv_sec || (now.tv_sec == w->last_redraw.tv_sec && now.tv_nsec < w->last_redraw.tv_nsec)) {
         runes_term_refcnt_inc(t);
-        runes_warn("setting a timer for %dms", t->config->redraw_rate);
         runes_loop_timer_set(
             t->loop, t->config->redraw_rate, t, runes_window_delay_cb);
         w->delaying = 1;
@@ -587,7 +586,6 @@ static void runes_window_delay_cb(void *t)
 {
     RunesWindow *w = ((RunesTerm *)t)->w;
 
-    runes_warn("done delaying");
     w->delaying = 0;
     runes_window_request_flush(t);
     runes_term_refcnt_dec((RunesTerm*)t);
