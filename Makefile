@@ -59,7 +59,7 @@ $(COUT): $(COBJ)
 libvt100/libvt100.a: make-libvt100
 
 make-libvt100:
-	@if ! $(MAKE) -q -C libvt100 static; then $(MAKE) -C libvt100 static; MAKELEVEL=$(echo "${MAKELEVEL}-1" | bc) exec $(MAKE); fi
+	@if ! $(MAKE) -q -C libvt100 static; then $(MAKE) -C libvt100 static && MAKELEVEL=$(echo "${MAKELEVEL}-1" | bc) exec $(MAKE); fi
 
 $(BUILD)%.o: $(SRC)%.c
 	@mkdir -p $(BUILD)
