@@ -1,8 +1,7 @@
 #ifndef _RUNES_TERM_H
 #define _RUNES_TERM_H
 
-struct vt100_screen;
-typedef struct vt100_screen VT100Screen;
+#include <vt100.h>
 
 struct runes_term {
     RunesConfig *config;
