@@ -29,8 +29,6 @@ RunesWindowBackend *runes_window_backend_new()
 {
     RunesWindowBackend *wb;
 
-    XInitThreads();
-
     setlocale(LC_ALL, "");
     XSetLocaleModifiers("");
 

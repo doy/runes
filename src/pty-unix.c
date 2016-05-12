@@ -1,10 +1,12 @@
 #define _XOPEN_SOURCE 600
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <vt100.h>
 
@@ -16,8 +18,7 @@
 #include "term.h"
 #include "window-xlib.h"
 
-static void runes_pty_read(void *t);
-static int runes_pty_got_data(void *t);
+static int runes_pty_input_cb(void *t);
 
 RunesPty *runes_pty_new()
 {
@@ -103,9 +104,10 @@ void runes_pty_spawn_subprocess(RunesTerm *t)
 
 void runes_pty_init_loop(RunesTerm *t, RunesLoop *loop)
 {
+    RunesPty *pty = t->pty;
+
     runes_term_refcnt_inc(t);
-    runes_loop_start_work(
-        loop, t, runes_pty_read, runes_pty_got_data);
+    runes_loop_start_work(loop, pty->master, t, runes_pty_input_cb);
 }
 
 void runes_pty_set_window_size(
@@ -139,7 +141,7 @@ void runes_pty_delete(RunesPty *pty)
     free(pty);
 }
 
-static void runes_pty_read(void *t)
+static int runes_pty_input_cb(void *t)
 {
     RunesPty *pty = ((RunesTerm *)t)->pty;
 
@@ -147,11 +149,6 @@ static void runes_pty_read(void *t)
     pty->readlen = read(
         pty->master, pty->readbuf + pty->remaininglen,
         RUNES_READ_BUFFER_LENGTH - pty->remaininglen);
-}
-
-static int runes_pty_got_data(void *t)
-{
-    RunesPty *pty = ((RunesTerm *)t)->pty;
 
     if (pty->readlen > 0) {
         int to_process = pty->readlen + pty->remaininglen;

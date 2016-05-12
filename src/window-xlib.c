@@ -74,10 +74,10 @@ static struct function_key application_cursor_keys[] = {
 };
 #undef RUNES_KEY
 
-static void runes_window_get_next_event(void *t);
+static int runes_window_event_cb(void *t);
+static int runes_window_handle_event(RunesTerm *t, XEvent *e);
 static Bool runes_window_wants_event(
     Display *dpy, XEvent *event, XPointer arg);
-static int runes_window_process_event(void *t);
 static Bool runes_window_find_flush_events(
     Display *dpy, XEvent *e, XPointer arg);
 static void runes_window_resize_window(
@@ -257,7 +257,7 @@ void runes_window_init_loop(RunesTerm *t, RunesLoop *loop)
 
     runes_term_refcnt_inc(t);
     runes_loop_start_work(
-        loop, t, runes_window_get_next_event, runes_window_process_event);
+        loop, XConnectionNumber(w->wb->dpy), t, runes_window_event_cb);
 }
 
 void runes_window_request_flush(RunesTerm *t)
@@ -271,9 +271,7 @@ void runes_window_request_flush(RunesTerm *t)
     e.xclient.data.l[0] = w->wb->atoms[RUNES_ATOM_RUNES_FLUSH];
 
     XSendEvent(w->wb->dpy, w->w, False, NoEventMask, &e);
-    XLockDisplay(w->wb->dpy);
     XFlush(w->wb->dpy);
-    XUnlockDisplay(w->wb->dpy);
 }
 
 void runes_window_request_close(RunesTerm *t)
@@ -289,9 +287,7 @@ void runes_window_request_close(RunesTerm *t)
     e.xclient.data.l[1] = CurrentTime;
 
     XSendEvent(w->wb->dpy, w->w, False, NoEventMask, &e);
-    XLockDisplay(w->wb->dpy);
     XFlush(w->wb->dpy);
-    XUnlockDisplay(w->wb->dpy);
 }
 
 unsigned long runes_window_get_window_id(RunesTerm *t)
@@ -353,27 +349,30 @@ void runes_window_delete(RunesWindow *w)
     free(w);
 }
 
-static void runes_window_get_next_event(void *t)
+static int runes_window_event_cb(void *t)
 {
     RunesWindow *w = ((RunesTerm *)t)->w;
+    XEvent e;
+    int should_close = 0;
 
-    XIfEvent(w->wb->dpy, &w->event, runes_window_wants_event, t);
+    while (XCheckIfEvent(w->wb->dpy, &e, runes_window_wants_event, t)) {
+        should_close = runes_window_handle_event(((RunesTerm *)t), &e);
+        if (should_close) {
+            break;
+        }
+    }
+
+    if (should_close) {
+        runes_pty_request_close(t);
+        runes_term_refcnt_dec(t);
+    }
+
+    return !should_close;
 }
 
-static Bool runes_window_wants_event(Display *dpy, XEvent *event, XPointer arg)
-{
-    RunesWindow *w = ((RunesTerm *)arg)->w;
-    Window event_window = ((XAnyEvent*)event)->window;
-
-    UNUSED(dpy);
-
-    return event_window == w->w || event_window == w->border_w;
-}
-
-static int runes_window_process_event(void *t)
+static int runes_window_handle_event(RunesTerm *t, XEvent *e)
 {
     RunesWindow *w = ((RunesTerm *)t)->w;
-    XEvent *e = &w->event;
     int should_close = 0;
 
     if (!XFilterEvent(e, None)) {
@@ -441,12 +440,17 @@ static int runes_window_process_event(void *t)
         }
     }
 
-    if (should_close) {
-        runes_pty_request_close(t);
-        runes_term_refcnt_dec(t);
-    }
+    return should_close;
+}
 
-    return !should_close;
+static Bool runes_window_wants_event(Display *dpy, XEvent *event, XPointer arg)
+{
+    RunesWindow *w = ((RunesTerm *)arg)->w;
+    Window event_window = ((XAnyEvent*)event)->window;
+
+    UNUSED(dpy);
+
+    return event_window == w->w || event_window == w->border_w;
 }
 
 static Bool runes_window_find_flush_events(
@@ -567,7 +571,9 @@ static int runes_window_check_recent(RunesTerm *t)
     }
     if (now.tv_sec < w->last_redraw.tv_sec || (now.tv_sec == w->last_redraw.tv_sec && now.tv_nsec < w->last_redraw.tv_nsec)) {
         runes_term_refcnt_inc(t);
-        runes_loop_timer_set(t->loop, rate, 0, t, runes_window_delay_cb);
+        runes_warn("setting a timer for %dms", t->config->redraw_rate);
+        runes_loop_timer_set(
+            t->loop, t->config->redraw_rate, t, runes_window_delay_cb);
         w->delaying = 1;
         return 1;
     }
@@ -581,6 +587,7 @@ static void runes_window_delay_cb(void *t)
 {
     RunesWindow *w = ((RunesTerm *)t)->w;
 
+    runes_warn("done delaying");
     w->delaying = 0;
     runes_window_request_flush(t);
     runes_term_refcnt_dec((RunesTerm*)t);
@@ -623,8 +630,7 @@ static void runes_window_visual_bell(RunesTerm *t)
         XFlush(w->wb->dpy);
 
         runes_term_refcnt_inc(t);
-        runes_loop_timer_set(
-            t->loop, 20, 0, t, runes_window_reset_visual_bell);
+        runes_loop_timer_set(t->loop, 20, t, runes_window_reset_visual_bell);
     }
 }
 

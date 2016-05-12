@@ -1,117 +1,106 @@
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "runes.h"
 #include "loop.h"
 
 struct runes_loop_data {
-    uv_work_t req;
-    RunesLoop *loop;
+    struct event *event;
     void *t;
-    void (*work_cb)(void*);
-    int (*after_work_cb)(void*);
+    int (*cb)(void*);
 };
 
 struct runes_loop_timer_data {
+    struct event *event;
+    struct timeval *timeout;
     void *t;
     void (*cb)(void*);
 };
 
-static void runes_loop_do_work(uv_work_t *req);
-static void runes_loop_do_after_work(uv_work_t *req, int status);
-static void runes_loop_timer_cb(uv_timer_t *handle);
-static void runes_loop_free_handle(uv_handle_t *handle);
+static void runes_loop_work_cb(evutil_socket_t fd, short what, void *arg);
+static void runes_loop_timer_cb(evutil_socket_t fd, short what, void *arg);
 
 RunesLoop *runes_loop_new()
 {
     RunesLoop *loop;
 
     loop = calloc(1, sizeof(RunesLoop));
-    loop->loop = uv_default_loop();
+    loop->base = event_base_new();
 
     return loop;
 }
 
 void runes_loop_run(RunesLoop *loop)
 {
-    uv_run(loop->loop, UV_RUN_DEFAULT);
+    event_base_dispatch(loop->base);
 }
 
-void runes_loop_start_work(RunesLoop *loop, void *t,
-                           void (*work_cb)(void*),
-                           int (*after_work_cb)(void*))
+void runes_loop_start_work(
+    RunesLoop *loop, int fd, void *t, int (*cb)(void*))
 {
     struct runes_loop_data *data;
 
     data = malloc(sizeof(struct runes_loop_data));
-    data->req.data = data;
-    data->loop = loop;
+    data->event = event_new(loop->base, fd, EV_READ, runes_loop_work_cb, data);
     data->t = t;
-    data->work_cb = work_cb;
-    data->after_work_cb = after_work_cb;
+    data->cb = cb;
 
-    uv_queue_work(loop->loop, (void*)data, runes_loop_do_work,
-                  runes_loop_do_after_work);
+    event_add(data->event, NULL);
 }
 
-void runes_loop_timer_set(RunesLoop *loop, int timeout, int repeat,
-                          void *t, void (*cb)(void*))
+void runes_loop_timer_set(
+    RunesLoop *loop, int timeout, void *t, void (*cb)(void*))
 {
-    uv_timer_t *timer_req;
-    struct runes_loop_timer_data *timer_data;
+    struct runes_loop_timer_data *data;
 
-    timer_req = malloc(sizeof(uv_timer_t));
-    uv_timer_init(loop->loop, timer_req);
-    timer_data = malloc(sizeof(struct runes_loop_timer_data));
-    timer_data->t = t;
-    timer_data->cb = cb;
-    timer_req->data = (void *)timer_data;
-    uv_timer_start(timer_req, runes_loop_timer_cb, timeout, repeat);
+    data = malloc(sizeof(struct runes_loop_timer_data));
+    data->event = event_new(loop->base, -1, 0, runes_loop_timer_cb, data);
+    data->t = t;
+    data->cb = cb;
+    data->timeout = malloc(sizeof(struct timeval));
+    data->timeout->tv_sec = 0;
+    while (timeout >= 1000) {
+        data->timeout->tv_sec += 1;
+        timeout -= 1000;
+    }
+    data->timeout->tv_usec = timeout * 1000;
+
+    event_add(data->event, data->timeout);
 }
 
 void runes_loop_delete(RunesLoop *loop)
 {
-    uv_loop_close(loop->loop);
+    event_base_free(loop->base);
 
     free(loop);
 }
 
-static void runes_loop_do_work(uv_work_t *req)
+static void runes_loop_work_cb(evutil_socket_t fd, short what, void *arg)
 {
-    struct runes_loop_data *data = req->data;
-    void *t = data->t;
+    struct runes_loop_data *data = arg;
 
-    data->work_cb(t);
-}
+    UNUSED(fd);
+    UNUSED(what);
 
-static void runes_loop_do_after_work(uv_work_t *req, int status)
-{
-    struct runes_loop_data *data = req->data;
-    RunesLoop *loop = data->loop;
-    void *t = data->t;
-    int should_loop = 0;
-
-    UNUSED(status);
-
-    should_loop = data->after_work_cb(t);
-    if (should_loop) {
-        uv_queue_work(loop->loop, req, runes_loop_do_work,
-                      runes_loop_do_after_work);
+    if (data->cb(data->t)) {
+        event_add(data->event, NULL);
     }
     else {
-        free(req);
+        event_free(data->event);
+        free(data);
     }
 }
 
-static void runes_loop_timer_cb(uv_timer_t *handle)
+static void runes_loop_timer_cb(evutil_socket_t fd, short what, void *arg)
 {
-    struct runes_loop_timer_data *data = handle->data;
-    data->cb(data->t);
-    uv_close(
-        (uv_handle_t *)handle, runes_loop_free_handle);
-}
+    struct runes_loop_timer_data *data = arg;
 
-static void runes_loop_free_handle(uv_handle_t *handle)
-{
-    free(handle->data);
-    free(handle);
+    UNUSED(fd);
+    UNUSED(what);
+
+    data->cb(data->t);
+
+    event_free(data->event);
+    free(data->timeout);
+    free(data);
 }

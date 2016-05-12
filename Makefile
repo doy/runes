@@ -24,7 +24,7 @@ DOBJ     = $(BUILD)runesd.o \
 	   $(BUILD)daemon.o
 COBJ     = $(BUILD)runesc.o \
 	   $(BUILD)util.o
-LIBS     = cairo cairo-xlib libuv pangocairo
+LIBS     = cairo cairo-xlib libevent pangocairo
 OPT     ?= -g
 CFLAGS  ?= $(OPT) -Wall -Wextra -Werror
 LDFLAGS ?= $(OPT) -Wall -Wextra -Werror

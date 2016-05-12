@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -14,7 +15,6 @@
 
 static int runes_daemon_open_socket(char *sock_name);
 static void runes_daemon_close_socket(RunesDaemon *sock);
-static void runes_daemon_socket_accept(void *t);
 static int runes_daemon_handle_request(void *t);
 
 RunesDaemon *runes_daemon_new(RunesLoop *loop, RunesWindowBackend *wb)
@@ -33,8 +33,8 @@ RunesDaemon *runes_daemon_new(RunesLoop *loop, RunesWindowBackend *wb)
 
 void runes_daemon_init_loop(RunesDaemon *daemon, RunesLoop *loop)
 {
-    runes_loop_start_work(loop, daemon, runes_daemon_socket_accept,
-                          runes_daemon_handle_request);
+    runes_loop_start_work(
+        loop, daemon->sock, daemon, runes_daemon_handle_request);
 }
 
 void runes_socket_delete(RunesDaemon *daemon)
@@ -97,23 +97,17 @@ static void runes_daemon_close_socket(RunesDaemon *daemon)
     unlink(daemon->sock_name);
 }
 
-static void runes_daemon_socket_accept(void *t)
+static int runes_daemon_handle_request(void *t)
 {
     RunesDaemon *daemon = (RunesDaemon *)t;
     struct sockaddr_un client;
     socklen_t len = sizeof(client);
-
-    daemon->client_sock = accept(
-        daemon->sock, (struct sockaddr*)(&client), &len);
-}
-
-static int runes_daemon_handle_request(void *t)
-{
-    RunesDaemon *daemon = (RunesDaemon *)t;
     ssize_t bytes;
     uint32_t argc, argv_len;
     char **argv, *argv_buf;
 
+    daemon->client_sock = accept(
+        daemon->sock, (struct sockaddr*)(&client), &len);
     if (daemon->client_sock < 0) {
         runes_die("couldn't accept connection: %s", strerror(errno));
     }
