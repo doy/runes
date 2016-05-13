@@ -455,19 +455,23 @@ static Bool runes_window_wants_event(Display *dpy, XEvent *event, XPointer arg)
 }
 
 static Bool runes_window_find_flush_events(
-    Display *dpy, XEvent *e, XPointer arg)
+    Display *dpy, XEvent *event, XPointer arg)
 {
     RunesWindow *w = (RunesWindow *)arg;
+    Window event_window = ((XAnyEvent*)event)->window;
+    Atom a = event->xclient.data.l[0];
 
     UNUSED(dpy);
 
-    if (e->type == ClientMessage) {
-        Atom a = e->xclient.data.l[0];
-        return a == w->wb->atoms[RUNES_ATOM_RUNES_FLUSH] ? True : False;
-    }
-    else {
+    if (event_window != w->w && event_window != w->border_w) {
         return False;
     }
+
+    if (event->type != ClientMessage) {
+        return False;
+    }
+
+    return a == w->wb->atoms[RUNES_ATOM_RUNES_FLUSH];
 }
 
 static void runes_window_resize_window(
