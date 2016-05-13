@@ -345,6 +345,7 @@ void runes_window_delete(RunesWindow *w)
     XCloseIM(im);
     XDestroyWindow(w->wb->dpy, w->w);
     XDestroyWindow(w->wb->dpy, w->border_w);
+    XFlush(w->wb->dpy);
 
     free(w);
 }
