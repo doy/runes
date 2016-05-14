@@ -63,8 +63,8 @@ static int runes_socket_open_client(char *name)
     client.sun_family = AF_UNIX;
     strcpy(client.sun_path, name);
     if (connect(s, (struct sockaddr*)(&client), sizeof(struct sockaddr_un))) {
-        runes_die("couldn't connect to socket at %s: %s", name,
-                  strerror(errno));
+        runes_die(
+            "couldn't connect to socket at %s: %s", name, strerror(errno));
     }
 
     return s;
