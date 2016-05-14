@@ -179,7 +179,7 @@ static int runes_daemon_handle_request(void *t)
         }
 
         runes_term_register_with_loop(
-            runes_term_new(argc, argv, daemon->wb), daemon->loop);
+            runes_term_new(argc, argv, NULL, NULL, daemon->wb), daemon->loop);
     }
 
     free(argv);

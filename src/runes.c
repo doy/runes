@@ -11,7 +11,8 @@ int main (int argc, char *argv[])
 
     loop = runes_loop_new();
     wb = runes_window_backend_new();
-    runes_term_register_with_loop(runes_term_new(argc, argv, wb), loop);
+    runes_term_register_with_loop(
+        runes_term_new(argc, argv, NULL, NULL, wb), loop);
 
     runes_loop_run(loop);
 

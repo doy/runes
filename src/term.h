@@ -14,7 +14,8 @@ struct runes_term {
     int refcnt;
 };
 
-RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackend *wb);
+RunesTerm *runes_term_new(
+    int argc, char *argv[], char *envp[], char *cwd, RunesWindowBackend *wb);
 void runes_term_register_with_loop(RunesTerm *t, RunesLoop *loop);
 void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel);
 void runes_term_refcnt_inc(RunesTerm *t);

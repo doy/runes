@@ -14,7 +14,7 @@ struct runes_pty {
 };
 
 RunesPty *runes_pty_new(void);
-void runes_pty_spawn_subprocess(RunesTerm *t);
+void runes_pty_spawn_subprocess(RunesTerm *t, char *envp[], char *cwd);
 void runes_pty_init_loop(RunesTerm *t, RunesLoop *loop);
 void runes_pty_set_window_size(
     RunesTerm *t, int row, int col, int xpixel, int ypixel);

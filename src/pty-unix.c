@@ -18,6 +18,8 @@
 #include "term.h"
 #include "window-xlib.h"
 
+extern char **environ;
+
 static int runes_pty_input_cb(void *t);
 
 RunesPty *runes_pty_new()
@@ -32,7 +34,7 @@ RunesPty *runes_pty_new()
     return pty;
 }
 
-void runes_pty_spawn_subprocess(RunesTerm *t)
+void runes_pty_spawn_subprocess(RunesTerm *t, char *envp[], char *cwd)
 {
     RunesPty *pty = t->pty;
 
@@ -89,6 +91,14 @@ void runes_pty_spawn_subprocess(RunesTerm *t)
 
         unsetenv("LINES");
         unsetenv("COLUMNS");
+
+        if (cwd) {
+            chdir(cwd);
+        }
+
+        if (envp) {
+            environ = envp;
+        }
 
         if (strpbrk(cmd, " $")) {
             execlp("/bin/sh", "/bin/sh", "-c", cmd, (char *)NULL);

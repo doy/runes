@@ -9,7 +9,8 @@
 #include "pty-unix.h"
 #include "window-xlib.h"
 
-RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackend *wb)
+RunesTerm *runes_term_new(
+    int argc, char *argv[], char *envp[], char *cwd, RunesWindowBackend *wb)
 {
     RunesTerm *t;
     int width, height;
@@ -24,7 +25,7 @@ RunesTerm *runes_term_new(int argc, char *argv[], RunesWindowBackend *wb)
 
     vt100_screen_set_scrollback_length(t->scr, t->config->scrollback_length);
     runes_window_create_window(t, argc, argv);
-    runes_pty_spawn_subprocess(t);
+    runes_pty_spawn_subprocess(t, envp, cwd);
     runes_display_set_context(t, t->w->backend_cr);
 
     runes_window_get_size(t, &width, &height);
