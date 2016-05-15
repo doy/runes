@@ -8,7 +8,6 @@ struct runes_daemon {
     RunesWindowBackend *wb;
     char *sock_name;
     int sock;
-    int client_sock;
 };
 
 RunesDaemon *runes_daemon_new(RunesLoop *loop, RunesWindowBackend *wb);

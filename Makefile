@@ -21,9 +21,13 @@ DOBJ     = $(BUILD)runesd.o \
 	   $(BUILD)pty-unix.o \
 	   $(BUILD)loop.o \
 	   $(BUILD)util.o \
-	   $(BUILD)daemon.o
+	   $(BUILD)daemon.o \
+	   $(BUILD)socket.o \
+	   $(BUILD)protocol.o
 COBJ     = $(BUILD)runesc.o \
-	   $(BUILD)util.o
+	   $(BUILD)util.o \
+	   $(BUILD)socket.o \
+	   $(BUILD)protocol.o
 LIBS     = cairo cairo-xlib libevent pangocairo
 OPT     ?= -g
 CFLAGS  ?= $(OPT) -Wall -Wextra -Werror

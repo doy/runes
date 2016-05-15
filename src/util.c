@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "runes.h"
 
@@ -101,6 +102,19 @@ void runes_mkdir_p(char *dir)
 
     free(partial_path);
     free(dir);
+}
+
+char *runes_getcwd(void)
+{
+    char buf[4096];
+
+    if (getcwd(buf, 4096)) {
+        return strdup(buf);
+    }
+    else {
+        runes_die("getcwd: %s", strerror(errno));
+        return NULL;
+    }
 }
 
 static void runes_vwarn(const char *fmt, va_list ap)
