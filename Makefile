@@ -3,31 +3,27 @@ DOUT     = runesd
 COUT     = runesc
 BUILD    = build/
 SRC      = src/
+BASE_OBJ = $(BUILD)util.o
+TERM_OBJ = $(BUILD)display.o \
+	   $(BUILD)term.o \
+	   $(BUILD)config.o \
+	   $(BUILD)window-xlib.o \
+	   $(BUILD)window-backend-xlib.o \
+	   $(BUILD)pty-unix.o \
+	   $(BUILD)loop.o
+SOCK_OBJ = $(BUILD)socket.o \
+	   $(BUILD)protocol.o
 OBJ      = $(BUILD)runes.o \
-	   $(BUILD)display.o \
-	   $(BUILD)term.o \
-	   $(BUILD)config.o \
-	   $(BUILD)window-xlib.o \
-	   $(BUILD)window-backend-xlib.o \
-	   $(BUILD)pty-unix.o \
-	   $(BUILD)loop.o \
-	   $(BUILD)util.o
+	   $(BASE_OBJ) \
+	   $(TERM_OBJ)
 DOBJ     = $(BUILD)runesd.o \
-	   $(BUILD)display.o \
-	   $(BUILD)term.o \
-	   $(BUILD)config.o \
-	   $(BUILD)window-xlib.o \
-	   $(BUILD)window-backend-xlib.o \
-	   $(BUILD)pty-unix.o \
-	   $(BUILD)loop.o \
-	   $(BUILD)util.o \
 	   $(BUILD)daemon.o \
-	   $(BUILD)socket.o \
-	   $(BUILD)protocol.o
+	   $(BASE_OBJ) \
+	   $(TERM_OBJ) \
+	   $(SOCK_OBJ)
 COBJ     = $(BUILD)runesc.o \
-	   $(BUILD)util.o \
-	   $(BUILD)socket.o \
-	   $(BUILD)protocol.o
+	   $(BASE_OBJ) \
+	   $(SOCK_OBJ)
 LIBS     = cairo cairo-xlib libevent pangocairo
 OPT     ?= -g
 CFLAGS  ?= $(OPT) -Wall -Wextra -Werror
