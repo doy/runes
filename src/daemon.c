@@ -16,6 +16,8 @@
 #include "term.h"
 
 static int runes_daemon_handle_request(void *t);
+static void runes_daemon_handle_new_term_message(
+    RunesDaemon *daemon, char *buf, size_t len);
 
 RunesDaemon *runes_daemon_new(RunesLoop *loop, RunesWindowBackend *wb)
 {
@@ -48,33 +50,48 @@ void runes_socket_delete(RunesDaemon *daemon)
 static int runes_daemon_handle_request(void *t)
 {
     RunesDaemon *daemon = (RunesDaemon *)t;
-    int client_sock;
+    int client_sock, type;
     char *buf;
     size_t len;
-    struct runes_protocol_message msg;
-    RunesTerm *new_term;
 
     client_sock = runes_socket_server_accept(daemon->sock);
 
-    if (!runes_protocol_read_packet(client_sock, &buf, &len)) {
+    if (runes_protocol_read_packet(client_sock, &type, &buf, &len)) {
+        switch (type) {
+        case RUNES_PROTOCOL_NEW_TERM:
+            runes_daemon_handle_new_term_message(daemon, buf, len);
+            break;
+        default:
+            runes_warn("unknown packet type: %d", type);
+            break;
+        }
+
+        free(buf);
+    }
+    else {
         runes_warn("invalid packet received");
-        return 1;
     }
 
     runes_socket_client_close(client_sock);
 
-    if (!runes_protocol_parse_message(buf, len, &msg)) {
-        runes_warn("couldn't parse message from client");
-        free(buf);
-        return 1;
-    }
-
-    new_term = runes_term_new(
-        msg.argc, msg.argv, msg.envp, msg.cwd, daemon->wb);
-    runes_term_register_with_loop(new_term, daemon->loop);
-
-    free(buf);
-    runes_protocol_free_message(&msg);
-
     return 1;
+}
+
+static void runes_daemon_handle_new_term_message(
+    RunesDaemon *daemon, char *buf, size_t len)
+{
+    struct runes_protocol_new_term_message msg;
+
+    if (runes_protocol_parse_new_term_message(buf, len, &msg)) {
+        RunesTerm *new_term;
+
+        new_term = runes_term_new(
+            msg.argc, msg.argv, msg.envp, msg.cwd, daemon->wb);
+        runes_term_register_with_loop(new_term, daemon->loop);
+
+        runes_protocol_free_new_term_message(&msg);
+    }
+    else {
+        runes_warn("couldn't parse message from client");
+    }
 }

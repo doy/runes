@@ -13,7 +13,7 @@ int main (int argc, char *argv[])
     char *name, *buf;
     int s;
     size_t len;
-    struct runes_protocol_message msg;
+    struct runes_protocol_new_term_message msg;
 
     msg.argc = argc;
     msg.argv = argv;
@@ -22,11 +22,11 @@ int main (int argc, char *argv[])
 
     name = runes_get_daemon_socket_name();
     s = runes_socket_client_open(name);
-    if (!runes_protocol_create_message(&msg, &buf, &len)) {
+    if (!runes_protocol_create_new_term_message(&msg, &buf, &len)) {
         runes_warn("couldn't create message");
     }
     else {
-        if (!runes_protocol_send_packet(s, buf, len)) {
+        if (!runes_protocol_send_packet(s, RUNES_PROTOCOL_NEW_TERM, buf, len)) {
             runes_warn("couldn't send packet");
             free(buf);
         }

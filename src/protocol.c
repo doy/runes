@@ -20,8 +20,8 @@ static ssize_t runes_protocol_load_str(char *buf, size_t len, char **str);
 static int runes_protocol_read_bytes(int sock, size_t len, char *outbuf);
 static int runes_protocol_write_bytes(int sock, char *buf, size_t len);
 
-int runes_protocol_parse_message(
-    char *buf, size_t len, struct runes_protocol_message *outmsg)
+int runes_protocol_parse_new_term_message(
+    char *buf, size_t len, struct runes_protocol_new_term_message *outmsg)
 {
     uint32_t version;
     size_t offset = 0;
@@ -55,8 +55,9 @@ int runes_protocol_parse_message(
     return 1;
 }
 
-int runes_protocol_create_message(
-    struct runes_protocol_message *msg, char **outbuf, size_t *outlen)
+int runes_protocol_create_new_term_message(
+    struct runes_protocol_new_term_message *msg,
+    char **outbuf, size_t *outlen)
 {
     GArray *buf;
 
@@ -88,7 +89,8 @@ int runes_protocol_create_message(
     return 1;
 }
 
-void runes_protocol_free_message(struct runes_protocol_message *msg)
+void runes_protocol_free_new_term_message(
+    struct runes_protocol_new_term_message *msg)
 {
     char **p;
 
@@ -109,16 +111,22 @@ void runes_protocol_free_message(struct runes_protocol_message *msg)
     free(msg->cwd);
 }
 
-int runes_protocol_read_packet(int sock, char **outbuf, size_t *outlen)
+int runes_protocol_read_packet(
+    int sock, int *outtype, char **outbuf, size_t *outlen)
 {
-    uint32_t len;
+    uint32_t len, type;
     char *buf;
 
     if (!runes_protocol_read_bytes(sock, sizeof(len), (char *)&len)) {
         return 0;
     }
-
     len = ntohl(len);
+
+    if (!runes_protocol_read_bytes(sock, sizeof(type), (char *)&type)) {
+        return 0;
+    }
+    type = ntohl(type);
+
     if (len > RUNES_MAX_PACKET_SIZE) {
         runes_warn("packet of size %d is too big", len);
         return 0;
@@ -132,22 +140,33 @@ int runes_protocol_read_packet(int sock, char **outbuf, size_t *outlen)
 
     *outlen = len;
     *outbuf = buf;
+    *outtype = type;
 
     return 1;
 }
 
-int runes_protocol_send_packet(int sock, char *buf, size_t len)
+int runes_protocol_send_packet(int sock, int type, char *buf, size_t len)
 {
-    uint32_t len32 = len;
+    uint32_t len32 = len, type32 = type;
 
     if (len > RUNES_MAX_PACKET_SIZE) {
         runes_warn("packet of size %d is too big", len);
         return 0;
     }
 
-    len32 = htonl(len32);
+    if (type < 0 || type >= RUNES_PROTOCOL_NUM_MESSAGE_TYPES) {
+        runes_warn("unknown message type %d", type);
+        return 0;
+    }
 
+    len32 = htonl(len32);
     if (!runes_protocol_write_bytes(sock, (char *)&len32, sizeof(len32))) {
+        runes_warn("failed to write packet to socket");
+        return 0;
+    }
+
+    type32 = htonl(type32);
+    if (!runes_protocol_write_bytes(sock, (char *)&type32, sizeof(type32))) {
         runes_warn("failed to write packet to socket");
         return 0;
     }
