@@ -9,6 +9,7 @@ struct runes_loop {
 
 RunesLoop *runes_loop_new(void);
 void runes_loop_run(RunesLoop *loop);
+void runes_loop_stop(RunesLoop *loop);
 void runes_loop_start_work(
     RunesLoop *loop, int fd, void *t, int (*cb)(void*));
 void runes_loop_timer_set(

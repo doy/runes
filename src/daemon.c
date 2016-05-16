@@ -50,7 +50,7 @@ void runes_socket_delete(RunesDaemon *daemon)
 static int runes_daemon_handle_request(void *t)
 {
     RunesDaemon *daemon = (RunesDaemon *)t;
-    int client_sock, type;
+    int client_sock, type, ret = 1;
     char *buf;
     size_t len;
 
@@ -60,6 +60,10 @@ static int runes_daemon_handle_request(void *t)
         switch (type) {
         case RUNES_PROTOCOL_NEW_TERM:
             runes_daemon_handle_new_term_message(daemon, buf, len);
+            break;
+        case RUNES_PROTOCOL_KILL_DAEMON:
+            ret = 0;
+            runes_loop_stop(daemon->loop);
             break;
         default:
             runes_warn("unknown packet type: %d", type);
@@ -74,7 +78,7 @@ static int runes_daemon_handle_request(void *t)
 
     runes_socket_client_close(client_sock);
 
-    return 1;
+    return ret;
 }
 
 static void runes_daemon_handle_new_term_message(

@@ -35,6 +35,11 @@ void runes_loop_run(RunesLoop *loop)
     event_base_dispatch(loop->base);
 }
 
+void runes_loop_stop(RunesLoop *loop)
+{
+    event_base_loopbreak(loop->base);
+}
+
 void runes_loop_start_work(
     RunesLoop *loop, int fd, void *t, int (*cb)(void*))
 {

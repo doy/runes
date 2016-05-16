@@ -14,6 +14,7 @@ struct runes_protocol_new_term_message {
 
 enum runes_protocol_message_type {
     RUNES_PROTOCOL_NEW_TERM,
+    RUNES_PROTOCOL_KILL_DAEMON,
     RUNES_PROTOCOL_NUM_MESSAGE_TYPES
 };
 
