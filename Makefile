@@ -66,10 +66,12 @@ libvt100/libvt100.a: make-libvt100
 make-libvt100:
 	@if ! $(MAKE) -q -C libvt100 static; then $(MAKE) -C libvt100 static && MAKELEVEL=$(echo "${MAKELEVEL}-1" | bc) exec $(MAKE) $(MAKECMDGOALS); fi
 
-$(BUILD)%.o: $(SRC)%.c
-	@mkdir -p $(BUILD)
+$(BUILD)%.o: $(SRC)%.c | $(BUILD)
 	@$(MAKEDEPEND) -o $(<:$(SRC)%.c=$(BUILD).%.d) $<
 	$(QUIET_CC)$(CC) $(ALLCFLAGS) -c -o $@ $<
+
+$(BUILD):
+	@mkdir -p $(BUILD)
 
 $(SRC)screen.c: $(SRC)parser.h
 
