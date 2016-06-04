@@ -82,5 +82,7 @@ help:
 	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-20s\033[0m %s\n", $$2, $$4}'
 
 -include $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
+-include $(DOBJ:$(BUILD)%.o=$(BUILD).%.d)
+-include $(COBJ:$(BUILD)%.o=$(BUILD).%.d)
 
 .PHONY: all run run-daemon clean help make-libvt100
