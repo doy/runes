@@ -34,6 +34,11 @@ ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
 
 MAKEDEPEND = $(CC) $(ALLCFLAGS) -M -MP -MT '$@ $(@:$(BUILD)%.o=$(BUILD).%.d)'
 
+ifndef VERBOSE
+QUIET_CC  = @echo "  CC  $@";
+QUIET_LD  = @echo "  LD  $@";
+endif
+
 all: $(OUT) $(DOUT) $(COUT) ## Build all of the targets
 
 release: ## Build optimized binaries
@@ -48,13 +53,13 @@ run-daemon: $(DOUT) $(COUT) ## Build and run the runes daemon
 	@./$(DOUT)
 
 $(OUT): $(OBJ) libvt100/libvt100.a
-	$(CC) -o $@ $^ $(ALLLDFLAGS)
+	$(QUIET_LD)$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 $(DOUT): $(DOBJ) libvt100/libvt100.a
-	$(CC) -o $@ $^ $(ALLLDFLAGS)
+	$(QUIET_LD)$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 $(COUT): $(COBJ)
-	$(CC) -o $@ $^ $(ALLLDFLAGS)
+	$(QUIET_LD)$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 libvt100/libvt100.a: make-libvt100
 
@@ -64,7 +69,7 @@ make-libvt100:
 $(BUILD)%.o: $(SRC)%.c
 	@mkdir -p $(BUILD)
 	@$(MAKEDEPEND) -o $(<:$(SRC)%.c=$(BUILD).%.d) $<
-	$(CC) $(ALLCFLAGS) -c -o $@ $<
+	$(QUIET_CC)$(CC) $(ALLCFLAGS) -c -o $@ $<
 
 $(SRC)screen.c: $(SRC)parser.h
 
