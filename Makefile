@@ -73,14 +73,6 @@ $(BUILD)%.o: $(SRC)%.c | $(BUILD)
 $(BUILD):
 	@mkdir -p $(BUILD)
 
-$(SRC)screen.c: $(SRC)parser.h
-
-$(SRC)%.c: $(SRC)%.l
-	$(LEX) -o $@ $<
-
-$(SRC)%.h: $(SRC)%.l
-	$(LEX) --header-file=$(<:.l=.h) -o /dev/null $<
-
 clean: ## Remove build files
 	cd libvt100 && make clean
 	rm -f $(OUT) $(OBJ) $(OBJ:$(BUILD)%.o=$(BUILD).%.d) $(DOUT) $(DOBJ) $(DOBJ:$(BUILD)%.o=$(BUILD).%.d) $(COUT) $(COBJ) $(COBJ:$(BUILD)%.o=$(BUILD).%.d)
