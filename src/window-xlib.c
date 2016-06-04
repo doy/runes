@@ -25,36 +25,36 @@ struct function_key {
 
 #define RUNES_KEY(sym, str) { sym, str, sizeof(str) - 1 }
 static struct function_key keys[] = {
-    RUNES_KEY(XK_Up,         "\e[A"),
-    RUNES_KEY(XK_Down,       "\e[B"),
-    RUNES_KEY(XK_Right,      "\e[C"),
-    RUNES_KEY(XK_Left,       "\e[D"),
-    RUNES_KEY(XK_Page_Up,    "\e[5~"),
-    RUNES_KEY(XK_Page_Down,  "\e[6~"),
-    RUNES_KEY(XK_Home,       "\e[H"),
-    RUNES_KEY(XK_End,        "\e[F"),
-    RUNES_KEY(XK_F1,         "\eOP"),
-    RUNES_KEY(XK_F2,         "\eOQ"),
-    RUNES_KEY(XK_F3,         "\eOR"),
-    RUNES_KEY(XK_F4,         "\eOS"),
-    RUNES_KEY(XK_F5,         "\e[15~"),
-    RUNES_KEY(XK_F6,         "\e[17~"),
-    RUNES_KEY(XK_F7,         "\e[18~"),
-    RUNES_KEY(XK_F8,         "\e[19~"),
-    RUNES_KEY(XK_F9,         "\e[20~"),
-    RUNES_KEY(XK_F10,        "\e[21~"),
-    RUNES_KEY(XK_F11,        "\e[23~"),
-    RUNES_KEY(XK_F12,        "\e[24~"),
-    RUNES_KEY(XK_F13,        "\e[25~"),
-    RUNES_KEY(XK_F14,        "\e[26~"),
-    RUNES_KEY(XK_F15,        "\e[28~"),
-    RUNES_KEY(XK_F16,        "\e[29~"),
-    RUNES_KEY(XK_F17,        "\e[31~"),
-    RUNES_KEY(XK_F18,        "\e[32~"),
-    RUNES_KEY(XK_F19,        "\e[33~"),
-    RUNES_KEY(XK_F20,        "\e[34~"),
+    RUNES_KEY(XK_Up,         "\033[A"),
+    RUNES_KEY(XK_Down,       "\033[B"),
+    RUNES_KEY(XK_Right,      "\033[C"),
+    RUNES_KEY(XK_Left,       "\033[D"),
+    RUNES_KEY(XK_Page_Up,    "\033[5~"),
+    RUNES_KEY(XK_Page_Down,  "\033[6~"),
+    RUNES_KEY(XK_Home,       "\033[H"),
+    RUNES_KEY(XK_End,        "\033[F"),
+    RUNES_KEY(XK_F1,         "\033OP"),
+    RUNES_KEY(XK_F2,         "\033OQ"),
+    RUNES_KEY(XK_F3,         "\033OR"),
+    RUNES_KEY(XK_F4,         "\033OS"),
+    RUNES_KEY(XK_F5,         "\033[15~"),
+    RUNES_KEY(XK_F6,         "\033[17~"),
+    RUNES_KEY(XK_F7,         "\033[18~"),
+    RUNES_KEY(XK_F8,         "\033[19~"),
+    RUNES_KEY(XK_F9,         "\033[20~"),
+    RUNES_KEY(XK_F10,        "\033[21~"),
+    RUNES_KEY(XK_F11,        "\033[23~"),
+    RUNES_KEY(XK_F12,        "\033[24~"),
+    RUNES_KEY(XK_F13,        "\033[25~"),
+    RUNES_KEY(XK_F14,        "\033[26~"),
+    RUNES_KEY(XK_F15,        "\033[28~"),
+    RUNES_KEY(XK_F16,        "\033[29~"),
+    RUNES_KEY(XK_F17,        "\033[31~"),
+    RUNES_KEY(XK_F18,        "\033[32~"),
+    RUNES_KEY(XK_F19,        "\033[33~"),
+    RUNES_KEY(XK_F20,        "\033[34~"),
     RUNES_KEY(XK_BackSpace,  "\x7f"),
-    RUNES_KEY(XK_Delete,     "\e[3~"),
+    RUNES_KEY(XK_Delete,     "\033[3~"),
     /* XXX keypad keys need to go here too */
     RUNES_KEY(XK_VoidSymbol, "")
 };
@@ -65,10 +65,10 @@ static struct function_key application_keypad_keys[] = {
 };
 
 static struct function_key application_cursor_keys[] = {
-    RUNES_KEY(XK_Up,    "\eOA"),
-    RUNES_KEY(XK_Down,  "\eOB"),
-    RUNES_KEY(XK_Right, "\eOC"),
-    RUNES_KEY(XK_Left,  "\eOD"),
+    RUNES_KEY(XK_Up,    "\033OA"),
+    RUNES_KEY(XK_Down,  "\033OB"),
+    RUNES_KEY(XK_Right, "\033OC"),
+    RUNES_KEY(XK_Left,  "\033OD"),
     /* XXX home/end? */
     RUNES_KEY(XK_VoidSymbol, "")
 };
@@ -799,7 +799,7 @@ static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e)
         }
     case XLookupChars:
         if (e->state & Mod1Mask) {
-            runes_window_write_to_pty(t, "\e", 1);
+            runes_window_write_to_pty(t, "\033", 1);
         }
         runes_window_write_to_pty(t, buf, chars);
         break;
@@ -861,7 +861,7 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
 
         loc = runes_window_get_mouse_position(t, e->x, e->y);
         sprintf(
-            response, "\e[M%c%c%c",
+            response, "\033[M%c%c%c",
             ' ' + (status), ' ' + loc.col + 1, ' ' + loc.row + 1);
         runes_window_write_to_pty(t, response, 6);
     }
@@ -871,7 +871,7 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
 
         loc = runes_window_get_mouse_position(t, e->x, e->y);
         sprintf(
-            response, "\e[M%c%c%c",
+            response, "\033[M%c%c%c",
             ' ' + (e->button - 1), ' ' + loc.col + 1, ' ' + loc.row + 1);
         runes_window_write_to_pty(t, response, 6);
     }
@@ -958,11 +958,11 @@ static void runes_window_handle_selection_notify_event(
             w->wb->dpy, e->requestor, e->property, 0, 0x1fffffff, 0,
             AnyPropertyType, &type, &format, &nitems, &left, &buf);
         if (t->scr->bracketed_paste) {
-            runes_window_write_to_pty(t, "\e[200~", 6);
+            runes_window_write_to_pty(t, "\033[200~", 6);
         }
         runes_window_write_to_pty(t, (char *)buf, nitems);
         if (t->scr->bracketed_paste) {
-            runes_window_write_to_pty(t, "\e[201~", 6);
+            runes_window_write_to_pty(t, "\033[201~", 6);
         }
         XFree(buf);
     }
