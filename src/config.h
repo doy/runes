@@ -22,10 +22,10 @@ struct runes_config {
     char *cmd;
     char *font_name;
 
-    char bell_is_urgent: 1;
-    char bold_is_bright: 1;
-    char bold_is_bold: 1;
-    char audible_bell: 1;
+    unsigned int bell_is_urgent: 1;
+    unsigned int bold_is_bright: 1;
+    unsigned int bold_is_bold: 1;
+    unsigned int audible_bell: 1;
 };
 
 RunesConfig *runes_config_new(int argc, char *argv[]);

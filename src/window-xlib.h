@@ -16,8 +16,8 @@ struct runes_window {
 
     cairo_t *backend_cr;
 
-    char visual_bell_is_ringing: 1;
-    char delaying: 1;
+    unsigned int visual_bell_is_ringing: 1;
+    unsigned int delaying: 1;
 };
 
 RunesWindow *runes_window_new(RunesWindowBackend *wb);

@@ -20,9 +20,9 @@ struct runes_display {
     struct vt100_loc selection_start;
     struct vt100_loc selection_end;
 
-    char unfocused: 1;
-    char has_selection: 1;
-    char dirty: 1;
+    unsigned int unfocused: 1;
+    unsigned int has_selection: 1;
+    unsigned int dirty: 1;
 };
 
 RunesDisplay *runes_display_new(char *font_name);
