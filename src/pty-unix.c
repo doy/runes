@@ -65,12 +65,12 @@ void runes_pty_spawn_subprocess(RunesTerm *t, char *envp[], char *cwd)
 
         close(pty->slave);
 
-        cmd = t->config->cmd;
-        if (!cmd) {
-            cmd = getenv("SHELL");
+        if (cwd) {
+            chdir(cwd);
         }
-        if (!cmd) {
-            cmd = "/bin/sh";
+
+        if (envp) {
+            environ = envp;
         }
 
         /* XXX should use a different TERM value eventually, but for right now
@@ -92,12 +92,12 @@ void runes_pty_spawn_subprocess(RunesTerm *t, char *envp[], char *cwd)
         unsetenv("LINES");
         unsetenv("COLUMNS");
 
-        if (cwd) {
-            chdir(cwd);
+        cmd = t->config->cmd;
+        if (!cmd) {
+            cmd = getenv("SHELL");
         }
-
-        if (envp) {
-            environ = envp;
+        if (!cmd) {
+            cmd = "/bin/sh";
         }
 
         if (strpbrk(cmd, " $")) {
