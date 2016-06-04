@@ -26,8 +26,8 @@ COBJ     = $(BUILD)runesc.o \
 	   $(SOCK_OBJ)
 LIBS     = cairo cairo-xlib libevent pangocairo
 OPT     ?= -g
-CFLAGS  ?= $(OPT) -Wall -Wextra -Werror
-LDFLAGS ?= $(OPT) -Wall -Wextra -Werror
+CFLAGS  ?= $(OPT) -Wall -Wextra -Werror -std=c1x -D_XOPEN_SOURCE=600
+LDFLAGS ?= $(OPT) -Wall -Wextra -Werror -std=c1x -D_XOPEN_SOURCE=600
 
 ALLCFLAGS  = $(shell pkg-config --cflags $(LIBS)) -Ilibvt100/src $(CFLAGS)
 ALLLDFLAGS = $(shell pkg-config --libs $(LIBS)) $(LDFLAGS)
