@@ -548,7 +548,7 @@ static char *runes_config_parse_string(char *val)
 
 static cairo_pattern_t *runes_config_parse_color(char *val)
 {
-    int r, g, b;
+    unsigned int r, g, b;
 
     if (strlen(val) != 7 || sscanf(val, "#%2x%2x%2x", &r, &g, &b) != 3) {
         runes_warn("unknown color value: '%s'", val);
