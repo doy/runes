@@ -21,7 +21,6 @@ static char *atom_names[RUNES_NUM_ATOMS] = {
     "UTF8_STRING",
     "WM_PROTOCOLS",
     "TARGETS",
-    "RUNES_FLUSH",
     "RUNES_SELECTION"
 };
 

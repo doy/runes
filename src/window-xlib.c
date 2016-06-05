@@ -80,7 +80,6 @@ static Bool runes_window_wants_event(
     Display *dpy, XEvent *event, XPointer arg);
 static void runes_window_resize_window(
     RunesTerm *t, int width, int height);
-static void runes_window_flush(RunesTerm *t);
 static void runes_window_write_to_pty(
     RunesTerm *t, char *buf, size_t len);
 static int runes_window_check_recent(RunesTerm *t);
@@ -269,18 +268,45 @@ void runes_window_init_loop(RunesTerm *t, RunesLoop *loop)
         loop, XConnectionNumber(w->wb->dpy), t, runes_window_event_cb);
 }
 
-void runes_window_request_flush(RunesTerm *t)
+void runes_window_flush(RunesTerm *t)
 {
     RunesWindow *w = t->w;
-    XEvent e;
 
-    e.xclient.type = ClientMessage;
-    e.xclient.window = w->w;
-    e.xclient.format = 32;
-    e.xclient.data.l[0] = w->wb->atoms[RUNES_ATOM_RUNES_FLUSH];
+    if (runes_window_check_recent(t)) {
+        return;
+    }
 
-    XSendEvent(w->wb->dpy, w->w, False, NoEventMask, &e);
+    if (t->scr->audible_bell) {
+        runes_window_audible_bell(t);
+        t->scr->audible_bell = 0;
+    }
+
+    if (t->scr->visual_bell) {
+        runes_window_visual_bell(t);
+        t->scr->visual_bell = 0;
+    }
+
+    if (t->scr->update_title) {
+        runes_window_set_window_title(t, t->scr->title, t->scr->title_len);
+        t->scr->update_title = 0;
+    }
+
+    if (t->scr->update_icon_name) {
+        runes_window_set_icon_name(
+            t, t->scr->icon_name, t->scr->icon_name_len);
+        t->scr->update_icon_name = 0;
+    }
+
+    if (w->visual_bell_is_ringing) {
+        return;
+    }
+
+    runes_display_draw_screen(t);
+    runes_display_draw_cursor(t);
+    cairo_surface_flush(cairo_get_target(w->backend_cr));
     XFlush(w->wb->dpy);
+
+    clock_gettime(CLOCK_REALTIME, &w->last_redraw);
 }
 
 void runes_window_request_close(RunesTerm *t)
@@ -433,9 +459,6 @@ static int runes_window_handle_event(RunesTerm *t, XEvent *e)
                     e
                 );
             }
-            else if (a == w->wb->atoms[RUNES_ATOM_RUNES_FLUSH]) {
-                runes_window_flush(t);
-            }
             break;
         }
         default:
@@ -481,46 +504,6 @@ static void runes_window_resize_window(
     }
 }
 
-static void runes_window_flush(RunesTerm *t)
-{
-    RunesWindow *w = t->w;
-
-    if (runes_window_check_recent(t)) {
-        return;
-    }
-
-    if (t->scr->audible_bell) {
-        runes_window_audible_bell(t);
-        t->scr->audible_bell = 0;
-    }
-
-    if (t->scr->visual_bell) {
-        runes_window_visual_bell(t);
-        t->scr->visual_bell = 0;
-    }
-
-    if (t->scr->update_title) {
-        runes_window_set_window_title(t, t->scr->title, t->scr->title_len);
-        t->scr->update_title = 0;
-    }
-
-    if (t->scr->update_icon_name) {
-        runes_window_set_icon_name(
-            t, t->scr->icon_name, t->scr->icon_name_len);
-        t->scr->update_icon_name = 0;
-    }
-
-    if (w->visual_bell_is_ringing) {
-        return;
-    }
-
-    runes_display_draw_screen(t);
-    runes_display_draw_cursor(t);
-    cairo_surface_flush(cairo_get_target(w->backend_cr));
-
-    clock_gettime(CLOCK_REALTIME, &w->last_redraw);
-}
-
 static void runes_window_write_to_pty(
     RunesTerm *t, char *buf, size_t len)
 {
@@ -528,7 +511,7 @@ static void runes_window_write_to_pty(
     if (t->display->row_visible_offset != 0) {
         t->display->row_visible_offset = 0;
         t->display->dirty = 1;
-        runes_window_request_flush(t);
+        runes_window_flush(t);
     }
 }
 
@@ -574,7 +557,7 @@ static void runes_window_delay_cb(void *t)
     RunesWindow *w = ((RunesTerm *)t)->w;
 
     w->delaying = 0;
-    runes_window_request_flush(t);
+    runes_window_flush(t);
     runes_term_refcnt_dec((RunesTerm*)t);
 }
 
@@ -626,7 +609,7 @@ static void runes_window_reset_visual_bell(void *t)
     cairo_set_source(w->backend_cr, ((RunesTerm *)t)->config->bgdefault);
     cairo_paint(w->backend_cr);
     cairo_surface_flush(cairo_get_target(w->backend_cr));
-    runes_window_request_flush(t);
+    runes_window_flush(t);
     w->visual_bell_is_ringing = 0;
     runes_term_refcnt_dec(t);
 }
@@ -690,7 +673,7 @@ static void runes_window_start_selection_loc(
     RunesTerm *t, struct vt100_loc *start)
 {
     runes_display_set_selection(t, start, start);
-    runes_window_request_flush(t);
+    runes_window_flush(t);
 }
 
 static void runes_window_update_selection(
@@ -712,7 +695,7 @@ static void runes_window_update_selection_loc(
     if (t->display->selection_end.row != end->row || t->display->selection_end.col != end->col) {
         runes_window_acquire_selection(t, time);
         runes_display_set_selection(t, &t->display->selection_start, end);
-        runes_window_request_flush(t);
+        runes_window_flush(t);
     }
 }
 

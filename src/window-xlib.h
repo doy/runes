@@ -25,7 +25,7 @@ struct runes_window {
 RunesWindow *runes_window_new(RunesWindowBackend *wb);
 void runes_window_create_window(RunesTerm *t, int argc, char *argv[]);
 void runes_window_init_loop(RunesTerm *t, RunesLoop *loop);
-void runes_window_request_flush(RunesTerm *t);
+void runes_window_flush(RunesTerm *t);
 void runes_window_request_close(RunesTerm *t);
 unsigned long runes_window_get_window_id(RunesTerm *t);
 void runes_window_get_size(RunesTerm *t, int *xpixel, int *ypixel);

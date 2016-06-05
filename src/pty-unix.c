@@ -154,7 +154,6 @@ static int runes_pty_input_cb(void *t)
 {
     RunesPty *pty = ((RunesTerm *)t)->pty;
 
-    runes_window_request_flush(t);
     pty->readlen = read(
         pty->master, pty->readbuf + pty->remaininglen,
         RUNES_READ_BUFFER_LENGTH - pty->remaininglen);
@@ -165,6 +164,7 @@ static int runes_pty_input_cb(void *t)
             ((RunesTerm *)t)->scr, pty->readbuf, to_process);
         pty->remaininglen = to_process - processed;
         memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
+        runes_window_flush(t);
 
         return 1;
     }
