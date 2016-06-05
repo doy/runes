@@ -1081,8 +1081,10 @@ static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
 
     if (w->multi_click_timer_event) {
         runes_loop_timer_clear(t->loop, w->multi_click_timer_event);
+        runes_term_refcnt_dec(t);
     }
 
+    runes_term_refcnt_inc(t);
     w->multi_click_timer_event = runes_loop_timer_set(
         t->loop, t->config->double_click_rate, t,
         runes_window_multi_click_cb);
@@ -1200,6 +1202,7 @@ static void runes_window_multi_click_cb(void *t)
 
     w->multi_clicks = 0;
     w->multi_click_timer_event = NULL;
+    runes_term_refcnt_dec(t);
 }
 
 static struct function_key *runes_window_find_key_sequence(
