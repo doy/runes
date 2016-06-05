@@ -606,10 +606,10 @@ static void runes_window_reset_visual_bell(void *t)
 {
     RunesWindow *w = ((RunesTerm *)t)->w;
 
+    w->visual_bell_is_ringing = 0;
     cairo_set_source(w->backend_cr, ((RunesTerm *)t)->config->bgdefault);
     cairo_paint(w->backend_cr);
     runes_window_flush(t);
-    w->visual_bell_is_ringing = 0;
     runes_term_refcnt_dec(t);
 }
 
