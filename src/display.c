@@ -169,6 +169,14 @@ void runes_display_set_selection(
 
     display->has_selection = 1;
 
+    display->selection_start = *start;
+    display->selection_end = *end;
+
+    if (t->display->selection_contents) {
+        free(t->display->selection_contents);
+        t->display->selection_contents = NULL;
+    }
+
     if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
         struct vt100_loc *tmp;
 
@@ -177,13 +185,6 @@ void runes_display_set_selection(
         end = tmp;
     }
 
-    display->selection_start = *start;
-    display->selection_end = *end;
-
-    if (t->display->selection_contents) {
-        free(t->display->selection_contents);
-        t->display->selection_contents = NULL;
-    }
     vt100_screen_get_string_plaintext(
         t->scr, start, end,
         &t->display->selection_contents, &t->display->selection_len);
