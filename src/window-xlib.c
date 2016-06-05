@@ -1090,6 +1090,9 @@ static int runes_window_handle_builtin_button_press(
             runes_window_paste(t, e->time);
             return 1;
             break;
+        case Button3:
+            runes_window_update_selection(t, e->x, e->y);
+            break;
         case Button4:
             runes_window_visible_scroll(t, t->config->scroll_lines);
             return 1;
