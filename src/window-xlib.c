@@ -78,8 +78,6 @@ static int runes_window_event_cb(void *t);
 static int runes_window_handle_event(RunesTerm *t, XEvent *e);
 static Bool runes_window_wants_event(
     Display *dpy, XEvent *event, XPointer arg);
-static Bool runes_window_find_flush_events(
-    Display *dpy, XEvent *e, XPointer arg);
 static void runes_window_resize_window(
     RunesTerm *t, int width, int height);
 static void runes_window_flush(RunesTerm *t);
@@ -436,13 +434,6 @@ static int runes_window_handle_event(RunesTerm *t, XEvent *e)
                 );
             }
             else if (a == w->wb->atoms[RUNES_ATOM_RUNES_FLUSH]) {
-                Bool res = True;
-
-                while (res) {
-                    res = XCheckIfEvent(
-                        w->wb->dpy, e, runes_window_find_flush_events,
-                        (XPointer)w);
-                }
                 runes_window_flush(t);
             }
             break;
@@ -463,26 +454,6 @@ static Bool runes_window_wants_event(Display *dpy, XEvent *event, XPointer arg)
     UNUSED(dpy);
 
     return event_window == w->w || event_window == w->border_w;
-}
-
-static Bool runes_window_find_flush_events(
-    Display *dpy, XEvent *event, XPointer arg)
-{
-    RunesWindow *w = (RunesWindow *)arg;
-    Window event_window = ((XAnyEvent*)event)->window;
-    Atom a = event->xclient.data.l[0];
-
-    UNUSED(dpy);
-
-    if (event_window != w->w && event_window != w->border_w) {
-        return False;
-    }
-
-    if (event->type != ClientMessage) {
-        return False;
-    }
-
-    return a == w->wb->atoms[RUNES_ATOM_RUNES_FLUSH];
 }
 
 static void runes_window_resize_window(
