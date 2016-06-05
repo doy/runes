@@ -64,9 +64,7 @@ $(DOUT): $(DOBJ) libvt100/libvt100.a
 $(COUT): $(COBJ)
 	$(QUIET_LD)$(CC) -o $@ $^ $(ALLLDFLAGS)
 
-libvt100/libvt100.a: make-libvt100
-
-make-libvt100:
+libvt100/libvt100.a::
 	@if ! $(MAKE) -q -C libvt100 static; then $(MAKE) -C libvt100 static && MAKELEVEL=$(echo "${MAKELEVEL}-1" | bc) exec $(MAKE) $(MAKECMDGOALS); fi
 
 $(BUILD)%.o: $(SRC)%.c | $(BUILD)
@@ -88,4 +86,4 @@ help: ## Display this help
 -include $(DOBJ:$(BUILD)%.o=$(BUILD).%.d)
 -include $(COBJ:$(BUILD)%.o=$(BUILD).%.d)
 
-.PHONY: all run run-daemon clean help make-libvt100
+.PHONY: all run run-daemon clean help
