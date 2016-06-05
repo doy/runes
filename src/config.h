@@ -18,6 +18,7 @@ struct runes_config {
     int scrollback_length;
 
     int redraw_rate;
+    int double_click_rate;
 
     char *cmd;
     char *font_name;

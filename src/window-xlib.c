@@ -96,8 +96,12 @@ static void runes_window_clear_urgent(RunesTerm *t);
 static void runes_window_paste(RunesTerm *t, Time time);
 static void runes_window_start_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time);
+static void runes_window_start_selection_loc(
+    RunesTerm *t, struct vt100_loc *loc, Time time);
 static void runes_window_update_selection(
     RunesTerm *t, int xpixel, int ypixel);
+static void runes_window_update_selection_loc(
+    RunesTerm *t, struct vt100_loc *loc);
 static void runes_window_clear_selection(RunesTerm *t);
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e);
 static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e);
@@ -117,6 +121,11 @@ static int runes_window_handle_builtin_keypress(
     RunesTerm *t, KeySym sym, XKeyEvent *e);
 static int runes_window_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e);
+static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e);
+static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc);
+static void runes_window_end_of_word(RunesTerm *t, struct vt100_loc *loc);
+static int runes_window_is_word_char(char *buf, size_t len);
+static void runes_window_multi_click_cb(void *t);
 static struct function_key *runes_window_find_key_sequence(
     RunesTerm *t, KeySym sym);
 static struct vt100_loc runes_window_get_mouse_position(
@@ -698,12 +707,20 @@ static void runes_window_paste(RunesTerm *t, Time time)
 static void runes_window_start_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time)
 {
+    struct vt100_loc loc;
+
+    loc = runes_window_get_mouse_position(t, xpixel, ypixel);
+    runes_window_start_selection_loc(t, &loc, time);
+}
+
+static void runes_window_start_selection_loc(
+    RunesTerm *t, struct vt100_loc *loc, Time time)
+{
     RunesWindow *w = t->w;
     struct vt100_loc *start = &t->display->selection_start;
     struct vt100_loc *end   = &t->display->selection_end;
 
-    *start = runes_window_get_mouse_position(t, xpixel, ypixel);
-    *end   = *start;
+    *start = *end = *loc;
 
     XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, w->w, time);
     t->display->has_selection = (XGetSelectionOwner(w->wb->dpy, XA_PRIMARY) == w->w);
@@ -714,6 +731,15 @@ static void runes_window_start_selection(
 
 static void runes_window_update_selection(RunesTerm *t, int xpixel, int ypixel)
 {
+    struct vt100_loc loc;
+
+    loc = runes_window_get_mouse_position(t, xpixel, ypixel);
+    runes_window_update_selection_loc(t, &loc);
+}
+
+static void runes_window_update_selection_loc(
+    RunesTerm *t, struct vt100_loc *loc)
+{
     RunesWindow *w = t->w;
     struct vt100_loc *start = &t->display->selection_start;
     struct vt100_loc *end = &t->display->selection_end;
@@ -723,7 +749,7 @@ static void runes_window_update_selection(RunesTerm *t, int xpixel, int ypixel)
         return;
     }
 
-    *end = runes_window_get_mouse_position(t, xpixel, ypixel);
+    *end = *loc;
 
     if (orig_end.row != end->row || orig_end.col != end->col) {
         if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
@@ -1053,7 +1079,8 @@ static int runes_window_handle_builtin_keypress(
 static int runes_window_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e)
 {
-    if (e->type != ButtonRelease) {
+    switch (e->type) {
+    case ButtonPress:
         switch (e->button) {
         case Button1:
             runes_window_start_selection(t, e->x, e->y, e->time);
@@ -1074,9 +1101,146 @@ static int runes_window_handle_builtin_button_press(
         default:
             break;
         }
+        break;
+    case ButtonRelease:
+        runes_window_handle_multi_click(t, e);
+        break;
+    default:
+        break;
     }
 
     return 0;
+}
+
+static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
+{
+    RunesWindow *w = t->w;
+
+    if (e->button != Button1) {
+        return;
+    }
+
+    w->multi_clicks++;
+    if (w->multi_clicks > 1) {
+        struct vt100_loc loc;
+
+        loc = runes_window_get_mouse_position(t, e->x, e->y);
+        if (w->multi_clicks % 2) {
+            loc.col = 0;
+            runes_window_start_selection_loc(t, &loc, e->time);
+            loc.col = t->scr->grid->max.col;
+            runes_window_update_selection_loc(t, &loc);
+        }
+        else {
+            struct vt100_loc orig_loc = loc;
+
+            runes_window_beginning_of_word(t, &loc);
+            runes_window_start_selection_loc(t, &loc, e->time);
+            loc = orig_loc;
+            runes_window_end_of_word(t, &loc);
+            runes_window_update_selection_loc(t, &loc);
+        }
+    }
+
+    if (w->multi_click_timer_event) {
+        runes_loop_timer_clear(t->loop, w->multi_click_timer_event);
+    }
+
+    w->multi_click_timer_event = runes_loop_timer_set(
+        t->loop, t->config->double_click_rate, t,
+        runes_window_multi_click_cb);
+}
+
+static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc)
+{
+    struct vt100_cell *c;
+    struct vt100_row *r;
+    int row = loc->row - t->scr->grid->row_top, col = loc->col;
+    int prev_row = row, prev_col = col;
+
+    /* XXX vt100 should expose a better way to get at row data */
+    c = vt100_screen_cell_at(t->scr, row, col);
+    r = &t->scr->grid->rows[row + t->scr->grid->row_top];
+    while (runes_window_is_word_char(c->contents, c->len)) {
+        prev_col = col;
+        prev_row = row;
+        col--;
+        if (col < 0) {
+            row--;
+            if (row + t->scr->grid->row_top < 0) {
+                break;
+            }
+            r = &t->scr->grid->rows[row + t->scr->grid->row_top];
+            if (!r->wrapped) {
+                break;
+            }
+            col = t->scr->grid->max.col - 1;
+        }
+        c = vt100_screen_cell_at(t->scr, row, col);
+    }
+
+    loc->row = prev_row + t->scr->grid->row_top;
+    loc->col = prev_col;
+}
+
+static void runes_window_end_of_word(RunesTerm *t, struct vt100_loc *loc)
+{
+    struct vt100_cell *c;
+    struct vt100_row *r;
+    int row = loc->row - t->scr->grid->row_top, col = loc->col;
+
+    /* XXX vt100 should expose a better way to get at row data */
+    c = vt100_screen_cell_at(t->scr, row, col);
+    r = &t->scr->grid->rows[row + t->scr->grid->row_top];
+    while (runes_window_is_word_char(c->contents, c->len)) {
+        col++;
+        if (col >= t->scr->grid->max.col) {
+            if (!r->wrapped) {
+                break;
+            }
+            row++;
+            if (row >= t->scr->grid->max.row) {
+                break;
+            }
+            r = &t->scr->grid->rows[row + t->scr->grid->row_top];
+            col = 0;
+        }
+        c = vt100_screen_cell_at(t->scr, row, col);
+    }
+
+    loc->row = row + t->scr->grid->row_top;
+    loc->col = col;
+}
+
+static int runes_window_is_word_char(char *buf, size_t len)
+{
+    gunichar uc;
+
+    if (len == 0) {
+        return 0;
+    }
+
+    if (g_utf8_next_char(buf) < buf + len) {
+        return 1;
+    }
+
+    uc = g_utf8_get_char(buf);
+    if (vt100_char_width(uc) == 0) {
+        return 0;
+    }
+    if (g_unichar_isspace(uc)) {
+        return 0;
+    }
+
+    return 1;
+}
+
+static void runes_window_multi_click_cb(void *t)
+{
+    RunesWindow *w = ((RunesTerm *)t)->w;
+
+    w->multi_clicks = 0;
+    w->multi_click_timer_event = NULL;
 }
 
 static struct function_key *runes_window_find_key_sequence(

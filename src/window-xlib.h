@@ -16,6 +16,9 @@ struct runes_window {
 
     cairo_t *backend_cr;
 
+    unsigned int multi_clicks;
+    void *multi_click_timer_event;
+
     unsigned int visual_bell_is_ringing: 1;
     unsigned int delaying: 1;
 };
