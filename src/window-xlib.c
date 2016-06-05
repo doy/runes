@@ -719,9 +719,21 @@ static void runes_window_start_selection_loc(
     RunesWindow *w = t->w;
     struct vt100_loc *start = &t->display->selection_start;
     struct vt100_loc *end   = &t->display->selection_end;
+    Window old_owner;
 
     *start = *end = *loc;
 
+    old_owner = XGetSelectionOwner(w->wb->dpy, XA_PRIMARY);
+    if (old_owner != w->w) {
+        XEvent e;
+
+        e.xselectionclear.type = SelectionClear;
+        e.xselectionclear.window = old_owner;
+        e.xselectionclear.selection = XA_PRIMARY;
+        e.xselectionclear.time = CurrentTime;
+
+        XSendEvent(w->wb->dpy, old_owner, False, NoEventMask, &e);
+    }
     XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, w->w, time);
     t->display->has_selection = (XGetSelectionOwner(w->wb->dpy, XA_PRIMARY) == w->w);
 
