@@ -17,6 +17,7 @@ struct runes_window {
     unsigned int multi_clicks;
     void *multi_click_timer_event;
 
+    unsigned int owns_selection: 1;
     unsigned int visual_bell_is_ringing: 1;
     unsigned int delaying: 1;
 };

@@ -95,13 +95,14 @@ static void runes_window_set_urgent(RunesTerm *t);
 static void runes_window_clear_urgent(RunesTerm *t);
 static void runes_window_paste(RunesTerm *t, Time time);
 static void runes_window_start_selection(
-    RunesTerm *t, int xpixel, int ypixel, Time time);
-static void runes_window_start_selection_loc(
-    RunesTerm *t, struct vt100_loc *start, Time time);
-static void runes_window_update_selection(
     RunesTerm *t, int xpixel, int ypixel);
+static void runes_window_start_selection_loc(
+    RunesTerm *t, struct vt100_loc *start);
+static void runes_window_update_selection(
+    RunesTerm *t, int xpixel, int ypixel, Time time);
 static void runes_window_update_selection_loc(
-    RunesTerm *t, struct vt100_loc *end);
+    RunesTerm *t, struct vt100_loc *end, Time time);
+static void runes_window_acquire_selection(RunesTerm *t, Time time);
 static void runes_window_clear_selection(RunesTerm *t);
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e);
 static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e);
@@ -706,58 +707,69 @@ static void runes_window_paste(RunesTerm *t, Time time)
 }
 
 static void runes_window_start_selection(
+    RunesTerm *t, int xpixel, int ypixel)
+{
+    struct vt100_loc loc;
+
+    loc = runes_window_get_mouse_position(t, xpixel, ypixel);
+    runes_window_start_selection_loc(t, &loc);
+}
+
+static void runes_window_start_selection_loc(
+    RunesTerm *t, struct vt100_loc *start)
+{
+    runes_display_set_selection(t, start, start);
+    runes_window_request_flush(t);
+}
+
+static void runes_window_update_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time)
 {
     struct vt100_loc loc;
 
     loc = runes_window_get_mouse_position(t, xpixel, ypixel);
-    runes_window_start_selection_loc(t, &loc, time);
-}
-
-static void runes_window_start_selection_loc(
-    RunesTerm *t, struct vt100_loc *start, Time time)
-{
-    RunesWindow *w = t->w;
-    Window old_owner;
-    int got_selection;
-
-    old_owner = XGetSelectionOwner(w->wb->dpy, XA_PRIMARY);
-    if (old_owner != w->w) {
-        XEvent e;
-
-        e.xselectionclear.type = SelectionClear;
-        e.xselectionclear.window = old_owner;
-        e.xselectionclear.selection = XA_PRIMARY;
-
-        XSendEvent(w->wb->dpy, old_owner, False, NoEventMask, &e);
-    }
-    XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, w->w, time);
-    got_selection = (XGetSelectionOwner(w->wb->dpy, XA_PRIMARY) == w->w);
-
-    if (got_selection) {
-        runes_display_set_selection(t, start, start);
-        runes_window_request_flush(t);
-    }
-}
-
-static void runes_window_update_selection(RunesTerm *t, int xpixel, int ypixel)
-{
-    struct vt100_loc loc;
-
-    loc = runes_window_get_mouse_position(t, xpixel, ypixel);
-    runes_window_update_selection_loc(t, &loc);
+    runes_window_update_selection_loc(t, &loc, time);
 }
 
 static void runes_window_update_selection_loc(
-    RunesTerm *t, struct vt100_loc *end)
+    RunesTerm *t, struct vt100_loc *end, Time time)
 {
     if (!t->display->has_selection) {
         return;
     }
 
     if (t->display->selection_end.row != end->row || t->display->selection_end.col != end->col) {
+        runes_window_acquire_selection(t, time);
         runes_display_set_selection(t, &t->display->selection_start, end);
         runes_window_request_flush(t);
+    }
+}
+
+static void runes_window_acquire_selection(RunesTerm *t, Time time)
+{
+    RunesWindow *w = t->w;
+    Window old_owner;
+    int got_selection;
+
+    if (w->owns_selection) {
+        return;
+    }
+
+    old_owner = XGetSelectionOwner(w->wb->dpy, XA_PRIMARY);
+    XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, w->w, time);
+    got_selection = (XGetSelectionOwner(w->wb->dpy, XA_PRIMARY) == w->w);
+
+    if (got_selection) {
+        w->owns_selection = 1;
+        if (old_owner != w->w) {
+            XEvent e;
+
+            e.xselectionclear.type = SelectionClear;
+            e.xselectionclear.window = old_owner;
+            e.xselectionclear.selection = XA_PRIMARY;
+
+            XSendEvent(w->wb->dpy, old_owner, False, NoEventMask, &e);
+        }
     }
 }
 
@@ -767,6 +779,7 @@ static void runes_window_clear_selection(RunesTerm *t)
 
     XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, None, CurrentTime);
     t->display->has_selection = 0;
+    w->owns_selection = 0;
 }
 
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e)
@@ -898,7 +911,7 @@ static void runes_window_handle_motion_event(RunesTerm *t, XMotionEvent *e)
         return;
     }
 
-    runes_window_update_selection(t, e->x, e->y);
+    runes_window_update_selection(t, e->x, e->y, e->time);
 }
 
 static void runes_window_handle_expose_event(RunesTerm *t, XExposeEvent *e)
@@ -983,9 +996,11 @@ static void runes_window_handle_selection_notify_event(
 static void runes_window_handle_selection_clear_event(
     RunesTerm *t, XSelectionClearEvent *e)
 {
+    RunesWindow *w = t->w;
     UNUSED(e);
 
     t->display->has_selection = 0;
+    w->owns_selection = 0;
     t->display->dirty = 1;
     runes_window_flush(t);
 }
@@ -1070,7 +1085,7 @@ static int runes_window_handle_builtin_button_press(
     case ButtonPress:
         switch (e->button) {
         case Button1:
-            runes_window_start_selection(t, e->x, e->y, e->time);
+            runes_window_start_selection(t, e->x, e->y);
             return 1;
             break;
         case Button2:
@@ -1078,7 +1093,7 @@ static int runes_window_handle_builtin_button_press(
             return 1;
             break;
         case Button3:
-            runes_window_update_selection(t, e->x, e->y);
+            runes_window_update_selection(t, e->x, e->y, e->time);
             return 1;
             break;
         case Button4:
@@ -1126,18 +1141,18 @@ static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
         loc = runes_window_get_mouse_position(t, e->x, e->y);
         if (w->multi_clicks % 2) {
             loc.col = 0;
-            runes_window_start_selection_loc(t, &loc, e->time);
+            runes_window_start_selection_loc(t, &loc);
             loc.col = t->scr->grid->max.col;
-            runes_window_update_selection_loc(t, &loc);
+            runes_window_update_selection_loc(t, &loc, e->time);
         }
         else {
             struct vt100_loc orig_loc = loc;
 
             runes_window_beginning_of_word(t, &loc);
-            runes_window_start_selection_loc(t, &loc, e->time);
+            runes_window_start_selection_loc(t, &loc);
             loc = orig_loc;
             runes_window_end_of_word(t, &loc);
-            runes_window_update_selection_loc(t, &loc);
+            runes_window_update_selection_loc(t, &loc, e->time);
         }
     }
 }
