@@ -67,53 +67,58 @@ void runes_display_draw_screen(RunesTerm *t)
     RunesDisplay *display = t->display;
     int r, rows;
 
-    if (t->scr->dirty || display->dirty) {
-        if (t->scr->dirty) {
-            display->has_selection = 0;
-        }
+    cairo_push_group(display->cr);
 
-        cairo_push_group(display->cr);
+    /* XXX quite inefficient */
+    rows = t->scr->grid->max.row;
+    for (r = 0; r < rows; ++r) {
+        int c = 0, cols = t->scr->grid->max.col;
+        int vr = r + t->scr->grid->row_top - display->row_visible_offset;
+        int start = c;
+        struct vt100_cell *cell = NULL, *prev_cell = NULL;
+        GPtrArray *cells;
 
-        /* XXX quite inefficient */
-        rows = t->scr->grid->max.row;
-        for (r = 0; r < rows; ++r) {
-            int c = 0, cols = t->scr->grid->max.col;
-            int vr = r + t->scr->grid->row_top - display->row_visible_offset;
-            int start = c;
-            struct vt100_cell *cell = NULL, *prev_cell = NULL;
-            GPtrArray *cells;
+        cells = g_ptr_array_new();
 
-            cells = g_ptr_array_new();
-
-            while (c < cols) {
-                cell = &t->scr->grid->rows[vr].cells[c];
-
-                if (!runes_display_continue_string(prev_cell, cell)) {
-                    runes_display_draw_string(
-                        t, r, start, c - start,
-                        (struct vt100_cell **)cells->pdata, cells->len);
-                    g_ptr_array_set_size(cells, 0);
-                    start = c;
-                }
-                g_ptr_array_add(cells, cell);
-
-                c += cell->is_wide ? 2 : 1;
-                prev_cell = cell;
+        while (c < cols) {
+            cell = &t->scr->grid->rows[vr].cells[c];
+            if (display->dirty) {
+                cell->was_drawn = 0;
             }
-            runes_display_draw_string(
-                t, r, start, cols - start,
-                (struct vt100_cell **)cells->pdata, cells->len);
 
-            g_ptr_array_unref(cells);
+            if (!runes_display_continue_string(prev_cell, cell)) {
+                display->has_selection = 0;
+                runes_display_draw_string(
+                    t, r, start, c - start,
+                    (struct vt100_cell **)cells->pdata, cells->len);
+                g_ptr_array_set_size(cells, 0);
+                start = c;
+            }
+            g_ptr_array_add(cells, cell);
+
+            c += cell->is_wide ? 2 : 1;
+            prev_cell = cell;
+
+            if (cell->was_drawn) {
+                g_ptr_array_set_size(cells, 0);
+                start = c;
+            }
+            else {
+                cell->was_drawn = 1;
+            }
         }
+        runes_display_draw_string(
+            t, r, start, cols - start,
+            (struct vt100_cell **)cells->pdata, cells->len);
 
-        cairo_pattern_destroy(display->buffer);
-        display->buffer = cairo_pop_group(display->cr);
+        g_ptr_array_unref(cells);
     }
+
+    cairo_pattern_destroy(display->buffer);
+    display->buffer = cairo_pop_group(display->cr);
 
     runes_display_repaint_screen(t);
 
-    t->scr->dirty = 0;
     display->dirty = 0;
 }
 
@@ -219,6 +224,9 @@ static int runes_display_continue_string(
 {
     if (!old) {
         return 1;
+    }
+    if (new->was_drawn) {
+        return old->was_drawn;
     }
     if (!old->len || !new->len) {
         return 0;
