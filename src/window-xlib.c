@@ -145,7 +145,7 @@ void runes_window_create_window(RunesTerm *t, int argc, char *argv[])
 {
     RunesWindow *w = t->w;
     pid_t pid;
-    XClassHint class_hints = { "runes", "runes" };
+    XClassHint class_hints = { RUNES_PROGRAM_NAME, RUNES_PROGRAM_NAME };
     XWMHints wm_hints;
     XSizeHints normal_hints;
     double bg_r, bg_g, bg_b;
@@ -203,7 +203,8 @@ void runes_window_create_window(RunesTerm *t, int argc, char *argv[])
         w->wb->dpy, w->border_w, w->wb->atoms, RUNES_NUM_PROTOCOL_ATOMS);
 
     Xutf8SetWMProperties(
-        w->wb->dpy, w->border_w, "runes", "runes", argv, argc,
+        w->wb->dpy, w->border_w, RUNES_PROGRAM_NAME, RUNES_PROGRAM_NAME,
+        argv, argc,
         &normal_hints, &wm_hints, &class_hints);
 
     pid = getpid();
@@ -211,8 +212,8 @@ void runes_window_create_window(RunesTerm *t, int argc, char *argv[])
         w->wb->dpy, w->border_w, w->wb->atoms[RUNES_ATOM_NET_WM_PID],
         XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&pid, 1);
 
-    runes_window_set_icon_name(t, "runes", 5);
-    runes_window_set_window_title(t, "runes", 5);
+    runes_window_set_icon_name(t, RUNES_PROGRAM_NAME, 5);
+    runes_window_set_window_title(t, RUNES_PROGRAM_NAME, 5);
 
     cursor = XCreateFontCursor(w->wb->dpy, XC_xterm);
     cairo_pattern_get_rgba(

@@ -36,13 +36,13 @@ char *runes_get_daemon_socket_name()
 
     runtime_dir = getenv("XDG_RUNTIME_DIR");
     if (runtime_dir) {
-        runes_sprintf_dup(&socket_dir, "%s/runes", runtime_dir);
+        runes_sprintf_dup(&socket_dir, "%s/"RUNES_PROGRAM_NAME, runtime_dir);
     }
     else {
-        runes_sprintf_dup(&socket_dir, "%s/.runes", home);
+        runes_sprintf_dup(&socket_dir, "%s/."RUNES_PROGRAM_NAME, home);
     }
 
-    runes_sprintf_dup(&socket_file, "%s/runesd", socket_dir);
+    runes_sprintf_dup(&socket_file, "%s/"RUNES_PROGRAM_NAME"d", socket_dir);
     free(socket_dir);
 
     return socket_file;

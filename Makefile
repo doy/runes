@@ -46,6 +46,9 @@ release: ## Build optimized binaries
 	$(MAKE) OPT=-O2
 	strip $(OUT) $(DOUT) $(COUT)
 
+debug: CFLAGS += -DRUNES_PROGRAM_NAME='"runes-debug"'
+debug: $(OUT) $(DOUT) $(COUT) ## Like 'all', but with a different window class and socket path
+
 run: $(OUT) ## Build and run the standalone runes terminal
 	@./$(OUT)
 
@@ -79,7 +82,7 @@ clean: ## Remove build files
 	@rmdir -p $(BUILD) > /dev/null 2>&1 || true
 
 help: ## Display this help
-	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-20s\033[0m %s\n", $$2, $$4}'
+	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-12s\033[0m %s\n", $$2, $$4}'
 
 -include $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
 -include $(DOBJ:$(BUILD)%.o=$(BUILD).%.d)

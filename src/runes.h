@@ -1,6 +1,10 @@
 #ifndef _RUNES_H
 #define _RUNES_H
 
+#ifndef RUNES_PROGRAM_NAME
+#define RUNES_PROGRAM_NAME "runes"
+#endif
+
 struct runes_term;
 struct runes_window;
 struct runes_window_backend;
