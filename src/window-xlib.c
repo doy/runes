@@ -728,7 +728,6 @@ static void runes_window_start_selection_loc(
         e.xselectionclear.type = SelectionClear;
         e.xselectionclear.window = old_owner;
         e.xselectionclear.selection = XA_PRIMARY;
-        e.xselectionclear.time = CurrentTime;
 
         XSendEvent(w->wb->dpy, old_owner, False, NoEventMask, &e);
     }
