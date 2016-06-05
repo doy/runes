@@ -1124,6 +1124,14 @@ static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
         return;
     }
 
+    if (w->multi_click_timer_event) {
+        runes_loop_timer_clear(t->loop, w->multi_click_timer_event);
+    }
+
+    w->multi_click_timer_event = runes_loop_timer_set(
+        t->loop, t->config->double_click_rate, t,
+        runes_window_multi_click_cb);
+
     w->multi_clicks++;
     if (w->multi_clicks > 1) {
         struct vt100_loc loc;
@@ -1145,14 +1153,6 @@ static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
             runes_window_update_selection_loc(t, &loc);
         }
     }
-
-    if (w->multi_click_timer_event) {
-        runes_loop_timer_clear(t->loop, w->multi_click_timer_event);
-    }
-
-    w->multi_click_timer_event = runes_loop_timer_set(
-        t->loop, t->config->double_click_rate, t,
-        runes_window_multi_click_cb);
 }
 
 static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc)
