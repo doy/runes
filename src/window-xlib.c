@@ -608,7 +608,6 @@ static void runes_window_reset_visual_bell(void *t)
 
     cairo_set_source(w->backend_cr, ((RunesTerm *)t)->config->bgdefault);
     cairo_paint(w->backend_cr);
-    cairo_surface_flush(cairo_get_target(w->backend_cr));
     runes_window_flush(t);
     w->visual_bell_is_ringing = 0;
     runes_term_refcnt_dec(t);
