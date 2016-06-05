@@ -19,6 +19,7 @@ struct runes_loop_timer_data {
 
 static void runes_loop_work_cb(evutil_socket_t fd, short what, void *arg);
 static void runes_loop_timer_cb(evutil_socket_t fd, short what, void *arg);
+static void runes_loop_free_timer_data(struct runes_loop_timer_data *data);
 
 RunesLoop *runes_loop_new()
 {
@@ -53,7 +54,7 @@ void runes_loop_start_work(
     event_add(data->event, NULL);
 }
 
-void runes_loop_timer_set(
+void *runes_loop_timer_set(
     RunesLoop *loop, int timeout, void *t, void (*cb)(void*))
 {
     struct runes_loop_timer_data *data;
@@ -71,6 +72,18 @@ void runes_loop_timer_set(
     data->timeout->tv_usec = timeout * 1000;
 
     event_add(data->event, data->timeout);
+
+    return (void *)data;
+}
+
+void runes_loop_timer_clear(RunesLoop *loop, void *arg)
+{
+    struct runes_loop_timer_data *data = arg;
+
+    UNUSED(loop);
+
+    event_del(data->event);
+    runes_loop_free_timer_data(data);
 }
 
 void runes_loop_delete(RunesLoop *loop)
@@ -105,6 +118,11 @@ static void runes_loop_timer_cb(evutil_socket_t fd, short what, void *arg)
 
     data->cb(data->t);
 
+    runes_loop_free_timer_data(data);
+}
+
+static void runes_loop_free_timer_data(struct runes_loop_timer_data *data)
+{
     event_free(data->event);
     free(data->timeout);
     free(data);

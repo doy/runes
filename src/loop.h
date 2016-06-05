@@ -12,8 +12,9 @@ void runes_loop_run(RunesLoop *loop);
 void runes_loop_stop(RunesLoop *loop);
 void runes_loop_start_work(
     RunesLoop *loop, int fd, void *t, int (*cb)(void*));
-void runes_loop_timer_set(
+void *runes_loop_timer_set(
     RunesLoop *loop, int timeout, void *t, void (*cb)(void*));
+void runes_loop_timer_clear(RunesLoop *loop, void *arg);
 void runes_loop_delete(RunesLoop *loop);
 
 #endif
