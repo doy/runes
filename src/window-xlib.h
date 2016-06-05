@@ -10,8 +10,6 @@ struct runes_window {
     Window w;
     Window border_w;
     XIC ic;
-    char *selection_contents;
-    size_t selection_len;
     struct timespec last_redraw;
 
     cairo_t *backend_cr;

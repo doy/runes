@@ -162,6 +162,35 @@ void runes_display_draw_cursor(RunesTerm *t)
     }
 }
 
+void runes_display_set_selection(
+    RunesTerm *t, struct vt100_loc *start, struct vt100_loc *end)
+{
+    RunesDisplay *display = t->display;
+
+    display->has_selection = 1;
+
+    if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
+        struct vt100_loc *tmp;
+
+        tmp = start;
+        start = end;
+        end = tmp;
+    }
+
+    display->selection_start = *start;
+    display->selection_end = *end;
+
+    if (t->display->selection_contents) {
+        free(t->display->selection_contents);
+        t->display->selection_contents = NULL;
+    }
+    vt100_screen_get_string_plaintext(
+        t->scr, start, end,
+        &t->display->selection_contents, &t->display->selection_len);
+
+    t->display->dirty = 1;
+}
+
 void runes_display_delete(RunesDisplay *display)
 {
     cairo_pattern_destroy(display->buffer);

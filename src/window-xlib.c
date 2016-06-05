@@ -97,11 +97,11 @@ static void runes_window_paste(RunesTerm *t, Time time);
 static void runes_window_start_selection(
     RunesTerm *t, int xpixel, int ypixel, Time time);
 static void runes_window_start_selection_loc(
-    RunesTerm *t, struct vt100_loc *loc, Time time);
+    RunesTerm *t, struct vt100_loc *start, Time time);
 static void runes_window_update_selection(
     RunesTerm *t, int xpixel, int ypixel);
 static void runes_window_update_selection_loc(
-    RunesTerm *t, struct vt100_loc *loc);
+    RunesTerm *t, struct vt100_loc *end);
 static void runes_window_clear_selection(RunesTerm *t);
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e);
 static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e);
@@ -714,14 +714,11 @@ static void runes_window_start_selection(
 }
 
 static void runes_window_start_selection_loc(
-    RunesTerm *t, struct vt100_loc *loc, Time time)
+    RunesTerm *t, struct vt100_loc *start, Time time)
 {
     RunesWindow *w = t->w;
-    struct vt100_loc *start = &t->display->selection_start;
-    struct vt100_loc *end   = &t->display->selection_end;
     Window old_owner;
-
-    *start = *end = *loc;
+    int got_selection;
 
     old_owner = XGetSelectionOwner(w->wb->dpy, XA_PRIMARY);
     if (old_owner != w->w) {
@@ -735,10 +732,12 @@ static void runes_window_start_selection_loc(
         XSendEvent(w->wb->dpy, old_owner, False, NoEventMask, &e);
     }
     XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, w->w, time);
-    t->display->has_selection = (XGetSelectionOwner(w->wb->dpy, XA_PRIMARY) == w->w);
+    got_selection = (XGetSelectionOwner(w->wb->dpy, XA_PRIMARY) == w->w);
 
-    t->display->dirty = 1;
-    runes_window_request_flush(t);
+    if (got_selection) {
+        runes_display_set_selection(t, start, start);
+        runes_window_request_flush(t);
+    }
 }
 
 static void runes_window_update_selection(RunesTerm *t, int xpixel, int ypixel)
@@ -750,35 +749,14 @@ static void runes_window_update_selection(RunesTerm *t, int xpixel, int ypixel)
 }
 
 static void runes_window_update_selection_loc(
-    RunesTerm *t, struct vt100_loc *loc)
+    RunesTerm *t, struct vt100_loc *end)
 {
-    RunesWindow *w = t->w;
-    struct vt100_loc *start = &t->display->selection_start;
-    struct vt100_loc *end = &t->display->selection_end;
-    struct vt100_loc orig_end = *end;
-
     if (!t->display->has_selection) {
         return;
     }
 
-    *end = *loc;
-
-    if (orig_end.row != end->row || orig_end.col != end->col) {
-        if (end->row < start->row || (end->row == start->row && end->col < start->col)) {
-            struct vt100_loc *tmp;
-
-            tmp = start;
-            start = end;
-            end = tmp;
-        }
-
-        if (w->selection_contents) {
-            free(w->selection_contents);
-            w->selection_contents = NULL;
-        }
-        vt100_screen_get_string_plaintext(
-            t->scr, start, end, &w->selection_contents, &w->selection_len);
-        t->display->dirty = 1;
+    if (t->display->selection_end.row != end->row || t->display->selection_end.col != end->col) {
+        runes_display_set_selection(t, &t->display->selection_start, end);
         runes_window_request_flush(t);
     }
 }
@@ -789,10 +767,6 @@ static void runes_window_clear_selection(RunesTerm *t)
 
     XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, None, CurrentTime);
     t->display->has_selection = 0;
-    if (w->selection_contents) {
-        free(w->selection_contents);
-        w->selection_contents = NULL;
-    }
 }
 
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e)
@@ -1042,11 +1016,12 @@ static void runes_window_handle_selection_request_event(
     }
     else if (e->target == XA_STRING
              || e->target == w->wb->atoms[RUNES_ATOM_UTF8_STRING]) {
-        if (w->selection_contents) {
+        if (t->display->selection_contents) {
             XChangeProperty(
                 w->wb->dpy, e->requestor, e->property,
                 e->target, 8, PropModeReplace,
-                (unsigned char *)w->selection_contents, w->selection_len);
+                (unsigned char *)t->display->selection_contents,
+                t->display->selection_len);
         }
     }
     else {
