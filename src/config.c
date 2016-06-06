@@ -511,6 +511,9 @@ static void runes_config_set(RunesConfig *config, char *key, char *val)
     else if (!strcmp(key, "redraw_rate")) {
         config->redraw_rate = runes_config_parse_uint(val);
     }
+    else if (!strcmp(key, "double_click_rate")) {
+        config->double_click_rate = runes_config_parse_uint(val);
+    }
     else if (!strcmp(key, "command")) {
         config->cmd = runes_config_parse_string(val);
     }
