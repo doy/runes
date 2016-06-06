@@ -122,7 +122,7 @@ static int runes_window_handle_builtin_button_press(
 static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e);
 static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc);
 static void runes_window_end_of_word(RunesTerm *t, struct vt100_loc *loc);
-static int runes_window_is_word_char(char *buf, size_t len);
+static int runes_window_is_word_char(RunesTerm *t, int row, int col);
 static void runes_window_multi_click_cb(void *t);
 static struct function_key *runes_window_find_key_sequence(
     RunesTerm *t, KeySym sym);
@@ -1114,15 +1114,13 @@ static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
 
 static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc)
 {
-    struct vt100_cell *c;
     struct vt100_row *r;
     int row = loc->row - t->scr->grid->row_top, col = loc->col;
     int prev_row = row, prev_col = col;
 
     /* XXX vt100 should expose a better way to get at row data */
-    c = vt100_screen_cell_at(t->scr, row, col);
     r = &t->scr->grid->rows[row + t->scr->grid->row_top];
-    while (runes_window_is_word_char(c->contents, c->len)) {
+    while (runes_window_is_word_char(t, row, col)) {
         prev_col = col;
         prev_row = row;
         col--;
@@ -1137,7 +1135,6 @@ static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc)
             }
             col = t->scr->grid->max.col - 1;
         }
-        c = vt100_screen_cell_at(t->scr, row, col);
     }
 
     loc->row = prev_row + t->scr->grid->row_top;
@@ -1146,14 +1143,12 @@ static void runes_window_beginning_of_word(RunesTerm *t, struct vt100_loc *loc)
 
 static void runes_window_end_of_word(RunesTerm *t, struct vt100_loc *loc)
 {
-    struct vt100_cell *c;
     struct vt100_row *r;
     int row = loc->row - t->scr->grid->row_top, col = loc->col;
 
     /* XXX vt100 should expose a better way to get at row data */
-    c = vt100_screen_cell_at(t->scr, row, col);
     r = &t->scr->grid->rows[row + t->scr->grid->row_top];
-    while (runes_window_is_word_char(c->contents, c->len)) {
+    while (runes_window_is_word_char(t, row, col)) {
         col++;
         if (col >= t->scr->grid->max.col) {
             if (!r->wrapped) {
@@ -1166,26 +1161,48 @@ static void runes_window_end_of_word(RunesTerm *t, struct vt100_loc *loc)
             r = &t->scr->grid->rows[row + t->scr->grid->row_top];
             col = 0;
         }
-        c = vt100_screen_cell_at(t->scr, row, col);
     }
 
     loc->row = row + t->scr->grid->row_top;
     loc->col = col;
 }
 
-static int runes_window_is_word_char(char *buf, size_t len)
+static int runes_window_is_word_char(RunesTerm *t, int row, int col)
 {
+    struct vt100_cell *c, *prev;
+    int prev_row = row, prev_col = col;
     gunichar uc;
 
-    if (len == 0) {
+    if (col > 0) {
+        prev_col = col - 1;
+    }
+    else if (row > 0) {
+        struct vt100_row *r;
+
+        r = &t->scr->grid->rows[row - 1 + t->scr->grid->row_top];
+        if (r->wrapped) {
+            prev_row = row - 1;
+            prev_col = t->scr->grid->max.col;
+        }
+    }
+
+    prev = vt100_screen_cell_at(t->scr, prev_row, prev_col);
+    if (prev->is_wide) {
+        c = prev;
+    }
+    else {
+        c = vt100_screen_cell_at(t->scr, row, col);
+    }
+
+    if (c->len == 0) {
         return 0;
     }
 
-    if (g_utf8_next_char(buf) < buf + len) {
+    if (g_utf8_next_char(c->contents) < c->contents + c->len) {
         return 1;
     }
 
-    uc = g_utf8_get_char(buf);
+    uc = g_utf8_get_char(c->contents);
     if (vt100_char_width(uc) == 0) {
         return 0;
     }
