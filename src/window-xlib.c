@@ -59,6 +59,16 @@ static struct function_key keys[] = {
     RUNES_KEY(XK_VoidSymbol, "")
 };
 
+static struct function_key shift_keys[] = {
+    RUNES_KEY(XK_Up,           "\033[a"),
+    RUNES_KEY(XK_Down,         "\033[b"),
+    RUNES_KEY(XK_Right,        "\033[c"),
+    RUNES_KEY(XK_Left,         "\033[d"),
+    RUNES_KEY(XK_ISO_Left_Tab, "\033[Z"),
+    RUNES_KEY(XK_Delete,       "\033[3$"),
+    RUNES_KEY(XK_VoidSymbol,   "")
+};
+
 static struct function_key application_keypad_keys[] = {
     /* XXX i don't have a keypad on my laptop, need to get one for testing */
     RUNES_KEY(XK_VoidSymbol, "")
@@ -125,7 +135,7 @@ static void runes_window_end_of_word(RunesTerm *t, struct vt100_loc *loc);
 static int runes_window_is_word_char(RunesTerm *t, int row, int col);
 static void runes_window_multi_click_cb(void *t);
 static struct function_key *runes_window_find_key_sequence(
-    RunesTerm *t, KeySym sym);
+    RunesTerm *t, KeySym sym, XKeyEvent *e);
 static struct vt100_loc runes_window_get_mouse_position(
     RunesTerm *t, int xpixel, int ypixel);
 
@@ -766,7 +776,7 @@ static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e)
         if (!runes_window_handle_builtin_keypress(t, sym, e)) {
             struct function_key *key;
 
-            key = runes_window_find_key_sequence(t, sym);
+            key = runes_window_find_key_sequence(t, sym, e);
             if (key->sym != XK_VoidSymbol) {
                 runes_window_write_to_pty(t, key->str, key->len);
                 break;
@@ -1223,7 +1233,7 @@ static void runes_window_multi_click_cb(void *t)
 }
 
 static struct function_key *runes_window_find_key_sequence(
-    RunesTerm *t, KeySym sym)
+    RunesTerm *t, KeySym sym, XKeyEvent *e)
 {
     struct function_key *key;
 
@@ -1245,7 +1255,13 @@ static struct function_key *runes_window_find_key_sequence(
             key++;
         }
     }
-    key = &keys[0];
+
+    if (e->state & ShiftMask) {
+        key = &shift_keys[0];
+    }
+    else {
+        key = &keys[0];
+    }
     while (key->sym != XK_VoidSymbol) {
         if (key->sym == sym) {
             return key;
