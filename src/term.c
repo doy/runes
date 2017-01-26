@@ -24,7 +24,6 @@ RunesTerm *runes_term_new(
     t->scr = vt100_screen_new(t->config->default_rows, t->config->default_cols);
 
     vt100_screen_set_scrollback_length(t->scr, t->config->scrollback_length);
-    vt100_screen_set_wide_emoji(t->scr, t->config->scrollback_length);
 
     runes_window_create_window(t, argc, argv);
     runes_pty_spawn_subprocess(t, envp, cwd);

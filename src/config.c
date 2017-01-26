@@ -449,9 +449,6 @@ static void runes_config_set(RunesConfig *config, char *key, char *val)
     else if (!strcmp(key, "bell_is_urgent")) {
         config->bell_is_urgent = runes_config_parse_bool(val);
     }
-    else if (!strcmp(key, "wide_emoji")) {
-        config->wide_emoji = runes_config_parse_bool(val);
-    }
     else if (!strcmp(key, "bgcolor")) {
         cairo_pattern_t *newcolor;
         newcolor = runes_config_parse_color(val);

@@ -27,7 +27,6 @@ struct runes_config {
     unsigned int bold_is_bright: 1;
     unsigned int bold_is_bold: 1;
     unsigned int audible_bell: 1;
-    unsigned int wide_emoji: 1;
 };
 
 RunesConfig *runes_config_new(int argc, char *argv[]);
