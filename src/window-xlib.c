@@ -1213,7 +1213,7 @@ static int runes_window_is_word_char(RunesTerm *t, int row, int col)
     }
 
     uc = g_utf8_get_char(c->contents);
-    if (vt100_char_width(uc) == 0) {
+    if (vt100_char_width(uc, t->config->wide_emoji) == 0) {
         return 0;
     }
     if (g_unichar_isspace(uc)) {
