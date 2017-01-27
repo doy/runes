@@ -69,6 +69,15 @@ static struct function_key shift_keys[] = {
     RUNES_KEY(XK_VoidSymbol,   "")
 };
 
+static struct function_key ctrl_keys[] = {
+    RUNES_KEY(XK_Up,           "\033[Oa"),
+    RUNES_KEY(XK_Down,         "\033[Ob"),
+    RUNES_KEY(XK_Right,        "\033[Oc"),
+    RUNES_KEY(XK_Left,         "\033[Od"),
+    RUNES_KEY(XK_Delete,       "\033[3^"),
+    RUNES_KEY(XK_VoidSymbol,   "")
+};
+
 static struct function_key application_keypad_keys[] = {
     /* XXX i don't have a keypad on my laptop, need to get one for testing */
     RUNES_KEY(XK_VoidSymbol, "")
@@ -1258,6 +1267,9 @@ static struct function_key *runes_window_find_key_sequence(
 
     if (e->state & ShiftMask) {
         key = &shift_keys[0];
+    }
+    else if (e->state & ControlMask) {
+        key = &ctrl_keys[0];
     }
     else {
         key = &keys[0];
