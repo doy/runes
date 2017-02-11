@@ -69,7 +69,7 @@ void runes_display_draw_screen(RunesTerm *t)
 
     if (t->scr->dirty || display->dirty) {
         if (t->scr->dirty) {
-            display->has_selection = 0;
+            runes_display_maybe_clear_selection(t);
         }
 
         cairo_push_group(display->cr);
@@ -200,6 +200,21 @@ void runes_display_set_selection(
         &t->display->selection_contents, &t->display->selection_len);
 
     t->display->dirty = 1;
+}
+
+void runes_display_maybe_clear_selection(RunesTerm *t)
+{
+    RunesDisplay *display = t->display;
+    char *contents;
+    size_t len;
+
+    vt100_screen_get_string_plaintext(
+        t->scr, &display->selection_start, &display->selection_end,
+        &contents, &len);
+    if (len != display->selection_len
+        || memcmp(contents, display->selection_contents, len)) {
+        display->has_selection = 0;
+    }
 }
 
 void runes_display_delete(RunesDisplay *display)

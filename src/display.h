@@ -33,6 +33,7 @@ void runes_display_draw_screen(RunesTerm *t);
 void runes_display_draw_cursor(RunesTerm *t);
 void runes_display_set_selection(
     RunesTerm *t, struct vt100_loc *start, struct vt100_loc *end);
+void runes_display_maybe_clear_selection(RunesTerm *t);
 void runes_display_delete(RunesDisplay *display);
 
 #endif

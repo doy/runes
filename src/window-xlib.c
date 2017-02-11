@@ -119,7 +119,6 @@ static void runes_window_update_selection(
 static void runes_window_update_selection_loc(
     RunesTerm *t, struct vt100_loc *end, Time time);
 static void runes_window_acquire_selection(RunesTerm *t, Time time);
-static void runes_window_clear_selection(RunesTerm *t);
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e);
 static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e);
 static void runes_window_handle_motion_event(RunesTerm *t, XMotionEvent *e);
@@ -519,7 +518,7 @@ static void runes_window_resize_window(
         cairo_xlib_surface_set_size(
             cairo_get_target(w->backend_cr), dwidth, dheight);
         runes_term_set_window_size(t, dwidth, dheight);
-        runes_window_clear_selection(t);
+        runes_display_maybe_clear_selection(t);
     }
 }
 
@@ -743,15 +742,6 @@ static void runes_window_acquire_selection(RunesTerm *t, Time time)
             XSendEvent(w->wb->dpy, old_owner, False, NoEventMask, &e);
         }
     }
-}
-
-static void runes_window_clear_selection(RunesTerm *t)
-{
-    RunesWindow *w = t->w;
-
-    XSetSelectionOwner(w->wb->dpy, XA_PRIMARY, None, CurrentTime);
-    t->display->has_selection = 0;
-    w->owns_selection = 0;
 }
 
 static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e)
