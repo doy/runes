@@ -94,6 +94,16 @@ void runes_display_draw_screen(RunesTerm *t)
                         (struct vt100_cell **)cells->pdata, cells->len);
                     g_ptr_array_set_size(cells, 0);
                     start = c;
+                    while (c < cols && cell->len == 0) {
+                        cell = &t->scr->grid->rows[vr].cells[++c];
+                    }
+                    if (c > start) {
+                        runes_display_draw_string(
+                            t, r, start, c - start,
+                            (struct vt100_cell **)cells->pdata, cells->len);
+                        start = c;
+                    }
+                    prev_cell = NULL;
                 }
                 g_ptr_array_add(cells, cell);
 
@@ -280,8 +290,6 @@ static void runes_display_draw_string(
         return;
     }
 
-    attrs = &cells[0]->attrs;
-
     if (len > 1
         && display->has_selection
         && (display->selection_start.row != display->selection_end.row
@@ -304,50 +312,63 @@ static void runes_display_draw_string(
 
     selected = runes_display_loc_is_selected(t, loc);
 
-    switch (attrs->bgcolor.type) {
-    case VT100_COLOR_DEFAULT:
+    if (len) {
+        attrs = &cells[0]->attrs;
+
+        switch (attrs->bgcolor.type) {
+        case VT100_COLOR_DEFAULT:
+            bg = t->config->bgdefault;
+            break;
+        case VT100_COLOR_IDX:
+            bg = t->config->colors[attrs->bgcolor.idx];
+            break;
+        case VT100_COLOR_RGB:
+            bg = cairo_pattern_create_rgb(
+                attrs->bgcolor.r / 255.0,
+                attrs->bgcolor.g / 255.0,
+                attrs->bgcolor.b / 255.0);
+            bg_is_custom = 1;
+            break;
+        }
+
+        switch (attrs->fgcolor.type) {
+        case VT100_COLOR_DEFAULT:
+            fg = t->config->fgdefault;
+            break;
+        case VT100_COLOR_IDX: {
+            unsigned char idx = attrs->fgcolor.idx;
+
+            if (t->config->bold_is_bright && attrs->bold && idx < 8) {
+                idx += 8;
+            }
+            fg = t->config->colors[idx];
+            break;
+        }
+        case VT100_COLOR_RGB:
+            fg = cairo_pattern_create_rgb(
+                attrs->fgcolor.r / 255.0,
+                attrs->fgcolor.g / 255.0,
+                attrs->fgcolor.b / 255.0);
+            fg_is_custom = 1;
+            break;
+        }
+
+        if (attrs->inverse ^ selected) {
+            if (attrs->fgcolor.id == attrs->bgcolor.id) {
+                fg = t->config->bgdefault;
+                bg = t->config->fgdefault;
+            }
+            else {
+                cairo_pattern_t *tmp = fg;
+                fg = bg;
+                bg = tmp;
+            }
+        }
+    }
+    else {
         bg = t->config->bgdefault;
-        break;
-    case VT100_COLOR_IDX:
-        bg = t->config->colors[attrs->bgcolor.idx];
-        break;
-    case VT100_COLOR_RGB:
-        bg = cairo_pattern_create_rgb(
-            attrs->bgcolor.r / 255.0,
-            attrs->bgcolor.g / 255.0,
-            attrs->bgcolor.b / 255.0);
-        bg_is_custom = 1;
-        break;
-    }
-
-    switch (attrs->fgcolor.type) {
-    case VT100_COLOR_DEFAULT:
         fg = t->config->fgdefault;
-        break;
-    case VT100_COLOR_IDX: {
-        unsigned char idx = attrs->fgcolor.idx;
-
-        if (t->config->bold_is_bright && attrs->bold && idx < 8) {
-            idx += 8;
-        }
-        fg = t->config->colors[idx];
-        break;
-    }
-    case VT100_COLOR_RGB:
-        fg = cairo_pattern_create_rgb(
-            attrs->fgcolor.r / 255.0,
-            attrs->fgcolor.g / 255.0,
-            attrs->fgcolor.b / 255.0);
-        fg_is_custom = 1;
-        break;
-    }
-
-    if (attrs->inverse ^ selected) {
-        if (attrs->fgcolor.id == attrs->bgcolor.id) {
-            fg = t->config->bgdefault;
-            bg = t->config->fgdefault;
-        }
-        else {
+        if (selected) {
             cairo_pattern_t *tmp = fg;
             fg = bg;
             bg = tmp;
