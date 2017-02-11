@@ -49,6 +49,13 @@ release: ## Build optimized binaries
 debug: CFLAGS += -DRUNES_PROGRAM_NAME='"runes-debug"'
 debug: $(OUT) $(DOUT) $(COUT) ## Like 'all', but with a different window class and socket path
 
+release-profile: OPT = -O2 -pg
+release-profile: $(OUT) $(DOUT) $(COUT) ## Like 'release', but with profiling enabled
+
+profile: CFLAGS += -DRUNES_PROGRAM_NAME='"runes-debug"'
+profile: OPT = -g -pg
+profile: $(OUT) $(DOUT) $(COUT) ## Like 'debug', but with profiling enabled
+
 run: $(OUT) ## Build and run the standalone runes terminal
 	@./$(OUT)
 
@@ -65,7 +72,7 @@ $(COUT): $(COBJ)
 	$(QUIET_LD)$(CC) -o $@ $^ $(ALLLDFLAGS)
 
 libvt100/libvt100.a::
-	@if ! $(MAKE) -q -C libvt100 static; then $(MAKE) -C libvt100 static && MAKELEVEL=$(echo "${MAKELEVEL}-1" | bc) exec $(MAKE) $(MAKECMDGOALS); fi
+	@if ! $(MAKE) -q -C libvt100 static; then $(MAKE) -C libvt100 static OPT="$(OPT)" && MAKELEVEL=$(echo "${MAKELEVEL}-1" | bc) exec $(MAKE) $(MAKECMDGOALS); fi
 
 $(BUILD)%.o: $(SRC)%.c | $(BUILD)
 	@$(MAKEDEPEND) -o $(<:$(SRC)%.c=$(BUILD).%.d) $<
@@ -80,7 +87,7 @@ clean: ## Remove build files
 	@rmdir -p $(BUILD) > /dev/null 2>&1 || true
 
 help: ## Display this help
-	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-12s\033[0m %s\n", $$2, $$4}'
+	@grep -HE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":|##"}; {printf "\033[36m%-16s\033[0m %s\n", $$2, $$4}'
 
 -include $(OBJ:$(BUILD)%.o=$(BUILD).%.d)
 -include $(DOBJ:$(BUILD)%.o=$(BUILD).%.d)
