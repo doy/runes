@@ -869,7 +869,12 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
 
 static void runes_window_handle_motion_event(RunesTerm *t, XMotionEvent *e)
 {
-    if (!(e->state & Button1Mask)) {
+    RunesWindow *w = t->w;
+
+    /* unclear why we can't rely on (e->state & Button1Mask) here - it seems to
+     * always be true, which is confusing to me. i'd expect it to only be true
+     * if we had Button1 held down while moving the mouse. */
+    if (!w->mouse_down) {
         return;
     }
 
@@ -1043,11 +1048,14 @@ static int runes_window_handle_builtin_keypress(
 static int runes_window_handle_builtin_button_press(
     RunesTerm *t, XButtonEvent *e)
 {
+    RunesWindow *w = t->w;
+
     switch (e->type) {
     case ButtonPress:
         switch (e->button) {
         case Button1:
             runes_window_start_selection(t, e->x, e->y);
+            w->mouse_down = 1;
             return 1;
             break;
         case Button2:
@@ -1071,7 +1079,14 @@ static int runes_window_handle_builtin_button_press(
         }
         break;
     case ButtonRelease:
-        runes_window_handle_multi_click(t, e);
+        switch (e->button) {
+        case Button1:
+            runes_window_handle_multi_click(t, e);
+            w->mouse_down = 0;
+            break;
+        default:
+            break;
+        }
         break;
     default:
         break;
@@ -1083,10 +1098,6 @@ static int runes_window_handle_builtin_button_press(
 static void runes_window_handle_multi_click(RunesTerm *t, XButtonEvent *e)
 {
     RunesWindow *w = t->w;
-
-    if (e->button != Button1) {
-        return;
-    }
 
     if (w->multi_click_timer_event) {
         runes_loop_timer_clear(t->loop, w->multi_click_timer_event);

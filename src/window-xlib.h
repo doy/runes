@@ -20,6 +20,7 @@ struct runes_window {
     unsigned int owns_selection: 1;
     unsigned int visual_bell_is_ringing: 1;
     unsigned int delaying: 1;
+    unsigned int mouse_down: 1;
 };
 
 RunesWindow *runes_window_new(RunesWindowBackend *wb);
