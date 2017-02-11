@@ -253,16 +253,11 @@ static int runes_display_continue_string(
     if (!old->len || !new->len) {
         return 0;
     }
-    if (old->attrs.fgcolor.id != new->attrs.fgcolor.id) {
-        return 0;
-    }
-    if (old->attrs.bgcolor.id != new->attrs.bgcolor.id) {
-        return 0;
-    }
-    if (old->attrs.attrs != new->attrs.attrs) {
-        return 0;
-    }
-    return 1;
+    return !(
+        (old->attrs.fgcolor.id - new->attrs.fgcolor.id) |
+        (old->attrs.bgcolor.id - new->attrs.bgcolor.id) |
+        (old->attrs.attrs - new->attrs.attrs)
+    );
 }
 
 static void runes_display_draw_string(
