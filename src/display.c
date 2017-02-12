@@ -8,7 +8,7 @@
 #include "config.h"
 #include "term.h"
 
-static void runes_display_recalculate_font_metrics(
+static void runes_display_load_font(
     RunesDisplay *display, char *font_name);
 static void runes_display_repaint_screen(RunesTerm *t);
 static int runes_display_continue_string(
@@ -22,6 +22,12 @@ static void runes_display_paint_rectangle(
 static void runes_display_draw_glyphs(
     RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
     size_t len, int row, int col);
+static void runes_display_draw_glyphs_fast(
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
+    size_t len, int row, int col);
+static void runes_display_draw_glyphs_slow(
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
+    size_t len, int row, int col, size_t buflen);
 static int runes_display_glyphs_are_monospace(RunesTerm *t, int width);
 static int runes_display_loc_is_selected(RunesTerm *t, struct vt100_loc loc);
 static int runes_display_loc_is_between(
@@ -33,7 +39,7 @@ RunesDisplay *runes_display_new(char *font_name)
     RunesDisplay *display;
 
     display = calloc(1, sizeof(RunesDisplay));
-    runes_display_recalculate_font_metrics(display, font_name);
+    runes_display_load_font(display, font_name);
 
     return display;
 }
@@ -49,6 +55,11 @@ void runes_display_set_context(RunesTerm *t, cairo_t *cr)
     else {
         PangoAttrList *attrs;
         PangoFontDescription *font_desc;
+        PangoLayoutLine *line;
+        PangoGlyphItem *glyph_item;
+        PangoGlyphItemIter iter;
+        PangoGlyph glyph;
+        int i;
 
         attrs = pango_attr_list_new();
         font_desc = pango_font_description_from_string(t->config->font_name);
@@ -56,6 +67,19 @@ void runes_display_set_context(RunesTerm *t, cairo_t *cr)
         display->layout = pango_cairo_create_layout(display->cr);
         pango_layout_set_attributes(display->layout, attrs);
         pango_layout_set_font_description(display->layout, font_desc);
+
+        free(display->ascii_glyph_index_cache);
+        display->ascii_glyph_index_cache = calloc(128, sizeof(PangoGlyph));
+        for (i = 32; i < 128; ++i) {
+            char c = i;
+
+            pango_layout_set_text(display->layout, &c, 1);
+            line = pango_layout_get_line_readonly(display->layout, 0);
+            glyph_item = line->runs->data;
+            pango_glyph_item_iter_init_start(&iter, glyph_item, &c);
+            glyph = glyph_item->glyphs->glyphs[iter.start_glyph].glyph;
+            display->ascii_glyph_index_cache[i] = glyph;
+        }
 
         pango_attr_list_unref(attrs);
         pango_font_description_free(font_desc);
@@ -219,29 +243,34 @@ void runes_display_maybe_clear_selection(RunesTerm *t)
 
 void runes_display_delete(RunesDisplay *display)
 {
+    free(display->ascii_glyph_index_cache);
+    cairo_scaled_font_destroy(display->scaled_font);
     cairo_pattern_destroy(display->buffer);
     g_object_unref(display->layout);
 
     free(display);
 }
 
-static void runes_display_recalculate_font_metrics(
+static void runes_display_load_font(
     RunesDisplay *display, char *font_name)
 {
     PangoFontDescription *desc;
     PangoContext *context;
     PangoFontMetrics *metrics;
+    PangoFontMap *fontmap;
+    PangoFont *font;
     int ascent, descent;
 
     if (display->layout) {
         desc = (PangoFontDescription *)pango_layout_get_font_description(
             display->layout);
         context = pango_layout_get_context(display->layout);
+        fontmap = pango_context_get_font_map(context);
     }
     else {
         desc = pango_font_description_from_string(font_name);
-        context = pango_font_map_create_context(
-            pango_cairo_font_map_get_default());
+        fontmap = pango_cairo_font_map_get_default();
+        context = pango_font_map_create_context(fontmap);
     }
 
     metrics = pango_context_get_metrics(context, desc, NULL);
@@ -251,7 +280,14 @@ static void runes_display_recalculate_font_metrics(
     ascent   = pango_font_metrics_get_ascent(metrics);
     descent  = pango_font_metrics_get_descent(metrics);
     display->fonty = PANGO_PIXELS(ascent + descent);
+    display->font_descent = PANGO_PIXELS(descent);
 
+    font = pango_font_map_load_font(fontmap, context, desc);
+    display->scaled_font = pango_cairo_font_get_scaled_font(
+        (PangoCairoFont *)font);
+    cairo_scaled_font_reference(display->scaled_font);
+
+    g_object_unref(font);
     pango_font_metrics_unref(metrics);
     if (!display->layout) {
         pango_font_description_free(desc);
@@ -423,21 +459,87 @@ static void runes_display_draw_glyphs(
     RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
     size_t len, int row, int col)
 {
-    RunesDisplay *display = t->display;
     struct vt100_cell_attrs *attrs = &cells[0]->attrs;
-    PangoAttrList *pango_attrs;
-    char *buf;
     size_t buflen = 0, i;
-    int width = 0;
+    int fast = 1;
+
+    /* we only cache the normal font for now */
+    if ((attrs->bold && t->config->bold_is_bold)
+        || attrs->italic
+        || attrs->underline) {
+        fast = 0;
+    }
 
     for (i = 0; i < len; ++i) {
         buflen += cells[i]->len;
+        /* we only cache glyphs for ascii characters for now */
+        if (cells[i]->len > 1) {
+            fast = 0;
+        }
     }
-    buf = malloc(buflen);
-    buflen = 0;
+
+    if (fast) {
+        runes_display_draw_glyphs_fast(t, pattern, cells, len, row, col);
+    }
+    else {
+        runes_display_draw_glyphs_slow(
+            t, pattern, cells, len, row, col, buflen);
+    }
+}
+
+static void runes_display_draw_glyphs_fast(
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
+    size_t len, int row, int col)
+{
+    RunesDisplay *display = t->display;
+    cairo_glyph_t *glyphs;
+    size_t i;
+
+    glyphs = malloc(len * sizeof(cairo_glyph_t));
+
     for (i = 0; i < len; ++i) {
-        memcpy(&buf[buflen], cells[i]->contents, cells[i]->len);
-        buflen += cells[i]->len;
+        switch (cells[i]->len) {
+        case 0:
+            glyphs[i].index = display->ascii_glyph_index_cache[' '];
+            break;
+        case 1: {
+            char c = cells[i]->contents[0];
+            glyphs[i].index = display->ascii_glyph_index_cache[(int)c];
+            break;
+        }
+        default:
+            fprintf(stderr, "runes_display_draw_glyphs_fast requires ascii\n");
+            return;
+        }
+        glyphs[i].x = (col + i) * display->fontx;
+        glyphs[i].y = (row + 1) * display->fonty - display->font_descent;
+    }
+
+    cairo_save(display->cr);
+    cairo_move_to(display->cr, col * display->fontx, row * display->fonty);
+    cairo_set_source(display->cr, pattern);
+    cairo_set_scaled_font(display->cr, display->scaled_font);
+    cairo_show_glyphs(display->cr, glyphs, len);
+    cairo_restore(display->cr);
+
+    free(glyphs);
+}
+
+static void runes_display_draw_glyphs_slow(
+    RunesTerm *t, cairo_pattern_t *pattern, struct vt100_cell **cells,
+    size_t len, int row, int col, size_t buflen)
+{
+    RunesDisplay *display = t->display;
+    struct vt100_cell_attrs *attrs = &cells[0]->attrs;
+    PangoAttrList *pango_attrs;
+    size_t pos = 0, i;
+    char *buf;
+    int width = 0;
+
+    buf = malloc(buflen);
+    for (i = 0; i < len; ++i) {
+        memcpy(&buf[pos], cells[i]->contents, cells[i]->len);
+        pos += cells[i]->len;
         width += cells[i]->is_wide ? 2 : 1;
     }
 

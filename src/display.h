@@ -9,6 +9,8 @@ struct runes_display {
     cairo_t *cr;
     cairo_pattern_t *buffer;
     PangoLayout *layout;
+    cairo_scaled_font_t *scaled_font;
+    PangoGlyph *ascii_glyph_index_cache;
 
     int row_visible_offset;
 
@@ -16,6 +18,7 @@ struct runes_display {
     int ypixel;
     int fontx;
     int fonty;
+    int font_descent;
 
     struct vt100_loc selection_start;
     struct vt100_loc selection_end;
