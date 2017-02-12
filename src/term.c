@@ -47,6 +47,7 @@ void runes_term_set_window_size(RunesTerm *t, int xpixel, int ypixel)
     int row = ypixel / t->display->fonty, col = xpixel / t->display->fontx;
 
     runes_pty_set_window_size(t, row, col, xpixel, ypixel);
+    runes_display_set_window_size(t, row, col);
     vt100_screen_set_window_size(t->scr, row, col);
 }
 

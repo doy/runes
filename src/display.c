@@ -44,6 +44,16 @@ RunesDisplay *runes_display_new(char *font_name)
     return display;
 }
 
+void runes_display_set_window_size(RunesTerm *t, int row, int col)
+{
+    RunesDisplay *display = t->display;
+
+    UNUSED(row);
+
+    free(display->glyph_buf);
+    display->glyph_buf = malloc(col * sizeof(cairo_glyph_t));
+}
+
 void runes_display_set_context(RunesTerm *t, cairo_t *cr)
 {
     RunesDisplay *display = t->display;
@@ -244,6 +254,7 @@ void runes_display_maybe_clear_selection(RunesTerm *t)
 void runes_display_delete(RunesDisplay *display)
 {
     free(display->ascii_glyph_index_cache);
+    free(display->glyph_buf);
     cairo_scaled_font_destroy(display->scaled_font);
     cairo_pattern_destroy(display->buffer);
     g_object_unref(display->layout);
@@ -492,37 +503,33 @@ static void runes_display_draw_glyphs_fast(
     size_t len, int row, int col)
 {
     RunesDisplay *display = t->display;
-    cairo_glyph_t *glyphs;
     size_t i;
 
-    glyphs = malloc(len * sizeof(cairo_glyph_t));
-
     for (i = 0; i < len; ++i) {
+        cairo_glyph_t *glyph = &display->glyph_buf[i];
         switch (cells[i]->len) {
         case 0:
-            glyphs[i].index = display->ascii_glyph_index_cache[' '];
+            glyph->index = display->ascii_glyph_index_cache[' '];
             break;
         case 1: {
             char c = cells[i]->contents[0];
-            glyphs[i].index = display->ascii_glyph_index_cache[(int)c];
+            glyph->index = display->ascii_glyph_index_cache[(int)c];
             break;
         }
         default:
             fprintf(stderr, "runes_display_draw_glyphs_fast requires ascii\n");
             return;
         }
-        glyphs[i].x = (col + i) * display->fontx;
-        glyphs[i].y = (row + 1) * display->fonty - display->font_descent;
+        glyph->x = (col + i) * display->fontx;
+        glyph->y = (row + 1) * display->fonty - display->font_descent;
     }
 
     cairo_save(display->cr);
     cairo_move_to(display->cr, col * display->fontx, row * display->fonty);
     cairo_set_source(display->cr, pattern);
     cairo_set_scaled_font(display->cr, display->scaled_font);
-    cairo_show_glyphs(display->cr, glyphs, len);
+    cairo_show_glyphs(display->cr, display->glyph_buf, len);
     cairo_restore(display->cr);
-
-    free(glyphs);
 }
 
 static void runes_display_draw_glyphs_slow(

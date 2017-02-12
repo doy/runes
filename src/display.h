@@ -11,6 +11,7 @@ struct runes_display {
     PangoLayout *layout;
     cairo_scaled_font_t *scaled_font;
     PangoGlyph *ascii_glyph_index_cache;
+    cairo_glyph_t *glyph_buf;
 
     int row_visible_offset;
 
@@ -31,6 +32,7 @@ struct runes_display {
 };
 
 RunesDisplay *runes_display_new(char *font_name);
+void runes_display_set_window_size(RunesTerm *t, int row, int col);
 void runes_display_set_context(RunesTerm *t, cairo_t *cr);
 void runes_display_draw_screen(RunesTerm *t);
 void runes_display_draw_cursor(RunesTerm *t);
