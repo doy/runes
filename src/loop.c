@@ -17,9 +17,17 @@ struct runes_loop_timer_data {
     void (*cb)(void*);
 };
 
+struct runes_loop_idle_data {
+    struct event *event;
+    void *t;
+    void (*cb)(void*);
+};
+
 static void runes_loop_work_cb(evutil_socket_t fd, short what, void *arg);
 static void runes_loop_timer_cb(evutil_socket_t fd, short what, void *arg);
+static void runes_loop_idle_cb(evutil_socket_t fd, short what, void *arg);
 static void runes_loop_free_timer_data(struct runes_loop_timer_data *data);
+static void runes_loop_free_idle_data(struct runes_loop_idle_data *data);
 
 RunesLoop *runes_loop_new()
 {
@@ -27,6 +35,7 @@ RunesLoop *runes_loop_new()
 
     loop = calloc(1, sizeof(RunesLoop));
     loop->base = event_base_new();
+    event_base_priority_init(loop->base, 3);
 
     return loop;
 }
@@ -86,6 +95,24 @@ void runes_loop_timer_clear(RunesLoop *loop, void *arg)
     runes_loop_free_timer_data(data);
 }
 
+void runes_loop_at_idle(RunesLoop *loop, void *t, void (*cb)(void*))
+{
+    struct runes_loop_idle_data *data;
+    struct timeval timeout;
+
+    data = malloc(sizeof(struct runes_loop_idle_data));
+    data->event = event_new(loop->base, -1, 0, runes_loop_idle_cb, data);
+    data->t = t;
+    data->cb = cb;
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+
+    event_priority_set(data->event, 2);
+
+    event_add(data->event, &timeout);
+}
+
 void runes_loop_delete(RunesLoop *loop)
 {
     event_base_free(loop->base);
@@ -121,9 +148,27 @@ static void runes_loop_timer_cb(evutil_socket_t fd, short what, void *arg)
     runes_loop_free_timer_data(data);
 }
 
+static void runes_loop_idle_cb(evutil_socket_t fd, short what, void *arg)
+{
+    struct runes_loop_idle_data *data = arg;
+
+    UNUSED(fd);
+    UNUSED(what);
+
+    data->cb(data->t);
+
+    runes_loop_free_idle_data(data);
+}
+
 static void runes_loop_free_timer_data(struct runes_loop_timer_data *data)
 {
     event_free(data->event);
     free(data->timeout);
+    free(data);
+}
+
+static void runes_loop_free_idle_data(struct runes_loop_idle_data *data)
+{
+    event_free(data->event);
     free(data);
 }

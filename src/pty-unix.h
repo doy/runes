@@ -11,6 +11,8 @@ struct runes_pty {
     char readbuf[RUNES_READ_BUFFER_LENGTH];
     int readlen;
     int remaininglen;
+
+    int scheduled_flush: 1;
 };
 
 RunesPty *runes_pty_new(void);

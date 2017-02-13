@@ -20,6 +20,7 @@
 extern char **environ;
 
 static int runes_pty_input_cb(void *t);
+static void runes_pty_flush_cb(void *t);
 
 RunesPty *runes_pty_new()
 {
@@ -164,7 +165,10 @@ static int runes_pty_input_cb(void *t)
             ((RunesTerm *)t)->scr, pty->readbuf, to_process);
         pty->remaininglen = to_process - processed;
         memmove(pty->readbuf, pty->readbuf + processed, pty->remaininglen);
-        runes_window_flush(t);
+        if (!pty->scheduled_flush) {
+            runes_loop_at_idle(((RunesTerm *)t)->loop, t, runes_pty_flush_cb);
+            pty->scheduled_flush = 1;
+        }
 
         return 1;
     }
@@ -174,4 +178,12 @@ static int runes_pty_input_cb(void *t)
 
         return 0;
     }
+}
+
+static void runes_pty_flush_cb(void *t)
+{
+    RunesPty *pty = ((RunesTerm *)t)->pty;
+
+    runes_window_flush(t);
+    pty->scheduled_flush = 0;
 }
