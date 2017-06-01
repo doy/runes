@@ -3,6 +3,7 @@
 
 #include <cairo.h>
 #include <time.h>
+#include <vt100.h>
 #include <X11/Xlib.h>
 
 struct runes_window {
@@ -16,6 +17,8 @@ struct runes_window {
 
     unsigned int multi_clicks;
     void *multi_click_timer_event;
+
+    struct vt100_loc last_reported_mouse_position;
 
     unsigned int owns_selection: 1;
     unsigned int visual_bell_is_ringing: 1;

@@ -153,6 +153,8 @@ RunesWindow *runes_window_new(RunesWindowBackend *wb)
 
     w = calloc(1, sizeof(RunesWindow));
     w->wb = wb;
+    w->last_reported_mouse_position.col = -1;
+    w->last_reported_mouse_position.row = -1;
 
     return w;
 }
@@ -878,14 +880,36 @@ static void runes_window_handle_motion_event(RunesTerm *t, XMotionEvent *e)
 {
     RunesWindow *w = t->w;
 
-    /* unclear why we can't rely on (e->state & Button1Mask) here - it seems to
-     * always be true, which is confusing to me. i'd expect it to only be true
-     * if we had Button1 held down while moving the mouse. */
-    if (!w->mouse_down) {
-        return;
-    }
+    if (vt100_screen_mouse_reporting_wants_any_motion(t->scr)
+        || (vt100_screen_mouse_reporting_wants_button_motion(t->scr)
+            && w->mouse_down)) {
+        char response[7];
+        struct vt100_loc last_loc = w->last_reported_mouse_position;
+        struct vt100_loc loc;
 
-    runes_window_update_selection(t, e->x, e->y, e->time);
+        loc = runes_window_get_mouse_position(t, e->x, e->y);
+        loc.row -= t->scr->grid->row_top;
+        if (loc.col != last_loc.col || loc.row != last_loc.row) {
+            int button =
+                  e->state & Button1Mask ? 1
+                : e->state & Button2Mask ? 2
+                : e->state & Button3Mask ? 3
+                :                          4;
+            sprintf(
+                response, "\033[M%c%c%c",
+                '@' + (button - 1), ' ' + loc.col + 1, ' ' + loc.row + 1);
+            runes_window_write_to_pty(t, response, 6);
+            w->last_reported_mouse_position = loc;
+        }
+    }
+    else {
+        /* unclear why we can't rely on (e->state & Button1Mask) here - it
+         * seems to always be true, which is confusing to me. i'd expect it to
+         * only be true if we had Button1 held down while moving the mouse. */
+        if (w->mouse_down) {
+            runes_window_update_selection(t, e->x, e->y, e->time);
+        }
+    }
 }
 
 static void runes_window_handle_expose_event(RunesTerm *t, XExposeEvent *e)
