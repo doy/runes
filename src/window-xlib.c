@@ -804,12 +804,23 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
         }
     }
 
-    if (t->scr->mouse_reporting_press_release) {
+    if ((e->type == ButtonPress
+         && vt100_screen_mouse_reporting_wants_button_press(t->scr))
+        || (e->type == ButtonRelease
+            && vt100_screen_mouse_reporting_wants_button_release(t->scr))) {
         char response[7];
         char status = 0;
         struct vt100_loc loc;
 
+        /* ignore scroll wheel button up events */
         if (e->type == ButtonRelease && e->button > 3) {
+            return;
+        }
+
+        /* x10 mouse reporting only cares about buttons 1, 2, and 3 */
+        if (e->type == ButtonPress
+            && !vt100_screen_mouse_reporting_wants_button_release(t->scr)
+            && e->button > 3) {
             return;
         }
 
@@ -833,17 +844,22 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
             case Button5:
                 status = 65;
                 break;
+            default:
+                return;
             }
         }
 
-        if (e->state & ShiftMask) {
-            status |= 4;
-        }
-        if (e->state & Mod1Mask) {
-            status |= 8;
-        }
-        if (e->state & ControlMask) {
-            status |= 16;
+        /* x10 mouse reporting doesn't care about modifiers */
+        if (vt100_screen_mouse_reporting_wants_button_release(t->scr)) {
+            if (e->state & ShiftMask) {
+                status |= 4;
+            }
+            if (e->state & Mod1Mask) {
+                status |= 8;
+            }
+            if (e->state & ControlMask) {
+                status |= 16;
+            }
         }
 
         loc = runes_window_get_mouse_position(t, e->x, e->y);
@@ -851,16 +867,6 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
         sprintf(
             response, "\033[M%c%c%c",
             ' ' + (status), ' ' + loc.col + 1, ' ' + loc.row + 1);
-        runes_window_write_to_pty(t, response, 6);
-    }
-    else if (t->scr->mouse_reporting_press && e->type == ButtonPress) {
-        char response[7];
-        struct vt100_loc loc;
-
-        loc = runes_window_get_mouse_position(t, e->x, e->y);
-        sprintf(
-            response, "\033[M%c%c%c",
-            ' ' + (e->button - 1), ' ' + loc.col + 1, ' ' + loc.row + 1);
         runes_window_write_to_pty(t, response, 6);
     }
     else {
