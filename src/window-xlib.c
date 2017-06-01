@@ -847,6 +847,7 @@ static void runes_window_handle_button_event(RunesTerm *t, XButtonEvent *e)
         }
 
         loc = runes_window_get_mouse_position(t, e->x, e->y);
+        loc.row -= t->scr->grid->row_top;
         sprintf(
             response, "\033[M%c%c%c",
             ' ' + (status), ' ' + loc.col + 1, ' ' + loc.row + 1);
