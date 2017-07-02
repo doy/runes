@@ -786,6 +786,7 @@ static void runes_window_handle_key_event(RunesTerm *t, XKeyEvent *e)
         if (s == XLookupKeySym) {
             break;
         }
+        /* fallthrough */
     case XLookupChars:
         if (e->state & Mod1Mask) {
             runes_window_write_to_pty(t, "\033", 1);
