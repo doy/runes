@@ -128,8 +128,14 @@ void runes_display_draw_screen(RunesTerm *t)
                         (struct vt100_cell **)cells->pdata, cells->len);
                     g_ptr_array_set_size(cells, 0);
                     start = c;
-                    while (c < cols && cell->len == 0) {
-                        cell = &t->scr->grid->rows[vr].cells[++c];
+                    while (c < cols) {
+                        cell = &t->scr->grid->rows[vr].cells[c];
+                        if (cell->len == 0) {
+                            c++;
+                        }
+                        else {
+                            break;
+                        }
                     }
                     if (c > start) {
                         runes_display_draw_string(
