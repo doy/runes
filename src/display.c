@@ -242,10 +242,15 @@ void runes_display_maybe_clear_selection(RunesTerm *t)
     char *contents;
     size_t len;
 
+    if (!display->has_selection) {
+        return;
+    }
+
     vt100_screen_get_string_plaintext(
         t->scr, &display->selection_start, &display->selection_end,
         &contents, &len);
     if (len != display->selection_len
+        || !contents
         || memcmp(contents, display->selection_contents, len)) {
         display->has_selection = 0;
     }
