@@ -65,7 +65,8 @@ void runes_pty_spawn_subprocess(RunesTerm *t, char *envp[], char *cwd)
         close(pty->slave);
 
         if (cwd) {
-            chdir(cwd);
+            // XXX
+            if (chdir(cwd)) {}
         }
 
         if (envp) {
@@ -133,7 +134,8 @@ void runes_pty_set_window_size(
 
 void runes_pty_write(RunesTerm *t, char *buf, size_t len)
 {
-    write(t->pty->master, buf, len);
+    // XXX
+    if (write(t->pty->master, buf, len)) {}
 }
 
 void runes_pty_request_close(RunesTerm *t)
