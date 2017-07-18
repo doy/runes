@@ -32,8 +32,9 @@ looking into new extensions.
 Building
 --------
 Runes requires cairo, xlib, and libevent. Once those dependencies are
-installed, you should be able to build it just by running `make`. If you're
-interested in modifying the parser, you'll also need to install flex.
+installed and you've run `git submodule update --init`, you should be able to
+build it just by running `make`. If you're interested in modifying the parser,
+you'll also need to install flex.
 
 Contributing
 ------------
