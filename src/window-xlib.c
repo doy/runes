@@ -1224,7 +1224,7 @@ static int runes_window_is_word_char(RunesTerm *t, int row, int col)
         r = &t->scr->grid->rows[row - 1 + t->scr->grid->row_top];
         if (r->wrapped) {
             prev_row = row - 1;
-            prev_col = t->scr->grid->max.col;
+            prev_col = t->scr->grid->max.col - 1;
         }
     }
 
@@ -1318,9 +1318,9 @@ static struct vt100_loc runes_window_get_mouse_position(
     ret.row = ret.row < 0                         ? 0
             : ret.row > t->scr->grid->max.row - 1 ? t->scr->grid->max.row - 1
             :                                       ret.row;
-    ret.col = ret.col < 0                     ? 0
-            : ret.col > t->scr->grid->max.col ? t->scr->grid->max.col
-            :                                   ret.col;
+    ret.col = ret.col < 0                         ? 0
+            : ret.col > t->scr->grid->max.col - 1 ? t->scr->grid->max.col - 1
+            :                                       ret.col;
 
     ret.row = ret.row - t->display->row_visible_offset + t->scr->grid->row_count - t->scr->grid->max.row;
 
